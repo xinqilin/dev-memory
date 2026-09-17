@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "dev-memory",
+  "version": "0.0.1",
+  "description": "Team development memory and LLM-maintained wiki for Claude Code and Codex CLI",
+  "author": {
+    "name": "bill.lin"
+  }
+}

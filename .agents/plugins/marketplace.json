@@ -1,0 +1,20 @@
+{
+  "name": "project-plugin",
+  "interface": {
+    "displayName": "project-plugin"
+  },
+  "plugins": [
+    {
+      "name": "dev-memory",
+      "source": {
+        "source": "local",
+        "path": "./plugins/dev-memory"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

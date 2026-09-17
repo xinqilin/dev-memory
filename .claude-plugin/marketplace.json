@@ -1,0 +1,16 @@
+{
+  "name": "project-plugin",
+  "owner": {
+    "name": "bill.lin"
+  },
+  "metadata": {
+    "description": "Team development memory plugins"
+  },
+  "plugins": [
+    {
+      "name": "dev-memory",
+      "source": "./plugins/dev-memory",
+      "description": "Team development memory and LLM-maintained wiki for Claude Code and Codex CLI"
+    }
+  ]
+}
