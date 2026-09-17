@@ -1,0 +1,612 @@
+<title>dev-memory 圖解</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --bg: #F1F4F8;
+    --paper: #FFFFFF;
+    --soft: #E2E9F3;
+    --ink: #1B2433;
+    --muted: #5A6577;
+    --line: #C3CDDA;
+    --card: #FFDE85;
+    --card-edge: #D9B34A;
+    --card-ink: #3A2E05;
+    --accent: #3A67EE;
+    --ok: #1F8F63;
+    --warn: #D24B3B;
+    --f-hand: "LXGW WenKai TC", "Kaiti TC", "BiauKai", "PingFang TC", serif;
+    --f-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F151E;
+      --paper: #18212D;
+      --soft: #1F2B3A;
+      --ink: #E6ECF4;
+      --muted: #9AA6B7;
+      --line: #354457;
+      --card: #EDCB63;
+      --card-edge: #B8962F;
+      --accent: #7E9DFF;
+      --ok: #49C08D;
+      --warn: #FF7B6B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F151E;
+    --paper: #18212D;
+    --soft: #1F2B3A;
+    --ink: #E6ECF4;
+    --muted: #9AA6B7;
+    --line: #354457;
+    --card: #EDCB63;
+    --card-edge: #B8962F;
+    --accent: #7E9DFF;
+    --ok: #49C08D;
+    --warn: #FF7B6B;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 17px;
+    line-height: 1.7;
+  }
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 40px 64px;
+    display: grid;
+    gap: 64px;
+  }
+
+  header { display: grid; gap: 12px; max-width: 42rem; }
+  .kicker {
+    font-size: 13px;
+    letter-spacing: .12em;
+    color: var(--muted);
+  }
+  h1, h2, h3 { font-family: var(--f-hand); font-weight: 700; margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(34px, 6vw, 52px); line-height: 1.2; }
+  h2 { font-size: 30px; }
+  h3 { font-size: 26px; line-height: 1.3; }
+  p { margin: 0; }
+  .lead { font-size: 19px; color: var(--muted); max-width: 38rem; }
+
+  code, .code {
+    font-family: var(--f-mono);
+    font-size: .86em;
+    background: var(--soft);
+    padding: 1px 7px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  section { display: grid; gap: 28px; }
+
+  .journey { display: grid; gap: 36px; }
+  .step {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 32px;
+    align-items: center;
+  }
+  .step:nth-child(even) .pic { order: 2; }
+  .pic {
+    background: var(--soft);
+    border-radius: 18px;
+    padding: 18px;
+  }
+  .pic svg { display: block; width: 100%; height: auto; }
+  .say { display: grid; gap: 10px; max-width: 30rem; }
+  .num {
+    font-family: var(--f-hand);
+    font-size: 20px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .ideas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 36px 28px;
+  }
+  .idea { display: grid; gap: 12px; align-content: start; }
+  .idea p { color: var(--muted); }
+
+  .blocks {
+    background: var(--soft);
+    border-radius: 18px;
+    padding: 22px 18px;
+    display: grid;
+    gap: 18px;
+  }
+  .brow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .blk {
+    font-family: var(--f-hand);
+    font-size: 22px;
+    background: var(--card);
+    color: var(--card-ink);
+    border: 2px solid var(--card-edge);
+    border-radius: 8px;
+    padding: 2px 10px;
+  }
+  .blk.long { padding-inline: 18px; }
+  .blk.hit { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
+  .verdict { font-weight: 700; font-size: 15px; margin-left: 6px; }
+  .verdict.no { color: var(--warn); }
+  .verdict.yes { color: var(--ok); }
+  .brow-label { width: 100%; font-size: 14px; color: var(--muted); }
+
+  .skip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    border-top: 2px dashed var(--line);
+    padding-top: 24px;
+  }
+  .skip div { display: grid; gap: 4px; }
+  .skip b { font-family: var(--f-hand); font-size: 22px; text-decoration: line-through; text-decoration-color: var(--warn); text-decoration-thickness: 2px; }
+  .skip span { color: var(--muted); font-size: 15px; }
+
+  footer { color: var(--muted); font-size: 14px; }
+
+  .kit-group { display: grid; gap: 14px; }
+  .kit-title { font-size: 21px; color: var(--muted); }
+  .kit {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+    gap: 14px;
+  }
+  .tool {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+    column-gap: 14px;
+    row-gap: 4px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .tool svg { grid-row: 1 / span 3; width: 48px; height: 48px; }
+  .tool b { font-family: var(--f-hand); font-size: 20px; line-height: 1.3; }
+  .tool span { font-size: 15px; color: var(--muted); line-height: 1.6; }
+  .tool .tag {
+    grid-column: 2;
+    justify-self: start;
+    align-self: end;
+    margin-top: 8px;
+    font-style: normal;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1.5px solid currentColor;
+  }
+  .tag.have { color: var(--muted); }
+  .tag.install { color: var(--accent); }
+  .tag.builtin { color: var(--ok); }
+  .tag.team { color: var(--ink); }
+  .tag.later { color: var(--muted); border-style: dashed; }
+  .tool.later { background: transparent; border-style: dashed; }
+
+  /* svg paint classes */
+  svg .f-paper { fill: var(--paper); }
+  svg .f-bg { fill: var(--bg); }
+  svg .f-soft { fill: var(--soft); }
+  svg .f-card { fill: var(--card); }
+  svg .f-accent { fill: var(--accent); }
+  svg .f-ok { fill: var(--ok); }
+  svg .f-line { fill: var(--line); }
+  svg .f-none { fill: none; }
+  svg .s-ink { stroke: var(--ink); stroke-width: 2.5; }
+  svg .s-line { stroke: var(--line); stroke-width: 2.5; }
+  svg .s-accent { stroke: var(--accent); stroke-width: 3; }
+  svg .s-ok { stroke: var(--ok); stroke-width: 3; }
+  svg .s-warn { stroke: var(--warn); stroke-width: 3; }
+  svg .s-edge { stroke: var(--card-edge); stroke-width: 2.5; }
+  svg .fat { stroke-width: 5; }
+  svg * { stroke-linecap: round; stroke-linejoin: round; }
+  svg .dash { stroke-dasharray: 6 6; }
+  svg .t { font-family: var(--f-hand); fill: var(--ink); }
+  svg .t-mono { font-family: var(--f-mono); }
+  svg .t-card { fill: var(--card-ink); }
+  svg .t-ok { fill: var(--ok); }
+  svg .t-accent { fill: var(--accent); }
+  svg .t-muted { fill: var(--muted); }
+
+  @media (max-width: 720px) {
+    .step { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .step:nth-child(even) .pic { order: 0; }
+    .ideas { grid-template-columns: minmax(0, 1fr); }
+    .skip { grid-template-columns: minmax(0, 1fr); }
+    .wrap { gap: 48px; padding-block: 28px 48px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="kicker">五歲小孩也看得懂的版本</div>
+    <h1>把開發時的對話，<br>變成全隊查得到的百科</h1>
+    <p class="lead">每個人的電腦會自動記日記。你覺得夠了，就把日記整理成卡片，投稿到團隊圖書館。隊友同步回去，就查得到。</p>
+  </header>
+
+  <section>
+    <h2>它怎麼運作</h2>
+    <div class="journey">
+
+      <div class="step">
+        <div class="pic">
+          <svg viewBox="0 0 240 160" role="img" aria-label="筆電上的對話，自動寫進旁邊的筆記本">
+            <rect class="f-paper s-ink" x="16" y="28" width="116" height="76" rx="6"/>
+            <rect class="f-line" x="28" y="40" width="62" height="11" rx="5.5"/>
+            <rect class="f-accent" x="54" y="57" width="66" height="11" rx="5.5" opacity=".45"/>
+            <rect class="f-line" x="28" y="74" width="50" height="11" rx="5.5"/>
+            <path class="f-line s-ink" d="M6 104 H142 L132 118 H16 Z"/>
+            <path class="f-none s-accent dash" d="M136 50 C148 38 158 40 162 50"/>
+            <polygon class="f-accent" points="155,50 166,54 158,62"/>
+            <rect class="f-paper s-ink" x="168" y="22" width="60" height="96" rx="4"/>
+            <circle class="f-bg s-ink" cx="168" cy="36" r="4"/>
+            <circle class="f-bg s-ink" cx="168" cy="54" r="4"/>
+            <circle class="f-bg s-ink" cx="168" cy="72" r="4"/>
+            <circle class="f-bg s-ink" cx="168" cy="90" r="4"/>
+            <circle class="f-bg s-ink" cx="168" cy="108" r="4"/>
+            <line class="s-line" x1="180" y1="42" x2="218" y2="42"/>
+            <line class="s-line" x1="180" y1="58" x2="218" y2="58"/>
+            <line class="s-line" x1="180" y1="74" x2="212" y2="74"/>
+            <line class="s-line" x1="180" y1="90" x2="218" y2="90"/>
+            <text class="t t-mono t-muted" x="198" y="144" text-anchor="middle" font-size="10">~/.dev-memory</text>
+          </svg>
+        </div>
+        <div class="say">
+          <div class="num">第 1 步</div>
+          <h3>自動記日記</h3>
+          <p>你在 Claude Code 或 Codex 裡的對話，會自動存進你自己的電腦。只有你看得到。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="pic">
+          <svg viewBox="0 0 240 160" role="img" aria-label="筆記本被整理成三張便條卡：為什麼、決定、放棄">
+            <rect class="f-paper s-ink" x="12" y="36" width="58" height="82" rx="4"/>
+            <line class="s-line" x1="24" y1="54" x2="62" y2="54"/>
+            <line class="s-line" x1="24" y1="68" x2="62" y2="68"/>
+            <line class="s-line" x1="24" y1="82" x2="56" y2="82"/>
+            <line class="s-line" x1="24" y1="96" x2="62" y2="96"/>
+            <path class="f-none s-accent" d="M80 77 H102"/>
+            <polygon class="f-accent" points="100,70 112,77 100,84"/>
+            <rect class="f-card s-edge" x="132" y="26" width="98" height="78" rx="4" transform="rotate(6 181 65)"/>
+            <rect class="f-card s-edge" x="126" y="34" width="100" height="80" rx="4" transform="rotate(-4 176 74)"/>
+            <rect class="f-card s-edge" x="120" y="44" width="108" height="86" rx="4"/>
+            <text class="t t-card" x="132" y="72" font-size="15" font-weight="700">為什麼</text>
+            <line class="s-edge" x1="186" y1="67" x2="218" y2="67"/>
+            <text class="t t-card" x="132" y="96" font-size="15" font-weight="700">決定</text>
+            <line class="s-edge" x1="172" y1="91" x2="218" y2="91"/>
+            <text class="t t-card" x="132" y="120" font-size="15" font-weight="700">放棄</text>
+            <line class="s-edge" x1="172" y1="115" x2="218" y2="115"/>
+          </svg>
+        </div>
+        <div class="say">
+          <div class="num">第 2 步</div>
+          <h3>整理成便條卡</h3>
+          <p>覺得資料夠了，就下 <code>/wiki-ingest</code>。一張卡只寫一件事：為什麼要做、決定怎麼做、放棄了哪個做法。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="pic">
+          <svg viewBox="0 0 240 160" role="img" aria-label="便條卡被放進一本有分類標籤的百科">
+            <path class="f-paper s-ink" d="M120 52 C96 42 58 42 22 50 V140 C58 132 96 132 120 142 Z"/>
+            <path class="f-paper s-ink" d="M120 52 C144 42 182 42 212 50 V140 C182 132 144 132 120 142 Z"/>
+            <path class="f-none s-line" d="M38 70 C60 66 86 66 104 70"/>
+            <path class="f-none s-line" d="M38 88 C60 84 86 84 104 88"/>
+            <path class="f-none s-line" d="M38 106 C60 102 80 102 94 106"/>
+            <path class="f-none s-line" d="M136 70 C154 66 180 66 198 70"/>
+            <path class="f-none s-line" d="M136 88 C154 84 180 84 198 88"/>
+            <path class="f-none s-line" d="M136 106 C154 102 172 102 186 106"/>
+            <rect class="f-accent" x="212" y="60" width="18" height="18" rx="3"/>
+            <rect class="f-ok" x="212" y="84" width="18" height="18" rx="3"/>
+            <rect class="f-card s-edge" x="212" y="108" width="18" height="18" rx="3"/>
+            <g transform="rotate(-10 120 22)">
+              <rect class="f-card s-edge" x="92" y="6" width="56" height="32" rx="3"/>
+              <line class="s-edge" x1="100" y1="17" x2="140" y2="17"/>
+              <line class="s-edge" x1="100" y1="27" x2="130" y2="27"/>
+            </g>
+          </svg>
+        </div>
+        <div class="say">
+          <div class="num">第 3 步</div>
+          <h3>放進團隊百科</h3>
+          <p>AI 把卡片放到對的頁面，頁面分成三類：功能、資料表、repo。舊的說法被推翻時，會自動標出來。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="pic">
+          <svg viewBox="0 0 240 160" role="img" aria-label="信封寄給警衛檢查，沒有夾帶密碼，蓋章上架">
+            <circle class="f-none s-warn" cx="28" cy="30" r="8"/>
+            <path class="f-none s-warn" d="M36 30 H58 M50 30 V37 M56 30 V35"/>
+            <line class="s-warn" x1="18" y1="46" x2="62" y2="14"/>
+            <rect class="f-paper s-ink" x="8" y="60" width="62" height="42" rx="4"/>
+            <path class="f-none s-ink" d="M8 62 L39 86 L70 62"/>
+            <path class="f-none s-accent" d="M76 81 H88"/>
+            <polygon class="f-accent" points="86,75 96,81 86,87"/>
+            <path class="f-soft s-ink" d="M130 34 L160 46 V76 C160 100 146 114 130 124 C114 114 100 100 100 76 V46 Z"/>
+            <path class="f-none s-ok fat" d="M115 78 L126 89 L146 64"/>
+            <path class="f-none s-accent" d="M166 81 H174"/>
+            <polygon class="f-accent" points="172,75 182,81 172,87"/>
+            <g transform="rotate(-12 210 81)">
+              <circle class="f-none s-ok" cx="210" cy="81" r="25"/>
+              <text class="t t-ok" x="210" y="87" text-anchor="middle" font-size="16" font-weight="700">上架</text>
+            </g>
+          </svg>
+        </div>
+        <div class="say">
+          <div class="num">第 4 步</div>
+          <h3>投稿、檢查、上架</h3>
+          <p>要你自己按寄出（push + 開 PR）。系統先自動檢查有沒有夾帶密碼，同事看過才會上架。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="pic">
+          <svg viewBox="0 0 240 160" role="img" aria-label="團隊圖書館同步到兩位隊友的電腦，他們都能搜尋">
+            <polygon class="f-soft s-ink" points="12,54 74,24 136,54"/>
+            <rect class="f-paper s-ink" x="24" y="58" width="10" height="46"/>
+            <rect class="f-paper s-ink" x="48" y="58" width="10" height="46"/>
+            <rect class="f-paper s-ink" x="72" y="58" width="10" height="46"/>
+            <rect class="f-paper s-ink" x="96" y="58" width="10" height="46"/>
+            <rect class="f-paper s-ink" x="120" y="58" width="10" height="46"/>
+            <rect class="f-line s-ink" x="14" y="104" width="120" height="10" rx="2"/>
+            <text class="t" x="74" y="138" text-anchor="middle" font-size="13" font-weight="700">團隊 repo</text>
+            <path class="f-none s-accent dash" d="M144 64 C162 52 170 46 180 44"/>
+            <path class="f-none s-accent dash" d="M144 94 C162 106 170 112 180 114"/>
+            <rect class="f-paper s-ink" x="186" y="26" width="46" height="30" rx="3"/>
+            <path class="f-none s-ink" d="M180 58 H238"/>
+            <circle class="f-none s-accent" cx="205" cy="40" r="6"/>
+            <line class="s-accent" x1="209" y1="44" x2="215" y2="50"/>
+            <text class="t t-muted" x="209" y="76" text-anchor="middle" font-size="12">隊友 A</text>
+            <rect class="f-paper s-ink" x="186" y="96" width="46" height="30" rx="3"/>
+            <path class="f-none s-ink" d="M180 128 H238"/>
+            <circle class="f-none s-accent" cx="205" cy="110" r="6"/>
+            <line class="s-accent" x1="209" y1="114" x2="215" y2="120"/>
+            <text class="t t-muted" x="209" y="146" text-anchor="middle" font-size="12">隊友 B</text>
+          </svg>
+        </div>
+        <div class="say">
+          <div class="num">第 5 步</div>
+          <h3>隊友同步回自己電腦</h3>
+          <p>隊友把圖書館同步到自己電腦，就能搜到全隊的記憶，而且不用連到任何伺服器。</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>記住四件事</h2>
+    <div class="ideas">
+
+      <div class="idea">
+        <div class="pic">
+          <svg viewBox="0 0 320 180" role="img" aria-label="團隊圖書館是正本，你電腦裡的卡片盒只是索引，壞了可以重建">
+            <polygon class="f-soft s-ink" points="16,64 90,26 164,64"/>
+            <rect class="f-paper s-ink" x="30" y="68" width="12" height="56"/>
+            <rect class="f-paper s-ink" x="56" y="68" width="12" height="56"/>
+            <rect class="f-paper s-ink" x="84" y="68" width="12" height="56"/>
+            <rect class="f-paper s-ink" x="112" y="68" width="12" height="56"/>
+            <rect class="f-paper s-ink" x="138" y="68" width="12" height="56"/>
+            <rect class="f-line s-ink" x="18" y="124" width="144" height="12" rx="2"/>
+            <text class="t" x="90" y="164" text-anchor="middle" font-size="20" font-weight="700">正本</text>
+            <path class="f-none s-accent dash" d="M170 44 C214 22 256 30 262 70"/>
+            <polygon class="f-accent" points="254,66 263,80 272,66"/>
+            <text class="t t-muted" x="222" y="22" text-anchor="middle" font-size="13">壞了？重建一份</text>
+            <rect class="f-card s-edge" x="226" y="82" width="64" height="30" rx="3"/>
+            <rect class="f-card s-edge" x="218" y="92" width="80" height="30" rx="3"/>
+            <rect class="f-paper s-ink" x="208" y="104" width="100" height="42" rx="4"/>
+            <text class="t" x="258" y="172" text-anchor="middle" font-size="20" font-weight="700">索引</text>
+          </svg>
+        </div>
+        <h3>圖書館才是正本</h3>
+        <p>GitHub 上的團隊 repo 是正本。你電腦裡的資料庫只是索引，壞了或換電腦，重建一份就好。</p>
+      </div>
+
+      <div class="idea">
+        <div class="blocks" role="img" aria-label="中文要切成兩個字一塊才搜得到">
+          <div class="brow">
+            <span class="brow-label">整串當成一塊</span>
+            <span class="blk long">發票作廢流程</span>
+            <span class="verdict no">搜「作廢」✕ 找不到</span>
+          </div>
+          <div class="brow">
+            <span class="brow-label">兩個字切一塊</span>
+            <span class="blk">發票</span><span class="blk">票作</span><span class="blk hit">作廢</span><span class="blk">廢流</span><span class="blk">流程</span>
+            <span class="verdict yes">搜「作廢」✓ 找到</span>
+          </div>
+        </div>
+        <h3>中文要切成小積木</h3>
+        <p>中文每兩個字切成一塊，搜尋才找得到。你現在的 claude-mem 搜「例外」只找到 1 筆，實際上有 10 筆。</p>
+      </div>
+
+      <div class="idea">
+        <div class="pic">
+          <svg viewBox="0 0 320 205" role="img" aria-label="範例：batch 寫入一張資料表，api 和 backend 讀取它">
+            <rect class="f-paper s-ink" x="120" y="78" width="80" height="54" rx="4"/>
+            <rect class="f-accent" x="121" y="79" width="78" height="13"/>
+            <line class="s-line" x1="122" y1="106" x2="198" y2="106"/>
+            <line class="s-line" x1="122" y1="119" x2="198" y2="119"/>
+            <line class="s-line" x1="147" y1="93" x2="147" y2="131"/>
+            <line class="s-line" x1="174" y1="93" x2="174" y2="131"/>
+            <text class="t" x="160" y="154" text-anchor="middle" font-size="15" font-weight="700">資料表頁</text>
+
+            <polygon class="f-soft s-ink" points="12,100 44,76 76,100"/>
+            <rect class="f-paper s-ink" x="18" y="100" width="52" height="36"/>
+            <rect class="f-soft s-ink" x="38" y="116" width="12" height="20"/>
+            <text class="t t-mono" x="44" y="156" text-anchor="middle" font-size="12">batch</text>
+            <path class="f-none s-ok" d="M80 112 H110"/>
+            <polygon class="f-ok" points="108,106 118,112 108,118"/>
+            <text class="t t-ok" x="96" y="100" text-anchor="middle" font-size="13" font-weight="700">寫入</text>
+
+            <polygon class="f-soft s-ink" points="242,40 274,16 306,40"/>
+            <rect class="f-paper s-ink" x="248" y="40" width="52" height="34"/>
+            <rect class="f-soft s-ink" x="268" y="54" width="12" height="20"/>
+            <text class="t t-mono" x="274" y="92" text-anchor="middle" font-size="12">api</text>
+            <path class="f-none s-accent" d="M204 90 C220 78 228 68 236 60"/>
+            <polygon class="f-accent" points="229,57 242,54 238,67"/>
+            <text class="t t-accent" x="208" y="66" text-anchor="middle" font-size="13" font-weight="700">讀取</text>
+
+            <polygon class="f-soft s-ink" points="242,150 274,126 306,150"/>
+            <rect class="f-paper s-ink" x="248" y="150" width="52" height="34"/>
+            <rect class="f-soft s-ink" x="268" y="164" width="12" height="20"/>
+            <text class="t t-mono" x="274" y="200" text-anchor="middle" font-size="12">backend</text>
+            <path class="f-none s-accent" d="M204 122 C220 134 228 142 236 148"/>
+            <polygon class="f-accent" points="238,140 243,153 230,153"/>
+            <text class="t t-accent" x="206" y="152" text-anchor="middle" font-size="13" font-weight="700">讀取</text>
+          </svg>
+        </div>
+        <h3>跨 repo：資料表是十字路口</h3>
+        <p>每張資料表、每支 API 都有自己的一頁，寫著哪些 repo 在讀、哪些在寫，一看就知道改了會影響誰。圖上的關係只是範例。</p>
+      </div>
+
+      <div class="idea">
+        <div class="pic">
+          <svg viewBox="0 0 320 180" role="img" aria-label="Claude Code 和 Codex 兩支筆，寫在同一本日記">
+            <rect class="f-paper s-ink" x="112" y="26" width="96" height="128" rx="5"/>
+            <circle class="f-bg s-ink" cx="112" cy="42" r="4"/>
+            <circle class="f-bg s-ink" cx="112" cy="62" r="4"/>
+            <circle class="f-bg s-ink" cx="112" cy="82" r="4"/>
+            <circle class="f-bg s-ink" cx="112" cy="102" r="4"/>
+            <circle class="f-bg s-ink" cx="112" cy="122" r="4"/>
+            <circle class="f-bg s-ink" cx="112" cy="142" r="4"/>
+            <line class="s-line" x1="128" y1="48" x2="196" y2="48"/>
+            <line class="s-line" x1="128" y1="66" x2="196" y2="66"/>
+            <line class="s-line" x1="128" y1="84" x2="188" y2="84"/>
+            <line class="s-line" x1="128" y1="102" x2="196" y2="102"/>
+            <line class="s-line" x1="128" y1="120" x2="180" y2="120"/>
+            <g transform="rotate(35 70 80)">
+              <rect class="f-accent s-ink" x="30" y="72" width="80" height="16" rx="4"/>
+              <polygon class="f-paper s-ink" points="110,72 128,80 110,88"/>
+            </g>
+            <g transform="rotate(-35 250 80)">
+              <rect class="f-ok s-ink" x="210" y="72" width="80" height="16" rx="4"/>
+              <polygon class="f-paper s-ink" points="210,72 192,80 210,88"/>
+            </g>
+            <text class="t t-mono" x="52" y="26" text-anchor="middle" font-size="13">Claude Code</text>
+            <text class="t t-mono" x="270" y="26" text-anchor="middle" font-size="13">Codex</text>
+            <text class="t t-mono t-muted" x="160" y="172" text-anchor="middle" font-size="11">~/.dev-memory</text>
+          </svg>
+        </div>
+        <h3>兩支筆，同一本日記</h3>
+        <p>同一個 plugin，Claude Code 和 Codex 都能裝。兩邊寫進同一份記憶，換工具也不會失憶。</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>會用到的東西</h2>
+
+    <div class="kit-group">
+      <h3 class="kit-title">每個人的電腦</h3>
+      <div class="kit">
+        <div class="tool">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(35 16 24)"><rect class="f-accent s-ink" x="4" y="20" width="24" height="8" rx="2"/><polygon class="f-paper s-ink" points="28,20 36,24 28,28"/></g><g transform="rotate(-35 32 24)"><rect class="f-ok s-ink" x="20" y="20" width="24" height="8" rx="2"/><polygon class="f-paper s-ink" points="20,20 12,24 20,28"/></g></svg>
+          <b>Claude Code 或 Codex CLI</b>
+          <span>寫日記的筆，也是幫你整理卡片的 AI。不需要另外申請 LLM API key。</span>
+          <em class="tag have">已經有</em>
+        </div>
+        <div class="tool">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path class="f-card s-edge" d="M8 14 H18 C18 8 26 8 26 14 H36 V24 C42 24 42 32 36 32 V40 H8 Z"/></svg>
+          <b>dev-memory plugin</b>
+          <span>記日記的小幫手，也就是這次要寫的東西。包含自動記錄、<code>/wiki-ingest</code> 這些指令，以及搜尋功能。</span>
+          <em class="tag install">從 marketplace 安裝</em>
+        </div>
+        <div class="tool">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><circle class="f-soft s-ink" cx="24" cy="24" r="10"/><circle class="f-paper s-ink" cx="24" cy="24" r="4"/><path class="f-none s-ink" d="M24 6 V12 M24 36 V42 M6 24 H12 M36 24 H42 M11 11 L15 15 M33 33 L37 37 M37 11 L33 15 M15 33 L11 37"/></svg>
+          <b>Bun</b>
+          <span>讓小幫手跑起來的引擎，用它執行 plugin 程式。</span>
+          <em class="tag install">brew install bun</em>
+        </div>
+        <div class="tool">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><rect class="f-card s-edge" x="12" y="10" width="24" height="14" rx="2"/><rect class="f-paper s-ink" x="6" y="20" width="36" height="20" rx="3"/><line class="s-ink" x1="18" y1="30" x2="30" y2="30"/></svg>
+          <b>SQLite</b>
+          <span>抽屜裡的索引卡盒。整個資料庫只是一個檔案（<code>~/.dev-memory/memory.db</code>），不用開伺服器，中文搜尋靠它。</span>
+          <em class="tag builtin">Bun 內建，不用裝</em>
+        </div>
+        <div class="tool">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><rect class="f-paper s-ink" x="6" y="12" width="36" height="26" rx="3"/><path class="f-none s-ink" d="M6 14 L24 28 L42 14"/></svg>
+          <b>git + gh</b>
+          <span>郵差：負責同步團隊 repo、開 PR。用自己的 GitHub 帳號登入就好，不用自己產生 PAT，PR 作者也會是你本人。</span>
+          <em class="tag install">brew install gh + gh auth login</em>
+        </div>
+      </div>
+    </div>
+
+    <div class="kit-group">
+      <h3 class="kit-title">團隊共用（只要建一次）</h3>
+      <div class="kit">
+        <div class="tool">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><polygon class="f-soft s-ink" points="4,18 24,6 44,18"/><rect class="f-paper s-ink" x="9" y="20" width="5" height="16"/><rect class="f-paper s-ink" x="21.5" y="20" width="5" height="16"/><rect class="f-paper s-ink" x="34" y="20" width="5" height="16"/><rect class="f-line s-ink" x="5" y="36" width="38" height="5" rx="1"/></svg>
+          <b>團隊記憶 repo</b>
+          <span>團隊圖書館，也就是正本。裡面有卡片、百科、規則，以及產品和 repo 的對照表。</span>
+          <em class="tag team">GitHub 私有 repo</em>
+        </div>
+        <div class="tool">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path class="f-accent s-ink" d="M6 18 L10 8 H38 L42 18 Z"/><rect class="f-paper s-ink" x="9" y="18" width="30" height="22"/><rect class="f-soft s-ink" x="20" y="28" width="8" height="12"/></svg>
+          <b>project-plugin repo</b>
+          <span>小幫手的發放處，隊友從這裡安裝 plugin。</span>
+          <em class="tag team">GitHub 私有 repo</em>
+        </div>
+        <div class="tool">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path class="f-soft s-ink" d="M24 6 L40 12 V24 C40 34 32 40 24 44 C16 40 8 34 8 24 V12 Z"/><path class="f-none s-ok fat" d="M16 24 L22 30 L32 18"/></svg>
+          <b>GitHub Actions + gitleaks</b>
+          <span>門口警衛：每個 PR 自動檢查格式、壞掉的連結，以及有沒有夾帶密碼。</span>
+          <em class="tag team">在 CI 跑，個人不用裝</em>
+        </div>
+      </div>
+    </div>
+
+    <div class="kit-group">
+      <h3 class="kit-title">以後有需要才加</h3>
+      <div class="kit">
+        <div class="tool later">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><circle class="f-none s-accent" cx="20" cy="20" r="11"/><line class="s-accent" x1="28" y1="28" x2="40" y2="40"/><path class="f-accent" d="M20 13 L22 18 L27 20 L22 22 L20 27 L18 22 L13 20 L18 18 Z"/></svg>
+          <b>向量搜尋</b>
+          <span>用 Bedrock Cohere Embed v4 或 bge-m3，讓搜尋也能比對「意思相近」的內容。</span>
+          <em class="tag later">測出搜尋不夠準才加</em>
+        </div>
+        <div class="tool later">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><ellipse class="f-soft s-ink" cx="24" cy="12" rx="14" ry="5"/><path class="f-soft s-ink" d="M10 12 V36 C10 39 16 41 24 41 C32 41 38 39 38 36 V12"/><path class="f-none s-ink" d="M10 24 C10 27 16 29 24 29 C32 29 38 27 38 24"/></svg>
+          <b>PostgreSQL + pgvector</b>
+          <span>放在 RDS 的中央搜尋服務。</span>
+          <em class="tag later">PM 等不用 CLI 的人要網頁搜尋時才加</em>
+        </div>
+        <div class="tool later">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><rect class="f-paper s-ink" x="6" y="10" width="36" height="24" rx="4"/><path class="f-paper s-ink" d="M14 34 L12 42 L22 34"/><line class="s-line" x1="13" y1="19" x2="35" y2="19"/><line class="s-line" x1="13" y1="26" x2="28" y2="26"/></svg>
+          <b>Google Chat 通知</b>
+          <span>有新 PR 時通知大家，可以用 GitHub for Google Chat app 或一個 Action 做到。</span>
+          <em class="tag later">想保留通知才加</em>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>這次不用的東西</h2>
+    <div class="skip">
+      <div><b>claude-mem</b><span>退休：中文搜不到，還會把決定漏掉</span></div>
+      <div><b>n8n + Apps Script</b><span>改成直接開 PR，步驟更少</span></div>
+      <div><b>PostgreSQL</b><span>先不用，真的需要時再加</span></div>
+    </div>
+  </section>
+
+  <footer>完整規格、實作步驟和驗證方式都寫在計畫檔裡。</footer>
+
+</div>

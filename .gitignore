@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
+
+# Local index / databases (the repo is never the place for these)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Transcripts and rollouts (real conversations stay local)
+*.jsonl
+
+# Secrets
+.env*
+
+# Project guidance files are excluded by some global gitignores; keep them tracked here
+!AGENTS.md
+!CLAUDE.md
+!docs/HANDOFF.md
