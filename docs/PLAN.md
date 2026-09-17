@@ -38,8 +38,9 @@ Codex CLI  ──┴───────> dev-memory CLI（核心） ──> ~/
 | Plugin manifest | `.claude-plugin/plugin.json` | 根目錄 `plugin.json`（`$schema` agent-plugins 1.0.0），舊版的 `.codex-plugin/plugin.json` 也支援 | 兩份並存 |
 | Marketplace | `.claude-plugin/marketplace.json` | `.agents/plugins/marketplace.json`，找不到時會退回讀 `.claude-plugin/marketplace.json` | 同一個 repo 放兩份 |
 | Skills | `skills/<name>/SKILL.md` | 格式相同（open standard） | **共用**，內容不能寫死任一邊專屬的 tool 名稱 |
-| MCP | `.mcp.json` | `mcp.json`（要寫 transport `type`） | 兩份，指向同一個 stdio server |
-| Hooks | `hooks/hooks.json` | `hooks/hooks.json`，或寫在 manifest 裡 | Phase 0 驗證能不能共用一份 |
+| MCP | `.mcp.json`（`args` 用 `${CLAUDE_PLUGIN_ROOT}`） | **只讀** `mcp.json`，不讀 `.mcp.json`；要寫 `type: "stdio"`；`command` 不展開變數，`args` 展開 `${PLUGIN_ROOT}`（Phase 0 實測） | 兩份，指向同一個 stdio server；`command` 用裸名稱 `bun`，所以 PATH 裡要有 bun |
+| Hooks | `hooks/hooks.json` | `hooks/hooks.json`，或在 manifest 的 `extensions."com.openai".hooks` 覆寫 | Phase 0：格式相同，共用一份（用 `${CLAUDE_PLUGIN_ROOT}`）；Codex 端待 session 實測，失敗就拆成兩份 |
+| 安裝 | `--plugin-dir` 或 `plugin install` | `marketplace add` 之後還要 `plugin add <plugin>@<marketplace>`；會**複製**到 `~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/` | git 來源不會有 `node_modules` → MCP server 要零依賴或打包成單檔 |
 | 環境變數 | `CLAUDE_PLUGIN_ROOT` | `PLUGIN_ROOT`，同時也有 `CLAUDE_PLUGIN_ROOT` | 用 `CLAUDE_PLUGIN_ROOT` |
 | 事件 | SessionStart / Stop / PreCompact / SessionEnd（預設 1.5 秒） | 同樣四個事件，但 SessionEnd 預設 1 秒、最多 3 秒 | **主要靠 Stop 做增量存檔**，SessionStart 補掃漏掉的，SessionEnd 能做多少算多少 |
 | Hook 收到的資料 | `session_id`、`transcript_path`、`cwd` | 同樣欄位，但 `transcript_path` 可能是 null，官方也說格式不穩定 | 是 null 時改掃 `~/.codex/sessions/**` |
@@ -55,7 +56,7 @@ Codex CLI  ──┴───────> dev-memory CLI（核心） ──> ~/
 | 元件 | 用途 | 狀態 |
 |---|---|---|
 | Claude Code plugin + Codex plugin（同一份原始碼、兩份 manifest） | 蒐集、萃取、ingest、搜尋 | 必要 |
-| Bun + `bun:sqlite`（內建 FTS5） | CLI、MCP server、本機索引 | 必要（`brew install bun`） |
+| Bun + `bun:sqlite` | CLI、MCP server、本機索引。macOS 用**系統** SQLite（Phase 0 實測 3.51.0 有 FTS5），Linux/Windows 用 Bun 自帶的；`dev-memory init` 要檢查 `ENABLE_FTS5` | 必要（`brew install bun`，PATH 裡要有 `bun`） |
 | git + `gh` | 同步 memory repo、開 PR；用 `gh auth login` 或 SSH 認證，**不需要 PAT** | 必要 |
 | GitHub 私有 repo ×2 | marketplace（就是 `project-plugin`）、memory repo | 必要 |
 | GitHub Actions | 結構 lint、gitleaks CLI（用內建的 `GITHUB_TOKEN`） | 必要 |
@@ -217,7 +218,7 @@ dev-memory 審核  |  branch: mem/bill.lin/20260917-sap-create-bu-data
 ```
 project-plugin/
 ├── AGENTS.md / CLAUDE.md(@AGENTS.md)
-├── docs/{PLAN.md, HANDOFF.md, eli5.html}
+├── docs/{PLAN.md, HANDOFF.md, eli5.html, spikes/phase-0.md}
 ├── .claude-plugin/marketplace.json
 ├── .agents/plugins/marketplace.json
 ├── plugins/dev-memory/
@@ -280,7 +281,7 @@ updated: 2026-09-04
 - `archive_cursor(path, byte_offset)`：記錄每個 transcript 讀到哪裡，Stop 時只處理新增的行。
 - `record`：狀態是 `local`、`submitted` 或 `merged`。
 - `page`：從 `origin/main` 建出來的 wiki 索引。
-- `fts`（FTS5，unicode61）：中文切成 bigram；識別字保留完整形式，另外依 camelCase、snake_case 拆開。
+- `fts`（FTS5，`tokenize = "unicode61 tokenchars '_'"`，由 `core/tokenize.ts` 預先斷詞）：中文切成重疊 bigram，查詢時組成 bigram phrase（等於子字串比對）；識別字保留完整形式，另外依 camelCase、snake_case 拆開。已知限制：只查一個中文字時用 prefix，找不到出現在連續段最後一個字的單字。
 - `vector(ref, kind, model, model_digest, dim, content_hash, embedding BLOB)`：只有 provider 是 `ollama` 才寫入；模型、digest 或內容變了就重算。
 - `embed_queue(ref, kind, enqueued_at)`：待算向量的項目，在背景處理。
 
@@ -295,8 +296,18 @@ updated: 2026-09-04
 | 2. 做一個最小的 hello plugin（一個 skill、一個 SessionStart hook、一個 stdio MCP tool），兩份 manifest、兩份 marketplace | Claude Code 用 `claude --plugin-dir` 載入後三者都正常；Codex 用 `codex plugin marketplace add ./` 安裝、信任 hook 後三者都正常 |
 | 3. 確認兩件事：`hooks/hooks.json` 能不能兩邊共用；Codex plugin 能不能帶 stdio MCP | 記下結果。不能共用就拆成兩份；Codex 帶不了 MCP 就改讓 skill 直接呼叫 shell CLI |
 | 4. 確認 `bun:sqlite` 的 FTS5 在 macOS arm64 可用 | 能建立表、能查詢 |
-| 5. 寫 `tokenize.ts`，用 claude-mem 的 4,069 筆 observation 測 | `例外` 查到 10/10 筆；`WAIT_FOR_INSERT_MIDDLE_DB` 找得到 |
+| 5. 寫 `tokenize.ts`，用 claude-mem 的 observation 測（筆數會持續增加） | 中文詞 MATCH 筆數 = LIKE 筆數；`WAIT_FOR_INSERT_MIDDLE_DB` 找得到 |
 | 6. 寫 `repo-id.ts` | ssh、https、worktree、Codex `session_meta` 四種來源都轉成同一個 ID |
+
+**Phase 0 結果（2026-09-18）**：詳見 `docs/spikes/phase-0.md`。
+- 0.1、0.4、0.5、0.6 通過。
+- 0.2–0.3：
+  - Claude Code 用 `claude plugin validate --strict` 通過。
+  - Codex 在隔離環境確認能安裝，skill 跟 stdio MCP 都看得到。
+  - hooks.json 共用的部分文件層面成立。
+  - **待 Bill 在兩個工具的真實 session 裡驗證 hook 跟 MCP 呼叫**。
+- `bun test` 32/32 通過。
+- `例外` 實測 12 = LIKE 12（筆數比規劃時多，是因為 claude-mem 還在寫入）。
 
 ### Phase 1：本機蒐集與關鍵字搜尋（兩個工具都做，約 1.5–2 週）
 | 步驟 | 驗證 |
@@ -359,7 +370,9 @@ updated: 2026-09-04
 - **transcript 格式不是穩定介面**：兩個 adapter 都要用 fixture 測試、寬鬆解析；解析失敗只記 log，不能影響 session。
 - **Codex 的 SessionEnd 最多 3 秒**：所以主要靠 Stop 增量存檔，加上 SessionStart 補掃。
 - **Codex hook 要使用者手動信任**才會執行，也就才開始蒐集。
-- **Codex 能不能帶本機 stdio MCP、能不能從私有 marketplace 安裝，官方文件沒寫清楚**：Phase 0 驗證。
+- **Codex 能不能帶本機 stdio MCP**：Phase 0 實測可以（只讀 `mcp.json`）。**能不能從私有 marketplace 安裝**：要先 push 到 GitHub 私有 repo，還沒驗證。
+- **plugin 的 hook 跟 MCP 依賴 PATH 裡有 `bun`**：Agent Plugins 規格規定裸指令名稱由 client 決定怎麼找，README 要寫明；GUI 啟動的工具可能拿不到 shell 的 PATH。
+- **repo ID 規則**：統一小寫並去掉 host（Phase 0 預設）。不同 host 上的同名 `owner/repo` 會被當成同一個，待 Bill 確認。
 - **Skill 不能寫死工具專屬的 tool 名稱**。
 - **Ollama 預設把模型留在記憶體 5 分鐘**：一律帶 `keep_alive: "30s"`。
 - **Qwen3-Embedding 查詢沒加前綴會掉 1–5% 準確度**：provider 依模型處理。

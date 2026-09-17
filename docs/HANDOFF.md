@@ -1,4 +1,4 @@
-# Handoff — 2026-09-17 17:40
+# Handoff — 2026-09-18（Phase 0 完成）
 
 ## Goal
 
@@ -10,11 +10,13 @@
 
 ## Current Status
 
-- **規劃已完成，還沒開始實作**，Phase 0 尚未開始。
-- 完整計畫在 `docs/PLAN.md`，原檔是 `~/.claude/plans/claude-mem-luminous-naur.md`。
+- **Phase 0 完成（2026-09-18）**，結果在 `docs/spikes/phase-0.md`。Phase 1 還沒開始。
+  - git repo：branch `master`，共 4 個 commit（初始化、hello plugin、核心 spike、Phase 0 文件），**沒有 push、沒有 remote**。
+  - 0.1、0.4、0.5、0.6 實測通過；`bun test` 32/32 通過。
+  - 0.2–0.3：Claude Code 的 `claude plugin validate --strict` 通過；Codex 在隔離的 `CODEX_HOME` 實測能安裝，skill 跟 stdio MCP 都看得到。**還沒在兩個工具的真實 session 裡驗證 hook 輸出跟 MCP 呼叫**，要 Bill 照 spike 文件最後一節自己跑。
+- 完整計畫在 `docs/PLAN.md`（已同步 Phase 0 結果），原檔是 `~/.claude/plans/claude-mem-luminous-naur.md`。
 - 圖解在 `docs/eli5.html`，線上版：https://claude.ai/artifact/XFAiD5kPUgS5jmHi4ZDfGq
-- `/Users/bill.lin/project-plugin` 還不是 git repo。
-- `PLAN.md` 最後有 4 項「待確認決策」，目前先照預設值往下做。
+- `PLAN.md` 最後有「待確認決策」，另外 `docs/spikes/phase-0.md` 有 3 項「需要你決定」。
 
 ## 討論過程（決策怎麼演變）
 
@@ -85,7 +87,14 @@
 - **LLM**：直接用 Claude Code 或 Codex 本身，不需要額外的 API key。
 - **push 跟開 PR 由使用者自己執行**：Bill 的 CLAUDE.md 禁止 agent 執行 git push。
 - **認證**：`gh auth login` 或 SSH，不需要 PAT；CI 用內建的 `GITHUB_TOKEN`。
-- **Runtime**：Bun + `bun:sqlite`（已確認 Bun 的 build flag 有開 FTS5）。
+- **Runtime**：Bun + `bun:sqlite`。macOS 上 Bun 用的是**系統** SQLite，不是 Bun 自帶的；Phase 0 實測 macOS arm64 是 3.51.0，有開 FTS5。「Bun build flag 有開 FTS5」只適用 Linux/Windows。
+- **FTS5 斷詞（Phase 0 實測通過）**：`unicode61 tokenchars '_'`，由 `core/tokenize.ts` 預先斷詞（中文 bigram、識別字完整形式加上拆開的部分），查詢時組成 bigram phrase。
+- **repo ID（Phase 0 預設，待 Bill 確認）**：`owner/repo`，統一小寫並去掉 host。
+- **plugin 檔案配置（Phase 0 實測）**：
+  - Claude Code 讀 `.claude-plugin/plugin.json`、`.mcp.json`。
+  - Codex 讀根目錄 `plugin.json`（Agent Plugins 1.0.0）、`mcp.json`，**不讀** `.mcp.json`。
+  - `hooks/hooks.json` 共用一份。
+  - 三個指引檔被全域 gitignore 擋住，已在 repo `.gitignore` 加 `!` 例外。
 - **兩個工具共用**：
   - manifest 跟 MCP 設定各一份
   - skills 共用，內容不寫死任何工具專屬的 tool 名稱
@@ -97,24 +106,26 @@
 
 ## Next Steps
 
-1. Bill 確認 `PLAN.md` 裡的 4 項待確認決策，並提供：
+1. **Bill 跑工具內驗證**（`docs/spikes/phase-0.md` 最後一節，有指令跟預期輸出）：
+   - Claude Code：`claude --plugin-dir ./plugins/dev-memory`
+   - Codex：`codex plugin marketplace add ./` → `codex plugin add dev-memory@project-plugin` → 信任 hook → 重開 session
+   - 重點看 Codex 的 hook 有沒有輸出 `DEV_MEMORY_HOOK_OK host=codex`。沒有的話，照 spike 文件的退路把 hooks 拆成兩份。
+2. Bill 決定 spike 文件裡的 3 件事：
+   - repo ID 要不要保留 host
+   - Phase 1 的 MCP server 用 SDK 打包成單檔，還是維持零依賴
+   - 什麼時候 push 到私有 repo，驗證私有 marketplace 安裝
+3. Bill 確認 `PLAN.md` 裡的待確認決策，並提供：
    - n8n workflow 的 export JSON（prompt、category/slug 規則）
    - 產品跟 repo 的對應清單
    - 104corp 能不能建私有 repo
-2. Phase 0.1：在本目錄 `git init`。
-3. Phase 0.2–0.3：做一個 hello plugin，在兩個工具上驗證三件事：
-   - `hooks/hooks.json` 能不能兩邊共用
-   - Codex 的 plugin 能不能帶本機 stdio MCP
-   - 私有 marketplace 能不能安裝
-4. Phase 0.4–0.6：
-   - 驗證 `bun:sqlite` 的 FTS5
-   - 寫 `tokenize.ts`，用 claude-mem 那 4,069 筆測
-   - 寫 `repo-id.ts`
-5. Phase 0 結束時停下，給 Bill diff 摘要。
+4. 以上確認後進入 Phase 1。`src/hello-*.ts` 跟 `skills/hello` 屬於 Phase 0 的 spike，Phase 1 有正式元件後就移除。
 
 ## Critical Files
 
-- `docs/PLAN.md`：完整規劃，包含架構、相容性表、資料格式、Phase 0–5 步驟與驗證方式。
+- `docs/PLAN.md`：完整規劃，包含架構、相容性表、資料格式、Phase 0–6 步驟與驗證方式。
+- `docs/spikes/phase-0.md`：Phase 0 的結論、實測數據、要改計畫的地方、待 Bill 執行的工具內驗證清單。
+- `plugins/dev-memory/src/core/{tokenize,repo-id}.ts`：Phase 1 會直接沿用的核心模組。
+- `plugins/dev-memory/test/tokenize.claude-mem.test.ts`：用唯讀方式讀 claude-mem.db 的整合測試，沒有 DB 時自動 skip。
 - `docs/eli5.html`：圖解（瀏覽器開檔，或看上面的線上連結）。
 - `~/.claude-mem/scripts/sync-to-n8n.sh`：現行撈資料的邏輯，是要取代的對象。
 - `~/.claude/skills/n8n-doc-sync/SKILL.md`：現行 skill。`--feature` 跟 `maintenance/` 路徑的語意要保留；注意 `~/.claude` 有未 commit 的修改。
@@ -139,6 +150,12 @@
 - **Claude Code 私有 marketplace 的背景自動更新**：HTTPS 的 credential helper 會被停用，SSH 可以用。
 - **FTS5 unicode61 會把 `_` 當分隔符**，識別字要另外保留完整形式。
 - **Bill 的機器**：MacBook Pro M2 16GB，還沒裝 Ollama。
+- **全域 gitignore 會擋掉指引檔**：`~/.gitignore_global` 忽略 `CLAUDE.md`、`AGENTS.md`、`HANDOFF.md`、`.claude/`，所以 repo `.gitignore` 要加 `!` 例外。
+- **Codex 安裝 plugin 會複製到 cache**：`~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/`，所以 plugin root 是複本。
+- **Codex 的 `mcp.json` 規則**：`command` 不展開變數，只有 `args`、`env`、`cwd` 展開 `${PLUGIN_ROOT}`；`bun` 要在 PATH 裡。
+- **Codex 驗證可以不碰 `~/.codex`**：用 `CODEX_HOME=$TMPDIR/codex-home`，就能在隔離環境跑 `codex plugin marketplace add`、`plugin add`、`mcp list`、`debug prompt-input`。但 `debug prompt-input` 不會觸發 SessionStart hook。
+- **claude-mem 筆數會持續增加**：它還在記錄（包括開發 dev-memory 的 session），測試要斷言 MATCH = LIKE，不能寫死筆數。
+- **Sandbox 擋寫 `.mcp.json`**：用 shell heredoc 寫會被拒，要改用檔案編輯工具。
 - **Ollama 預設會把模型留在記憶體 5 分鐘**：請求要帶 `keep_alive: "30s"`。`/api/embed` 支援批次跟 `dimensions`，回傳的向量已經 L2 正規化。
 - **Qwen3-Embedding 查詢要加前綴**（`Instruct: {task}\nQuery: {query}`），不加會掉 1–5%；文件本身不用加。bge-m3 不需要前綴。
 - **claude-mem 的 Chroma 現況**：1.0GB、58,073 筆向量、384 維，collection 設定是 `{}`，也就是用 Chroma 預設的英文模型。
@@ -150,4 +167,4 @@
 
 ## Active Skill
 
-無。規劃階段已結束，還沒進入實作。
+無。Phase 0 已完成，等 Bill 跑完工具內驗證、確認決策後才進 Phase 1。
