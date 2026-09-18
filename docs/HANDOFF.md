@@ -114,6 +114,10 @@
   - 主要靠 Stop hook 增量存檔
 - **名稱（2026-09-18 定案）**：plugin `dev-memory`；plugin repo `xinqilin/dev-memory`；marketplace `104mis-plugins`（原本叫 `project-plugin`，沒有鑑別度）。安裝字串是 `dev-memory@104mis-plugins`。用團隊前綴是為了搬到 104corp 後不用再改名、隊友也不用重裝第二次。
 - **不匯入 claude-mem 現有的 observation**，只拿來當 tokenizer 的測試資料。
+- **借自 llm_wiki 的兩件事加進 Phase 3（2026-09-18 決定）**：
+  - **問答回填**：搜尋回答完後，有保留價值的答案提議寫成頁面（原作的 query 迴圈，我們原本只有「決策 → 紀錄」）。
+  - **來源檢查**：lint 驗證 `sources[]` 指得到真實紀錄，並抽查內容是否真的來自那些來源（原作用 `[@source]` 做確定性驗證）。
+  - 沒採用的第三項是 cascade 刪除：我們的 records 只新增不刪，語意對不上。
 
 ## Next Steps
 
