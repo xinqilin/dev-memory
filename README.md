@@ -40,6 +40,23 @@ codex
 
 **Codex 的 hook 要手動信任才會執行。** 啟動時會出現 hook 審查畫面，或輸入 `/hooks` 信任 dev-memory 的 SessionStart hook，信任完要重開 session。
 
+## 裝完之後（一定要做）
+
+最省事的方式是在對話裡說「**幫我設定 dev-memory**」，走 `mem-setup` skill，它會問你要把記憶 repo 放哪、然後把下面這些做完。
+
+自己來的話：
+
+```bash
+# 1. 先 clone 團隊的記憶 repo
+git clone <團隊 memory repo> ~/project-other/<repo 名稱>
+
+# 2. 設定並檢查（安裝後的 plugin 在 cache 裡，路徑用萬用字元展開）
+alias dm='bun ~/.claude/plugins/cache/104mis-plugins/dev-memory/*/src/cli.ts'
+dm setup --repo ~/project-other/<repo 名稱>
+```
+
+`setup` 會：建立 `~/.dev-memory`、寫好設定、把既有對話灌進索引、從 `main` 同步隊友的記憶，最後逐項檢查 `bun`、`git`、`gh`、FTS5、repo 結構，缺什麼就直接告訴你要跑哪一行。可以重複跑。
+
 ## 確認裝好了
 
 安裝後開一個新 session，然後：
@@ -64,6 +81,7 @@ bun src/cli.ts eval eval/queries.example.yaml   # 量搜尋準不準
 
 | 指令 | 用途 |
 |---|---|
+| `setup` | **裝完先跑這個**：設定 memory repo、建索引、同步、逐項檢查環境（`--repo`、`--skip-sweep`、`--skip-sync`） |
 | `init` | 建立 `~/.dev-memory`、索引跟設定，並檢查 SQLite 有沒有 FTS5 |
 | `archive <file>` | 只讀某個 transcript 的新增部分（Stop hook 用的就是這個） |
 | `sweep` | 掃描兩個工具的所有對話紀錄，補上漏掉的 |
@@ -72,7 +90,7 @@ bun src/cli.ts eval eval/queries.example.yaml   # 量搜尋準不準
 | `record` | 從 stdin 讀 JSON 存成一筆紀錄 |
 | `eval <file.yaml>` | 用評測集量 Recall@5 跟 MRR（`--suggest` 從記憶生候選題目） |
 | `init-repo <dir>` | 把 memory repo 的骨架加進既有 repo，不覆蓋任何現有檔案 |
-| `sync` | 從 memory repo 的 main 匯入紀錄跟頁面 |
+| `sync` | 從 memory repo 的 main 匯入紀錄跟頁面（`--skip-fetch`） |
 | `ingest-start <slug>` | 開一個 worktree 準備整理 wiki |
 | `export --branch <b>` | 把本機紀錄寫成 JSONL 提交到 repo |
 | `index-docs` | 把 repo 既有的人工文件列進 `wiki/index.md` |
@@ -90,7 +108,7 @@ bun src/cli.ts eval eval/queries.example.yaml   # 量搜尋準不準
 
 ```bash
 cd plugins/dev-memory
-bun test          # 目前 134 個測試
+bun test          # 目前 140 個測試
 ```
 
 ```
@@ -100,14 +118,14 @@ plugins/dev-memory/
 ├── .mcp.json                    # Claude Code 讀這份
 ├── mcp.json                     # Codex 只讀這份，不讀 .mcp.json
 ├── hooks/hooks.json             # 兩邊共用：SessionStart 補掃、Stop 增量存檔
-├── skills/{mem-save,wiki-ingest,wiki-lint}/SKILL.md
+├── skills/{mem-setup,mem-save,wiki-ingest,wiki-lint}/SKILL.md
 ├── src/
 │   ├── cli.ts                   # 所有功能的入口
 │   ├── mcp-server.ts            # memory_search / memory_get
 │   ├── hooks/{session-start,stop}.ts
 │   ├── adapters/{claude-code,codex}.ts
 │   ├── review/{server,checks,ui}  # 本機審核頁
-│   └── core/{db,config,archive,search,tokenize,repo-id,record,git-files,eval,
+│   └── core/{db,config,setup,archive,search,tokenize,repo-id,record,git-files,eval,
 │             sync,worktree,export,index-docs,init-repo,publish,entities,lint,staleness}.ts
 ├── dist/{mcp-server.js,review-ui/}  # 打包好的 MCP server 跟審核頁，改完 src 要 `bun run build`
 ├── eval/queries.example.yaml

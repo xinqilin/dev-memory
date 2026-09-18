@@ -14,6 +14,7 @@ import { findStalePages, formatStale } from "./core/staleness";
 import { indexExistingDocs } from "./core/index-docs";
 import { initRepo } from "./core/init-repo";
 import { publish } from "./core/publish";
+import { formatSetup, runSetup } from "./core/setup";
 import { sync as syncRepo } from "./core/sync";
 import { branchName, changedPages, ensureWorktree } from "./core/worktree";
 import { startReviewServer } from "./review/server";
@@ -24,6 +25,7 @@ import { type Kind, get, search } from "./core/search";
 const USAGE = `dev-memory
 
 Usage:
+  dev-memory setup [--repo <path>]    Set everything up and check it: start here after installing (--skip-sweep, --skip-sync)
   dev-memory init                     Create ~/.dev-memory, the local index and the config
   dev-memory archive <file> [--host]  Archive new lines of one transcript (host is inferred from the path)
   dev-memory sweep                    Archive every transcript of both tools
@@ -33,7 +35,7 @@ Usage:
   dev-memory eval <file.yaml>         Measure retrieval against a case file (--limit, --json)
   dev-memory eval --suggest           Print candidate eval cases drawn from the memory
   dev-memory init-repo <dir>          Add the memory repo scaffolding to an existing repository
-  dev-memory sync                     Import the memory repo's main branch into the local index (--repo, --no-fetch)
+  dev-memory sync                     Import the memory repo's main branch into the local index (--repo, --skip-fetch)
   dev-memory ingest-start <slug>      Open a worktree for a new ingest and print where it is
   dev-memory export --branch <b>      Write local records into the worktree as JSONL
   dev-memory index-docs               List the repo's existing docs in wiki/index.md
@@ -237,7 +239,7 @@ async function runPublish(args: string[]): Promise<number> {
 }
 
 async function runSync(args: string[]): Promise<number> {
-  const { values } = parseArgs({ args, options: { repo: { type: "string" }, fetch: { type: "boolean", default: true } } });
+  const { values } = parseArgs({ args, options: { repo: { type: "string" }, "skip-fetch": { type: "boolean" } } });
   const config = await loadConfig();
   const repo = values.repo ?? config.memory.repo;
   if (!repo) {
@@ -247,7 +249,7 @@ async function runSync(args: string[]): Promise<number> {
 
   const db = openDb();
   try {
-    const result = syncRepo(db, repo, { branch: config.memory.branch, fetch: values.fetch });
+    const result = syncRepo(db, repo, { branch: config.memory.branch, fetch: !values["skip-fetch"] });
     console.log(
       `records: ${result.records.imported} imported, ${result.records.alreadyThere} already here` +
         (result.records.markedMerged ? ` (${result.records.markedMerged} of mine are now on ${config.memory.branch})` : ""),
@@ -315,6 +317,27 @@ async function runEvalFile(args: string[]): Promise<number> {
 
 function hostFromPath(path: string): Host {
   return path.includes("/.codex/") || /rollout-[^/]*\.jsonl$/.test(path) ? "codex" : "claude-code";
+}
+
+async function setup(args: string[]): Promise<number> {
+  const { values } = parseArgs({
+    args,
+    options: {
+      repo: { type: "string" },
+      branch: { type: "string" },
+      "skip-sweep": { type: "boolean" },
+      "skip-sync": { type: "boolean" },
+    },
+  });
+
+  const result = await runSetup({
+    repo: values.repo,
+    branch: values.branch,
+    sweep: !values["skip-sweep"],
+    sync: !values["skip-sync"],
+  });
+  console.log(formatSetup(result));
+  return result.checks.every((check) => check.ok) ? 0 : 1;
 }
 
 async function init(): Promise<number> {
@@ -429,6 +452,8 @@ function runGet(args: string[]): number {
 
 const [command, ...rest] = process.argv.slice(2);
 switch (command) {
+  case "setup":
+    process.exit(await setup(rest));
   case "init":
     process.exit(await init());
   case "archive":

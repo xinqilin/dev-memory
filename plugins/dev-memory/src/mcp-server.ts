@@ -10,7 +10,7 @@ import { type Kind, get, search } from "./core/search";
 
 const KINDS = ["page", "record", "turn"] as const;
 
-const server = new McpServer({ name: "dev-memory", version: "0.2.0" });
+const server = new McpServer({ name: "dev-memory", version: "0.3.0" });
 
 server.registerTool(
   "memory_search",

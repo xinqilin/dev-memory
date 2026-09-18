@@ -10,6 +10,7 @@
 
 ## Current Status
 
+- **onboarding 補上（2026-09-18，0.3.0）**：裝完 plugin 還要手動編 `config.toml` 是最容易卡住的一步，改成一個 `dev-memory setup`：寫設定、建索引、sweep、sync，並逐項檢查 bun/git/gh/FTS5/repo 結構，缺什麼就印出要跑哪一行。另外加 `mem-setup` skill。
 - **Phase 3 完成（2026-09-18）**：entity 索引、`lint`、`stale`、問答回填、來源檢查、`eval --suggest` 都做好了，`bun test` 134 pass / 0 fail，plugin **0.2.0**。
   - 一次完整 ingest 已經實跑過：存紀錄 → wiki 頁 → 審核頁 → PR → merge → `sync`，搜尋排序是 wiki 頁 > 紀錄 > 對話。
   - 實跑抓到 4 個 bug：靜態資源被 token 擋住、新資料夾被當成一個項目列出、核准檢查把 wiki 規則套到 records/repos.yaml、失敗訊息只在小字。都已修並補測試。
@@ -172,6 +173,8 @@
 - **SQLite 的 bm25 是負數**，越負越相關。換算成分數時弄反過就會整個排序顛倒（這個 bug 被評測集抓到）。
 - **Bun 有 `TOML.parse` 但沒有 `stringify`**（1.3.4），寫設定檔要用模板。`Bun.YAML.parse` 則是可用的。
 - **sandbox 下 `bun add` 要指定 `BUN_INSTALL_CACHE_DIR` 跟 `TMPDIR`**，否則會報 tempdir PermissionDenied。
+- **`parseArgs` 不支援 `--no-x`**：Node 的 parseArgs 沒有否定旗標，寫 `--no-sweep` 會直接丟 ERR_PARSE_ARGS_UNKNOWN_OPTION。改用 `--skip-*`。
+- **`claude plugin` 沒有 `path` 子指令**：可用的是 details/list/install/update 等等，要拿安裝路徑只能用 cache 的萬用字元展開。
 - **sandbox 擋住監聽 port**：`Bun.serve` 會回報成 EADDRINUSE，審核頁的測試要在 sandbox 外跑。
 - **plugin 更新看版本號**：改完內容要 bump `plugin.json` 跟 `.claude-plugin/plugin.json` 的 version，否則 `claude plugin update` 印 "already at the latest version"。
 - **`git show` 的輸出不能 trim**：會吃掉檔案結尾的換行，還原檔案時就對不上原內容。

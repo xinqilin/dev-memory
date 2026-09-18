@@ -391,6 +391,7 @@ updated: 2026-09-04
 ### Phase 5：團隊推廣（約 1 週，加上試用期）
 | 步驟 | 驗證 |
 |---|---|
+| 0. `dev-memory setup`（已完成，0.3.0）：一個指令設定 memory repo、建索引、sweep、sync，並檢查 bun／git／gh／FTS5／repo 結構 | 新機器照 README 跑一次就能用，缺什麼會直接說 |
 | 1. README：<br>- 前置需求：bun、`gh auth login`、clone memory repo、`dev-memory init`<br>- 用 `/mem-setup` 選搜尋模式，附硬體建議表<br>- Claude Code 跟 Codex 的安裝方式（Codex 要加信任 hook 的步驟） | 兩個工具都能從私有 repo 安裝 |
 | 2. 找 1–2 位隊友試用，至少一位主要用 Codex、一位選 `none` | 記錄安裝到第一個 PR merge 花多久（目標 30 分鐘內）、卡在哪裡 |
 | 3. 退場舊工具（由 Bill 決定）：<br>- 停用 claude-mem（改 `settings.json` 前先讀 `governance/maintenance.md`）<br>- 停掉 n8n workflow 跟 Apps Script<br>- 移除 `skills/n8n-doc-sync` 跟 `sync-to-n8n.sh` | 不會同時有兩套系統在蒐集 |
