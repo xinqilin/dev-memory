@@ -5,9 +5,14 @@
   "type": "module",
   "scripts": {
     "test": "bun test",
-    "build": "bun build ./src/mcp-server.ts --target=bun --outfile=dist/mcp-server.js"
+    "build": "bun run build:mcp && bun run build:ui",
+    "build:mcp": "bun build ./src/mcp-server.ts --target=bun --outfile=dist/mcp-server.js",
+    "build:ui": "bun build ./src/review/ui/app.js --target=browser --minify --outfile=dist/review-ui/app.js && cp src/review/ui/index.html src/review/ui/style.css dist/review-ui/"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0"
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "diff": "^9.0.0",
+    "dompurify": "^3.4.15",
+    "marked": "^18.0.13"
   }
 }

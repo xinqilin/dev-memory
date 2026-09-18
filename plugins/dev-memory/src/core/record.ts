@@ -48,7 +48,7 @@ export function contentHash(input: RecordInput): string {
   return `sha256:${hasher.digest("hex")}`;
 }
 
-function gitAuthor(cwd: string): string {
+export function gitAuthor(cwd: string): string {
   const result = spawnSync("git", ["-C", cwd, "config", "user.name"], { encoding: "utf8" });
   const name = result.status === 0 ? result.stdout.trim() : "";
   return name || process.env.USER || "unknown";

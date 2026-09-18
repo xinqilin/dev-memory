@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 // dev-memory CLI. Everything the hooks and skills do goes through here, so both tools behave alike.
+import { spawnSync } from "node:child_process";
 import { parseArgs } from "node:util";
 import type { Host } from "./adapters/types";
 import { archiveFile, sweep, totals } from "./core/archive";
@@ -7,9 +8,12 @@ import { configPath, dbPath, ensureConfig, homeDir, loadConfig } from "./core/co
 import { hasFts5, openDb, schemaVersion, sqliteVersion } from "./core/db";
 import { formatReport, parseCases, runEval } from "./core/eval";
 import { initRepo } from "./core/init-repo";
+import { publish } from "./core/publish";
 import { sync as syncRepo } from "./core/sync";
+import { branchName, changedPages, ensureWorktree } from "./core/worktree";
+import { startReviewServer } from "./review/server";
 import { repoIdFromDir } from "./core/repo-id";
-import { type RecordInput, addRecord, contentHash, findByContentHash } from "./core/record";
+import { type RecordInput, addRecord, contentHash, findByContentHash, gitAuthor } from "./core/record";
 import { type Kind, get, search } from "./core/search";
 
 const USAGE = `dev-memory
@@ -24,6 +28,9 @@ Usage:
   dev-memory eval <file.yaml>         Measure retrieval against a case file (--limit, --json)
   dev-memory init-repo <dir>          Add the memory repo scaffolding to an existing repository
   dev-memory sync                     Import the memory repo's main branch into the local index (--repo, --no-fetch)
+  dev-memory ingest-start <slug>      Open a worktree for a new ingest and print where it is
+  dev-memory review --branch <b>      Serve the local review page for that ingest
+  dev-memory publish --branch <b>     Push and open the PR. Only run this yourself; the agent must not.
 `;
 
 /** The mem-save skill pipes JSON in, which avoids quoting a multi-line body on a command line. */
@@ -54,6 +61,82 @@ async function addRecordFromStdin(): Promise<number> {
     return 0;
   } finally {
     db.close();
+  }
+}
+
+async function memoryRepo(explicit?: string): Promise<string | null> {
+  const repo = explicit ?? (await loadConfig()).memory.repo;
+  if (!repo) {
+    console.error("No memory repo configured. Set memory.repo in ~/.dev-memory/config.toml, or pass --repo <path>.");
+    return null;
+  }
+  return repo;
+}
+
+async function runIngestStart(args: string[]): Promise<number> {
+  const { values, positionals } = parseArgs({ args, options: { repo: { type: "string" }, branch: { type: "string" } }, allowPositionals: true });
+  const repo = await memoryRepo(values.repo);
+  if (!repo) return 2;
+
+  const slug = positionals.join(" ").trim();
+  if (!slug && !values.branch) {
+    console.error("ingest-start needs a slug, for example: dev-memory ingest-start export-partial-failure");
+    return 2;
+  }
+
+  const branch = values.branch ?? branchName(gitAuthor(repo), slug);
+  const worktree = ensureWorktree(repo, branch);
+  console.log(`branch    ${branch}`);
+  console.log(`worktree  ${worktree.path}${worktree.created ? "  (created)" : "  (resumed)"}`);
+  console.log("Write the pages in the worktree, then: dev-memory review --branch " + branch);
+  return 0;
+}
+
+async function runReview(args: string[]): Promise<number> {
+  const { values } = parseArgs({ args, options: { repo: { type: "string" }, branch: { type: "string" }, open: { type: "boolean", default: true } } });
+  const repo = await memoryRepo(values.repo);
+  if (!repo) return 2;
+  if (!values.branch) {
+    console.error("review needs --branch <branch>");
+    return 2;
+  }
+
+  const worktree = ensureWorktree(repo, values.branch, { fetch: false });
+  const config = await loadConfig();
+  const server = startReviewServer({
+    worktree: worktree.path,
+    branch: values.branch,
+    base: `origin/${config.memory.branch}`,
+    // The button in the page is the only way to publish; the agent is told never to call it.
+    onPublish: async (path, branch) => publish(path, branch, { base: config.memory.branch }),
+  });
+
+  console.log(`review page: ${server.url}`);
+  console.log(`pages in this ingest: ${changedPages(worktree.path, `origin/${config.memory.branch}`).length}`);
+  if (values.open) spawnSync(process.platform === "darwin" ? "open" : "xdg-open", [server.url]);
+  console.log("Press Ctrl-C to stop.");
+  await new Promise(() => {}); // serve until interrupted
+  return 0;
+}
+
+async function runPublish(args: string[]): Promise<number> {
+  const { values } = parseArgs({ args, options: { repo: { type: "string" }, branch: { type: "string" }, "no-pr": { type: "boolean" } } });
+  const repo = await memoryRepo(values.repo);
+  if (!repo) return 2;
+  if (!values.branch) {
+    console.error("publish needs --branch <branch>");
+    return 2;
+  }
+
+  const config = await loadConfig();
+  const worktree = ensureWorktree(repo, values.branch, { fetch: false });
+  try {
+    const result = publish(worktree.path, values.branch, { base: config.memory.branch, openPr: !values["no-pr"] });
+    console.log(result.message);
+    return 0;
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    return 1;
   }
 }
 
@@ -257,6 +340,12 @@ switch (command) {
     process.exit(await runInitRepo(rest));
   case "sync":
     process.exit(await runSync(rest));
+  case "ingest-start":
+    process.exit(await runIngestStart(rest));
+  case "review":
+    process.exit(await runReview(rest));
+  case "publish":
+    process.exit(await runPublish(rest));
   case undefined:
   case "-h":
   case "--help":

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dev-memory 審核</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div>
+    <strong>dev-memory 審核</strong>
+    <span id="branch" class="muted"></span>
+  </div>
+  <div class="actions">
+    <span id="status" class="muted"></span>
+    <button id="approve">核准並 commit</button>
+    <button id="publish" class="primary">送出 PR</button>
+  </div>
+</header>
+
+<main>
+  <nav>
+    <div class="nav-title">這次改到的頁面</div>
+    <ul id="pages"></ul>
+  </nav>
+
+  <section class="editor-pane">
+    <div class="tabs">
+      <button class="tab is-active" data-tab="edit">編輯 / 預覽</button>
+      <button class="tab" data-tab="diff">跟 main 比較</button>
+      <button class="tab" data-tab="sources">來源紀錄</button>
+      <button class="tab" data-tab="checks">檢查結果</button>
+      <button id="discard" class="ghost">捨棄這頁</button>
+    </div>
+
+    <div class="panel is-active" data-panel="edit">
+      <div class="split">
+        <textarea id="editor" spellcheck="false" placeholder="選一頁開始編輯"></textarea>
+        <article id="preview" class="preview"></article>
+      </div>
+    </div>
+    <div class="panel" data-panel="diff"><div id="diff" class="diff"></div></div>
+    <div class="panel" data-panel="sources"><div id="sources"></div></div>
+    <div class="panel" data-panel="checks"><div id="checks"></div></div>
+  </section>
+</main>
+
+<div id="conflict" class="conflict" hidden>
+  <p>這個檔案在外面被改過（AI 或編輯器）。</p>
+  <button id="take-theirs">重新載入他們的版本</button>
+  <button id="keep-mine">保留我的版本</button>
+</div>
+
+<script src="app.js" type="module"></script>
+</body>
+</html>
