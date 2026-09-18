@@ -267,9 +267,9 @@
 <div class="wrap">
 
   <header>
-    <div class="kicker">五歲小孩也看得懂的版本 · 完整流程</div>
+    <div class="kicker">dev-memory · 團隊開發記憶 · 2026-09-18</div>
     <h1>一段對話，<br>怎麼變成全隊的百科</h1>
-    <p class="lead">從裝好 plugin，到隊友搜得到你的決定。七個步驟現在都跑得起來了。</p>
+    <p class="lead">開發過程中的決定，自動變成全隊查得到的文件。七個步驟現在都跑得起來，已經走完一次真實的 PR。</p>
     <div class="route" aria-label="整條路線">
       <span class="stop">記日記</span><span class="to">→</span>
       <span class="stop">搜得到</span><span class="to">→</span>
@@ -283,37 +283,81 @@
   </header>
 
   <section>
-    <h2>先裝好</h2>
-    <div class="journey">
-      <div class="step">
+    <h2>為什麼要做</h2>
+    <div class="ideas">
+      <div class="idea">
         <div class="pic">
-          <svg viewBox="0 0 320 190" role="img" aria-label="同一個 dev-memory 工具箱，分別接到 Claude Code 和 Codex；Codex 要先信任">
-            <rect class="f-paper s-accent" x="12" y="14" width="112" height="36" rx="18"/>
-            <text class="t t-accent" x="68" y="38" text-anchor="middle" font-size="16">Claude Code</text>
-            <rect class="f-paper s-ok" x="196" y="14" width="112" height="36" rx="18"/>
-            <text class="t t-ok" x="252" y="38" text-anchor="middle" font-size="16">Codex</text>
-
-            <path class="f-none s-accent dash" d="M104 84 C86 76 72 68 68 58"/>
-            <polygon class="f-accent" points="61,62 68,50 75,62"/>
-            <path class="f-none s-ok dash" d="M216 84 C234 76 248 68 252 58"/>
-            <polygon class="f-ok" points="245,62 252,50 259,62"/>
-
-            <path class="f-none s-edge fat" d="M140 90 V78 H180 V90"/>
-            <rect class="f-card s-edge" x="84" y="88" width="152" height="16" rx="4"/>
-            <rect class="f-card s-edge" x="90" y="104" width="140" height="72" rx="6"/>
-            <text class="t t-card" x="160" y="138" text-anchor="middle" font-size="20" font-weight="700">dev-memory</text>
-            <text class="t t-mono t-card" x="160" y="160" text-anchor="middle" font-size="10">skill · hook · MCP</text>
-
-            <path class="f-soft s-ink" d="M286 62 L298 66 V74 C298 82 292 86 286 89 C280 86 274 82 274 74 V66 Z"/>
-            <path class="f-none s-ok" d="M280 74 L285 79 L292 70"/>
-            <text class="t t-muted" x="286" y="108" text-anchor="middle" font-size="12">先信任</text>
+          <svg viewBox="0 0 320 170" role="img" aria-label="對話紀錄 14 天後被刪掉">
+            <rect class="f-paper s-ink" x="24" y="30" width="116" height="92" rx="6"/>
+            <line class="s-line" x1="38" y1="52" x2="126" y2="52"/>
+            <line class="s-line" x1="38" y1="70" x2="126" y2="70"/>
+            <line class="s-line" x1="38" y1="88" x2="108" y2="88"/>
+            <text class="t t-muted" x="82" y="146" text-anchor="middle" font-size="14">今天的對話</text>
+            <path class="f-none s-warn dash" d="M154 76 H196"/>
+            <polygon class="f-none s-warn" points="192,68 204,76 192,84"/>
+            <text class="t t-warn" x="176" y="62" text-anchor="middle" font-size="13">14 天</text>
+            <rect class="f-none s-line dash" x="218" y="30" width="80" height="92" rx="6"/>
+            <line class="s-warn" x1="234" y1="58" x2="282" y2="94"/>
+            <line class="s-warn" x1="282" y1="58" x2="234" y2="94"/>
+            <text class="t t-muted" x="258" y="146" text-anchor="middle" font-size="14">被清掉</text>
           </svg>
         </div>
-        <div class="say">
-          <h3>一個工具箱，兩份說明書</h3>
-          <p>裡面的東西兩邊共用。Claude Code 看 <code>.claude-plugin/</code>，Codex 看 <code>plugin.json</code>。裝的時候打 <code>dev-memory@104mis-plugins</code>。</p>
-          <p>Codex 第一次要你按「信任」，它才會開始記。</p>
+        <h3>記憶會蒸發</h3>
+        <p>對話紀錄預設 14 天就清掉。半年後想問「當初為什麼這樣決定」，沒有人答得出來，只能重新踩一次坑。</p>
+      </div>
+
+      <div class="idea">
+        <div class="pic">
+          <svg viewBox="0 0 320 170" role="img" aria-label="文件要另外花時間寫，所以沒人寫">
+            <rect class="f-paper s-ink" x="30" y="26" width="104" height="104" rx="5"/>
+            <line class="s-line" x1="46" y1="50" x2="118" y2="50"/>
+            <line class="s-line" x1="46" y1="68" x2="118" y2="68"/>
+            <line class="s-line" x1="46" y1="86" x2="100" y2="86"/>
+            <text class="t t-muted" x="82" y="152" text-anchor="middle" font-size="14">文件</text>
+            <text class="t t-warn" x="224" y="60" text-anchor="middle" font-size="18">要另外花時間</text>
+            <text class="t t-warn" x="224" y="88" text-anchor="middle" font-size="18">所以沒人寫</text>
+            <text class="t t-muted" x="224" y="120" text-anchor="middle" font-size="14">寫了也很快過期</text>
+          </svg>
         </div>
+        <h3>文件是額外工作</h3>
+        <p>做完功能還要再寫一次文件，沒有人有動力。寫完了，程式碼一改又過期，也沒人回去更新。</p>
+      </div>
+
+      <div class="idea">
+        <div class="pic">
+          <svg viewBox="0 0 320 170" role="img" aria-label="一個功能散在三個 repo 裡">
+            <rect class="f-soft s-ink" x="16" y="52" width="80" height="50" rx="4"/>
+            <text class="t t-mono" x="56" y="82" text-anchor="middle" font-size="12">batch</text>
+            <rect class="f-soft s-ink" x="120" y="52" width="80" height="50" rx="4"/>
+            <text class="t t-mono" x="160" y="82" text-anchor="middle" font-size="12">api</text>
+            <rect class="f-soft s-ink" x="224" y="52" width="80" height="50" rx="4"/>
+            <text class="t t-mono" x="264" y="82" text-anchor="middle" font-size="12">frontend</text>
+            <path class="f-none s-line dash" d="M96 77 H120 M200 77 H224"/>
+            <text class="t" x="160" y="34" text-anchor="middle" font-size="16">同一個功能</text>
+            <text class="t t-warn" x="160" y="140" text-anchor="middle" font-size="15">改一邊，另外兩邊沒人知道</text>
+          </svg>
+        </div>
+        <h3>知識散在各個 repo</h3>
+        <p>一個功能橫跨 batch、api、frontend。改了一張資料表，誰在讀它、會影響誰，得靠人記。</p>
+      </div>
+
+      <div class="idea">
+        <div class="pic">
+          <div class="blocks" role="img" aria-label="原本的工具中文搜不到">
+            <div class="brow">
+              <span class="brow-label">原本的工具搜「例外」</span>
+              <span class="blk long">找到 3 筆</span>
+              <span class="verdict no">✕ 漏了 9 筆</span>
+            </div>
+            <div class="brow">
+              <span class="brow-label">實際上有</span>
+              <span class="blk long">12 筆</span>
+              <span class="verdict yes">✓ 現在 12 筆全中</span>
+            </div>
+          </div>
+        </div>
+        <h3>搜不到就等於沒有</h3>
+        <p>原本的記憶工具不會斷中文，搜「例外」只找到 3 筆，實際有 12 筆。找不到的記憶，跟沒記一樣。</p>
       </div>
     </div>
   </section>
@@ -514,37 +558,31 @@
   </section>
 
   <section>
-    <h2>選配：意思相近也找得到</h2>
-    <div class="ideas">
-      <div class="idea">
-        <div class="pic">
-          <svg viewBox="0 0 320 150" role="img" aria-label="放大鏡裡是「例外」兩個字，標示預設">
-            <circle class="f-paper s-ink" cx="120" cy="66" r="42"/>
-            <line class="s-ink fat" x1="150" y1="96" x2="182" y2="128"/>
-            <text class="t" x="120" y="76" text-anchor="middle" font-size="26">例外</text>
-            <rect class="f-none s-ok" x="206" y="30" width="64" height="28" rx="14"/>
-            <text class="t t-ok" x="238" y="50" text-anchor="middle" font-size="15">預設</text>
-          </svg>
-        </div>
-        <h3>只用關鍵字</h3>
-        <p>什麼都不用裝就能用。字對得上才找得到。</p>
+    <h2>哪一步在哪裡做</h2>
+    <p class="lead">對話裡只挑內容、對計畫。真正的編輯跟審核在瀏覽器，不是在對話視窗裡。</p>
+    <div class="checks">
+      <div class="check">
+        <span>存決策、挑卡片、對整理計畫<small>確認點 ① ②，一句話回覆就好</small></span>
+        <b class="chip done">對話裡</b>
       </div>
-      <div class="idea">
-        <div class="pic">
-          <svg viewBox="0 0 320 150" role="img" aria-label="放大鏡裡是星星，用虛線接到可選的 Ollama">
-            <circle class="f-paper s-ink" cx="100" cy="66" r="42"/>
-            <line class="s-ink fat" x1="130" y1="96" x2="158" y2="124"/>
-            <path class="f-accent" d="M100 44 L106 60 L122 66 L106 72 L100 88 L94 72 L78 66 L94 60 Z"/>
-            <path class="f-none s-line dash" d="M160 126 C204 138 234 124 246 104"/>
-            <rect class="f-none s-line dash" x="192" y="34" width="112" height="66" rx="12"/>
-            <text class="t" x="248" y="64" text-anchor="middle" font-size="18">Ollama</text>
-            <text class="t t-muted" x="248" y="86" text-anchor="middle" font-size="12">自己選模型</text>
-          </svg>
-        </div>
-        <h3>加上語意搜尋</h3>
-        <p>想讓「說法不同、意思一樣」也找得到，用 <code>/mem-setup</code> 自己決定要不要裝 Ollama、用哪個模型。沒開也不會壞，自動退回關鍵字。</p>
+      <div class="check">
+        <span>AI 寫頁面<small>寫在獨立的 worktree，你自己的 clone 完全不受影響</small></span>
+        <b class="chip done">磁碟上</b>
+      </div>
+      <div class="check">
+        <span>編輯、預覽、跟 main 比對、看來源、核准、送出<small>確認點 ③，本機網頁，只綁 127.0.0.1</small></span>
+        <b class="chip done">瀏覽器</b>
+      </div>
+      <div class="check">
+        <span>CI 檢查與 merge<small>gitleaks 掃全 repo，結構檢查只掃 wiki 跟 records</small></span>
+        <b class="chip done">GitHub</b>
+      </div>
+      <div class="check">
+        <span>隊友把記憶拉回本機<small>一個指令：sync</small></span>
+        <b class="chip done">終端機</b>
       </div>
     </div>
+    <p class="legend">審核頁、IDE、對話三種改法改的是同一個檔案；同時改到會跳出「重新載入 / 保留我的版本」，不會默默蓋掉。</p>
   </section>
 
   <section>
@@ -591,34 +629,6 @@
         <p>每次 ingest 會同時更新總目錄跟相關頁面；被推翻的決定不刪掉，標成「已被取代」，搜尋時不會再跳出來誤導人。</p>
       </div>
     </div>
-  </section>
-
-  <section>
-    <h2>哪一步在哪裡做</h2>
-    <p class="lead">對話裡只挑內容、對計畫。真正的編輯跟審核在瀏覽器，不是在對話視窗裡。</p>
-    <div class="checks">
-      <div class="check">
-        <span>存決策、挑卡片、對整理計畫<small>確認點 ① ②，一句話回覆就好</small></span>
-        <b class="chip done">對話裡</b>
-      </div>
-      <div class="check">
-        <span>AI 寫頁面<small>寫在獨立的 worktree，你自己的 clone 完全不受影響</small></span>
-        <b class="chip done">磁碟上</b>
-      </div>
-      <div class="check">
-        <span>編輯、預覽、跟 main 比對、看來源、核准、送出<small>確認點 ③，本機網頁，只綁 127.0.0.1</small></span>
-        <b class="chip done">瀏覽器</b>
-      </div>
-      <div class="check">
-        <span>CI 檢查與 merge<small>gitleaks 掃全 repo，結構檢查只掃 wiki 跟 records</small></span>
-        <b class="chip done">GitHub</b>
-      </div>
-      <div class="check">
-        <span>隊友把記憶拉回本機<small>一個指令：sync</small></span>
-        <b class="chip done">終端機</b>
-      </div>
-    </div>
-    <p class="legend">審核頁、IDE、對話三種改法改的是同一個檔案；同時改到會跳出「重新載入 / 保留我的版本」，不會默默蓋掉。</p>
   </section>
 
   <section>
@@ -742,6 +752,42 @@
   </section>
 
   <section>
+    <h2>先裝好</h2>
+    <div class="journey">
+      <div class="step">
+        <div class="pic">
+          <svg viewBox="0 0 320 190" role="img" aria-label="同一個 dev-memory 工具箱，分別接到 Claude Code 和 Codex；Codex 要先信任">
+            <rect class="f-paper s-accent" x="12" y="14" width="112" height="36" rx="18"/>
+            <text class="t t-accent" x="68" y="38" text-anchor="middle" font-size="16">Claude Code</text>
+            <rect class="f-paper s-ok" x="196" y="14" width="112" height="36" rx="18"/>
+            <text class="t t-ok" x="252" y="38" text-anchor="middle" font-size="16">Codex</text>
+
+            <path class="f-none s-accent dash" d="M104 84 C86 76 72 68 68 58"/>
+            <polygon class="f-accent" points="61,62 68,50 75,62"/>
+            <path class="f-none s-ok dash" d="M216 84 C234 76 248 68 252 58"/>
+            <polygon class="f-ok" points="245,62 252,50 259,62"/>
+
+            <path class="f-none s-edge fat" d="M140 90 V78 H180 V90"/>
+            <rect class="f-card s-edge" x="84" y="88" width="152" height="16" rx="4"/>
+            <rect class="f-card s-edge" x="90" y="104" width="140" height="72" rx="6"/>
+            <text class="t t-card" x="160" y="138" text-anchor="middle" font-size="20" font-weight="700">dev-memory</text>
+            <text class="t t-mono t-card" x="160" y="160" text-anchor="middle" font-size="10">skill · hook · MCP</text>
+
+            <path class="f-soft s-ink" d="M286 62 L298 66 V74 C298 82 292 86 286 89 C280 86 274 82 274 74 V66 Z"/>
+            <path class="f-none s-ok" d="M280 74 L285 79 L292 70"/>
+            <text class="t t-muted" x="286" y="108" text-anchor="middle" font-size="12">先信任</text>
+          </svg>
+        </div>
+        <div class="say">
+          <h3>一個工具箱，兩份說明書</h3>
+          <p>裡面的東西兩邊共用。Claude Code 看 <code>.claude-plugin/</code>，Codex 看 <code>plugin.json</code>。裝的時候打 <code>dev-memory@104mis-plugins</code>。</p>
+          <p>Codex 第一次要你按「信任」，它才會開始記。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <h2>會用到的東西</h2>
 
     <div class="kit-group">
@@ -830,6 +876,40 @@
   </section>
 
   <section>
+    <h2>選配：意思相近也找得到</h2>
+    <div class="ideas">
+      <div class="idea">
+        <div class="pic">
+          <svg viewBox="0 0 320 150" role="img" aria-label="放大鏡裡是「例外」兩個字，標示預設">
+            <circle class="f-paper s-ink" cx="120" cy="66" r="42"/>
+            <line class="s-ink fat" x1="150" y1="96" x2="182" y2="128"/>
+            <text class="t" x="120" y="76" text-anchor="middle" font-size="26">例外</text>
+            <rect class="f-none s-ok" x="206" y="30" width="64" height="28" rx="14"/>
+            <text class="t t-ok" x="238" y="50" text-anchor="middle" font-size="15">預設</text>
+          </svg>
+        </div>
+        <h3>只用關鍵字</h3>
+        <p>什麼都不用裝就能用。字對得上才找得到。</p>
+      </div>
+      <div class="idea">
+        <div class="pic">
+          <svg viewBox="0 0 320 150" role="img" aria-label="放大鏡裡是星星，用虛線接到可選的 Ollama">
+            <circle class="f-paper s-ink" cx="100" cy="66" r="42"/>
+            <line class="s-ink fat" x1="130" y1="96" x2="158" y2="124"/>
+            <path class="f-accent" d="M100 44 L106 60 L122 66 L106 72 L100 88 L94 72 L78 66 L94 60 Z"/>
+            <path class="f-none s-line dash" d="M160 126 C204 138 234 124 246 104"/>
+            <rect class="f-none s-line dash" x="192" y="34" width="112" height="66" rx="12"/>
+            <text class="t" x="248" y="64" text-anchor="middle" font-size="18">Ollama</text>
+            <text class="t t-muted" x="248" y="86" text-anchor="middle" font-size="12">自己選模型</text>
+          </svg>
+        </div>
+        <h3>加上語意搜尋</h3>
+        <p>想讓「說法不同、意思一樣」也找得到，用 <code>/mem-setup</code> 自己決定要不要裝 Ollama、用哪個模型。沒開也不會壞，自動退回關鍵字。</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <h2>這次不用的東西</h2>
     <div class="skip">
       <div><b>claude-mem</b><span>退休：中文搜不到，還會把決定漏掉</span></div>
@@ -839,10 +919,41 @@
   </section>
 
   <section>
+    <h2>實測數字</h2>
+    <div class="checks">
+      <div class="check">
+        <span>灌進索引的對話<small>552 份對話紀錄，兩種工具的格式都吃</small></span>
+        <b class="chip done">2,696 筆</b>
+      </div>
+      <div class="check">
+        <span>中文搜尋<small>切成小積木之後，逐字比對找得到的每一筆都找得到</small></span>
+        <b class="chip done">12 = 12</b>
+      </div>
+      <div class="check">
+        <span>用問句搜尋的命中率<small>一開始整句話當成一塊比對，問句永遠落空；修正後</small></span>
+        <b class="chip done">0% → 40%</b>
+      </div>
+      <div class="check">
+        <span>自動測試<small>每個功能都有測試，包含真的開 git worktree、真的合併兩個 branch</small></span>
+        <b class="chip done">134 個</b>
+      </div>
+      <div class="check">
+        <span>審核頁的離線大小<small>編輯器、預覽、比對都打包進去，公司網路擋 CDN 也能用</small></span>
+        <b class="chip done">88 KB</b>
+      </div>
+      <div class="check">
+        <span>端對端走完一次<small>存決定 → 產生頁面 → 本機審核 → PR → merge → 隊友同步</small></span>
+        <b class="chip done">已完成</b>
+      </div>
+    </div>
+    <p class="legend">實跑一次抓到 4 個單元測試抓不到的問題（頁面樣式載不到、清單顯示資料夾、核准永遠失敗、失敗訊息看不到），都已修正。</p>
+  </section>
+
+  <section>
     <h2>現在做到哪</h2>
     <div class="checks">
       <div class="check">
-        <span>第 1、2 步已經能用<small>對話自動進索引，中文、英文、程式名字都搜得到；2,596 筆實測</small></span>
+        <span>第 1、2 步：自動記錄與搜尋<small>對話自動進索引，中文、英文、程式名字都搜得到</small></span>
         <b class="chip done">可用</b>
       </div>
       <div class="check">
@@ -878,13 +989,25 @@
         <b class="chip done">已驗證</b>
       </div>
       <div class="check">
-        <span>同一份 hook 兩邊都會跑<small>Claude Code 已驗證；Codex 要信任 hook 後才看得到，還沒測</small></span>
+        <span>維護工具<small>資料表誰讀誰寫、壞掉的連結、沒有來源的頁面、程式碼改了但文件沒跟上</small></span>
+        <b class="chip done">可用</b>
+      </div>
+      <div class="check">
+        <span>同一份 hook 兩邊都會跑<small>Claude Code 已驗證；Codex 要手動信任 hook，還沒測</small></span>
         <b class="chip wait">Codex 待測</b>
+      </div>
+      <div class="check">
+        <span>語意搜尋（說法不同也找得到）<small>要使用者自己決定裝不裝 Ollama，預設關閉</small></span>
+        <b class="chip wait">下一階段</b>
+      </div>
+      <div class="check">
+        <span>正式上線<small>切到團隊的文件 repo、找隊友試用、停掉舊工具</small></span>
+        <b class="chip wait">下一階段</b>
       </div>
     </div>
   </section>
 
-  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-18 · Phase 2 完成（Codex 待測；Phase 3 的 entity 頁與 lint 還沒做）</footer>
+  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-18 · Phase 0–3 完成，134 個測試通過，已跑完一次真實的 PR 流程</footer>
 
 </div>
 </body>
