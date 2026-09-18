@@ -85,3 +85,16 @@ test("baseVersion returns the version on main, or null for a new page", async ()
   expect(baseVersion(path, "wiki/index.md")).toBe("# 目錄\n"); // trailing newline must survive
   expect(baseVersion(path, "wiki/nope.md")).toBeNull();
 });
+
+test("a brand-new directory is listed as its files, not as the directory", async () => {
+  const { clone } = await repoPair();
+  const { path } = ensureWorktree(clone, "mem/t/20260918-e", { fetch: false });
+
+  await Bun.write(join(path, "wiki", "dev-memory", "decisions", "one.md"), "第一頁\n");
+  await Bun.write(join(path, "wiki", "dev-memory", "decisions", "two.md"), "第二頁\n");
+
+  expect(changedPages(path).map((f) => f.path)).toEqual([
+    "wiki/dev-memory/decisions/one.md",
+    "wiki/dev-memory/decisions/two.md",
+  ]);
+});

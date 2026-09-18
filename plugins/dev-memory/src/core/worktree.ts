@@ -75,7 +75,9 @@ export interface ChangedPage {
 /** What this ingest changed compared with the base branch, which is what the review page lists. */
 export function changedPages(worktreePath: string, base = "origin/main"): ChangedPage[] {
   const committed = tryGit(worktreePath, ["diff", "--name-status", `${base}...HEAD`]) ?? "";
-  const uncommitted = tryGit(worktreePath, ["status", "--porcelain"]) ?? "";
+  // -uall: without it git reports a brand-new directory as one entry, and the review page would
+  // list "wiki/dev-memory/" instead of the pages inside it.
+  const uncommitted = tryGit(worktreePath, ["status", "--porcelain", "-uall"]) ?? "";
   const pages = new Map<string, ChangedPage>();
 
   for (const line of committed.split("\n").filter(Boolean)) {
