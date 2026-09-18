@@ -409,7 +409,7 @@ updated: 2026-09-04
 10. **預設搜尋模式**：`none`；Ollama 的模型選項先提供 qwen3-embedding 0.6b/4b/8b 跟 bge-m3；Bedrock 放在 Phase 6。
 
 ## 待確認
-- **名稱**：plugin `dev-memory`、plugin repo `xinqilin/dev-memory`（已建）。marketplace 名稱目前是 `project-plugin`，所以安裝字串是 `dev-memory@project-plugin`；要搬到 104corp 時再一併決定要不要改名。
+- 無。名稱已定案：plugin `dev-memory`、plugin repo `xinqilin/dev-memory`（未來搬 104corp）、marketplace `104mis-plugins`，安裝字串 `dev-memory@104mis-plugins`。marketplace 名稱刻意用團隊前綴，搬家後不用再改、也不用重裝第二次。
 
 ## 前置需求（Bill 提供）
 - n8n workflow export JSON（`schema.md` 要沿用它的 prompt 跟 category/slug 規則）

@@ -24,7 +24,7 @@
 ## 0.2 hello plugin
 
 ```
-.claude-plugin/marketplace.json        # Claude Code（name: project-plugin）
+.claude-plugin/marketplace.json        # Claude Code（name: 104mis-plugins）
 .agents/plugins/marketplace.json       # Codex（source.source = "local"）
 plugins/dev-memory/
   .claude-plugin/plugin.json           # Claude Code 讀
@@ -53,6 +53,8 @@ $ claude plugin validate . --strict                      → ✔ Validation pass
 指令都在隔離的 `CODEX_HOME=$TMPDIR/codex-home` 裡跑，**沒有動到 `~/.codex`**。
 
 ### Codex 實測紀錄
+> 以下是當時的原始輸出，marketplace 名稱在 2026-09-18 改成 `104mis-plugins`，指令請以「待你執行」那節為準。
+
 ```
 $ codex plugin marketplace add ./
 Added marketplace `project-plugin` from /Users/bill.lin/project-plugin.
@@ -152,7 +154,7 @@ sqlite_version=3.51.0 platform=darwin/arm64 ENABLE_FTS5=true
 3. **私有 marketplace 安裝**：plugin repo 已經建好並 push 到 `xinqilin/dev-memory`（private），改成跟工具內驗證一起做：
    ```bash
    claude plugin marketplace add git@github.com:xinqilin/dev-memory.git
-   claude plugin install dev-memory@project-plugin
+   claude plugin install dev-memory@104mis-plugins
    ```
 
 ## 待你執行：工具內驗證
@@ -174,8 +176,8 @@ claude --plugin-dir ./plugins/dev-memory
 ### Codex CLI
 ```bash
 cd /Users/bill.lin/project-plugin
-codex plugin marketplace add ./                 # 預期：Added marketplace `project-plugin`
-codex plugin add dev-memory@project-plugin      # 預期：Added plugin `dev-memory` ... Installed plugin root: ~/.codex/plugins/cache/project-plugin/dev-memory/0.0.1
+codex plugin marketplace add ./                 # 預期：Added marketplace `104mis-plugins`
+codex plugin add dev-memory@104mis-plugins      # 預期：Added plugin `dev-memory` ... Installed plugin root: ~/.codex/plugins/cache/104mis-plugins/dev-memory/0.0.1
 codex mcp list                                  # 預期：dev-memory  bun  .../src/hello-mcp.ts  enabled
 codex                                           # 開 session
 ```
@@ -187,7 +189,7 @@ codex                                           # 開 session
 | 說「用 dev-memory 的 hello skill」 | `DEV_MEMORY_SKILL_OK`，接著是 `DEV_MEMORY_MCP_OK hello ... (host=codex, ...)` |
 
 - **hook 沒輸出**：`~/.dev-memory/logs/hello-hook.log` 沒有新增 codex 那一行，代表 `${CLAUDE_PLUGIN_ROOT}` 沒被展開。這時照上面「退路」拆成兩份。
-- **測完清掉**：`codex plugin remove dev-memory@project-plugin`、`codex plugin marketplace remove project-plugin`。
+- **測完清掉**：`codex plugin remove dev-memory@104mis-plugins`、`codex plugin marketplace remove 104mis-plugins`。
 
 ## 來源
 - Claude Code plugins reference: https://code.claude.com/docs/en/plugins-reference

@@ -1,7 +1,7 @@
 {
-  "name": "project-plugin",
+  "name": "104mis-plugins",
   "interface": {
-    "displayName": "project-plugin"
+    "displayName": "104mis-plugins"
   },
   "plugins": [
     {

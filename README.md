@@ -26,14 +26,14 @@ claude --plugin-dir ./plugins/dev-memory
 
 ```bash
 claude plugin marketplace add git@github.com:xinqilin/dev-memory.git
-claude plugin install dev-memory@project-plugin
+claude plugin install dev-memory@104mis-plugins
 ```
 
 ### Codex CLI
 
 ```bash
 codex plugin marketplace add ./          # 或 git@github.com:xinqilin/dev-memory.git
-codex plugin add dev-memory@project-plugin
+codex plugin add dev-memory@104mis-plugins
 codex mcp list                            # 應該看得到 dev-memory
 codex
 ```

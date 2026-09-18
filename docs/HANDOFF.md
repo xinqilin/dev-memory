@@ -108,19 +108,19 @@
   - manifest 跟 MCP 設定各一份
   - skills 共用，內容不寫死任何工具專屬的 tool 名稱
   - 主要靠 Stop hook 增量存檔
-- **名稱**：plugin `dev-memory`；plugin repo `xinqilin/dev-memory`。marketplace 名稱仍是 `project-plugin`，所以安裝字串是 `dev-memory@project-plugin`，等搬到 104corp 再決定要不要改名。
+- **名稱（2026-09-18 定案）**：plugin `dev-memory`；plugin repo `xinqilin/dev-memory`；marketplace `104mis-plugins`（原本叫 `project-plugin`，沒有鑑別度）。安裝字串是 `dev-memory@104mis-plugins`。用團隊前綴是為了搬到 104corp 後不用再改名、隊友也不用重裝第二次。
 - **不匯入 claude-mem 現有的 observation**，只拿來當 tokenizer 的測試資料。
 
 ## Next Steps
 
 1. **Bill 跑工具內驗證**（`docs/spikes/phase-0.md` 最後一節，有指令跟預期輸出）：
    - Claude Code：`claude --plugin-dir ./plugins/dev-memory`
-   - Codex：`codex plugin marketplace add ./` → `codex plugin add dev-memory@project-plugin` → 信任 hook → 重開 session
+   - Codex：`codex plugin marketplace add ./` → `codex plugin add dev-memory@104mis-plugins` → 信任 hook → 重開 session
    - 重點看 Codex 的 hook 有沒有輸出 `DEV_MEMORY_HOOK_OK host=codex`。沒有的話，照 spike 文件的退路把 hooks 拆成兩份。
 2. 順便驗私有 marketplace 安裝（repo 已經 push 上去了）：
    ```bash
    claude plugin marketplace add git@github.com:xinqilin/dev-memory.git
-   claude plugin install dev-memory@project-plugin
+   claude plugin install dev-memory@104mis-plugins
    ```
 3. Bill 提供：
    - n8n workflow 的 export JSON（`schema.md` 要沿用它的 prompt 跟 category/slug 規則）
