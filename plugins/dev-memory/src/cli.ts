@@ -7,6 +7,8 @@ import { archiveFile, sweep, totals } from "./core/archive";
 import { configPath, dbPath, ensureConfig, homeDir, loadConfig } from "./core/config";
 import { hasFts5, openDb, schemaVersion, sqliteVersion } from "./core/db";
 import { formatReport, parseCases, runEval } from "./core/eval";
+import { exportRecords } from "./core/export";
+import { indexExistingDocs } from "./core/index-docs";
 import { initRepo } from "./core/init-repo";
 import { publish } from "./core/publish";
 import { sync as syncRepo } from "./core/sync";
@@ -29,6 +31,8 @@ Usage:
   dev-memory init-repo <dir>          Add the memory repo scaffolding to an existing repository
   dev-memory sync                     Import the memory repo's main branch into the local index (--repo, --no-fetch)
   dev-memory ingest-start <slug>      Open a worktree for a new ingest and print where it is
+  dev-memory export --branch <b>      Write local records into the worktree as JSONL
+  dev-memory index-docs               List the repo's existing docs in wiki/index.md
   dev-memory review --branch <b>      Serve the local review page for that ingest
   dev-memory publish --branch <b>     Push and open the PR. Only run this yourself; the agent must not.
 `;
@@ -89,6 +93,37 @@ async function runIngestStart(args: string[]): Promise<number> {
   console.log(`branch    ${branch}`);
   console.log(`worktree  ${worktree.path}${worktree.created ? "  (created)" : "  (resumed)"}`);
   console.log("Write the pages in the worktree, then: dev-memory review --branch " + branch);
+  return 0;
+}
+
+async function runExport(args: string[]): Promise<number> {
+  const { values } = parseArgs({ args, options: { repo: { type: "string" }, branch: { type: "string" } } });
+  const repo = await memoryRepo(values.repo);
+  if (!repo) return 2;
+  if (!values.branch) {
+    console.error("export needs --branch <branch>");
+    return 2;
+  }
+
+  const worktree = ensureWorktree(repo, values.branch, { fetch: false });
+  const db = openDb();
+  try {
+    const result = await exportRecords(db, worktree.path);
+    console.log(`${result.written} records written, ${result.alreadyThere} already in the repo`);
+    for (const file of result.files) console.log(`  ${file}`);
+    return 0;
+  } finally {
+    db.close();
+  }
+}
+
+async function runIndexDocs(args: string[]): Promise<number> {
+  const { values, positionals } = parseArgs({ args, options: { repo: { type: "string" } }, allowPositionals: true });
+  const repo = positionals[0] ?? (await memoryRepo(values.repo));
+  if (!repo) return 2;
+
+  const result = await indexExistingDocs(repo);
+  console.log(`${result.docs.length} existing docs listed in ${result.indexPath}${result.changed ? "" : "  (unchanged)"}`);
   return 0;
 }
 
@@ -342,6 +377,10 @@ switch (command) {
     process.exit(await runSync(rest));
   case "ingest-start":
     process.exit(await runIngestStart(rest));
+  case "export":
+    process.exit(await runExport(rest));
+  case "index-docs":
+    process.exit(await runIndexDocs(rest));
   case "review":
     process.exit(await runReview(rest));
   case "publish":

@@ -1,4 +1,4 @@
-# Handoff — 2026-09-18（Phase 1 步驟 1–8 完成）
+# Handoff — 2026-09-18（Phase 2 步驟 1–7 完成）
 
 ## Goal
 
@@ -10,6 +10,10 @@
 
 ## Current Status
 
+- **Phase 2 步驟 1–7 完成（2026-09-18）**：memory repo 模板、sync、ingest worktree、審核頁、publish、紀錄匯出都做好了，`bun test` 117 pass / 0 fail。
+  - plugin 版本升到 **0.1.0**（更新是看版本號，不 bump 的話 `claude plugin update` 不會拉新版）。
+  - 測試 repo `xinqilin/dev-memory-test` 已建好並套用骨架。
+  - 還沒實際跑過一次完整 ingest（三個確認點 → 開真的 PR）。
 - **Phase 1 步驟 1–8 完成（2026-09-18）**：可以蒐集、建索引、中文搜尋、存紀錄，MCP 跟兩個 hook 都接上了。`bun test` 77 pass / 0 fail。
   - plugin repo 已推上 `xinqilin/dev-memory`（private），Claude Code 從私有 marketplace 安裝、hook、skill、MCP 四項都實測過。
   - Codex 端還沒實測（使用者說之後再修）。
@@ -164,6 +168,10 @@
 - **SQLite 的 bm25 是負數**，越負越相關。換算成分數時弄反過就會整個排序顛倒（這個 bug 被評測集抓到）。
 - **Bun 有 `TOML.parse` 但沒有 `stringify`**（1.3.4），寫設定檔要用模板。`Bun.YAML.parse` 則是可用的。
 - **sandbox 下 `bun add` 要指定 `BUN_INSTALL_CACHE_DIR` 跟 `TMPDIR`**，否則會報 tempdir PermissionDenied。
+- **sandbox 擋住監聽 port**：`Bun.serve` 會回報成 EADDRINUSE，審核頁的測試要在 sandbox 外跑。
+- **plugin 更新看版本號**：改完內容要 bump `plugin.json` 跟 `.claude-plugin/plugin.json` 的 version，否則 `claude plugin update` 印 "already at the latest version"。
+- **`git show` 的輸出不能 trim**：會吃掉檔案結尾的換行，還原檔案時就對不上原內容。
+- **clone 空 repo 後 branch 是本機預設**（這台是 `master`），要 `git branch -m master main` 才推得上 `main`。
 - **Codex rollout 的結構**：
   - `session_meta.git` 有 `repository_url`、`branch`、`commit_hash`
   - 改檔常常是透過 `exec_command`，所以要用 git diff 判斷改了哪些檔案

@@ -352,6 +352,14 @@ updated: 2026-09-04
 | 6. 把 `104mis-billing-doc` 既有的 39 份文件登記進 `wiki/index.md`（原地不動、不搬檔、不改格式）；之後有頁面要被 `/wiki-lint` 檢查時再逐步補 frontmatter | `index.md` 同時涵蓋既有文件跟新產生的頁；既有文件的連結跟 commit 歷史都沒斷 |
 | 7. 兩個作者同一個月各自提交 | `records/` 不會衝突 |
 
+**Phase 2 結果（2026-09-18）**：步驟 1–7 完成，`bun test` 117 pass / 0 fail。
+- `templates/memory-repo/`（schema.md、repos.yaml、`tools/lint.ts`、CI、index/log）＋ `init-repo`：就地套用、不覆蓋既有檔案。
+- `core/{sync,worktree,export,index-docs,publish}.ts`、`review/{server,checks,ui}`、`skills/wiki-ingest`。
+- 審核頁：只綁 `127.0.0.1`、隨機 port、每個請求驗 token、路徑鎖在 worktree 內、存檔比對 `base_hash`、外部修改走 SSE 通知；`marked`／`DOMPurify`／`diff` 打包成 88 KB 進 repo，不走 CDN。
+- 紀錄匯出成 `records/<product>/<yyyy-mm>/<author>.jsonl`，只 append。**步驟 7 驗證**：兩個作者同一個月各自提交，branch 合併沒有衝突（測試會實際跑 `git merge`）。
+- **要注意的坑**：plugin 更新是看版本號，不是內容。改完要 bump `plugin.json` 的 version，否則 `claude plugin update` 是空操作。
+- 待實際跑一次：`/wiki-ingest` 的端對端流程（三個確認點）跟 `publish` 開真的 PR。
+
 ### Phase 3：跨 repo 知識與 Lint（約 1 週）
 | 步驟 | 驗證 |
 |---|---|

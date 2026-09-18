@@ -60,6 +60,22 @@ Write in the worktree, following `schema.md`:
 
 Never write secrets, credentials or personal data.
 
+Then write the records themselves into the repo:
+
+```bash
+CLI export --branch <branch>
+```
+
+That appends the local records to `records/<product>/<yyyy-mm>/<author>.jsonl` and marks them
+submitted. One file per author per month, append-only, so two people submitting in the same month
+never touch the same file.
+
+If the repo is an existing documentation repo and its own docs are not listed yet:
+
+```bash
+CLI index-docs
+```
+
 ## 4. Review page — **confirmation point ③**
 
 ```bash
