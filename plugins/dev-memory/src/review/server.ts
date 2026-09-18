@@ -58,9 +58,20 @@ export function startReviewServer(options: ReviewOptions): ReviewServer {
     return rel && !rel.startsWith("..") ? full : null;
   };
 
+  // The browser cannot attach a header to <link>, <script> or EventSource requests, so the page
+  // sets a cookie on first load. SameSite=Strict keeps another site from driving this server.
+  const cookieToken = (request: Request): string | null => {
+    const match = (request.headers.get("cookie") ?? "").match(/(?:^|;\s*)dev_memory_token=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  };
+
   const authorized = (request: Request): boolean => {
     const url = new URL(request.url);
-    return url.searchParams.get("token") === token || request.headers.get("authorization") === `Bearer ${token}`;
+    return (
+      url.searchParams.get("token") === token ||
+      request.headers.get("authorization") === `Bearer ${token}` ||
+      cookieToken(request) === token
+    );
   };
 
   const watcher = watch(worktree, { recursive: true }, (_event, filename) => {
@@ -79,7 +90,12 @@ export function startReviewServer(options: ReviewOptions): ReviewServer {
 
       // ---------- UI ----------
       if (url.pathname === "/") {
-        return new Response(Bun.file(join(uiDir, "index.html")), { headers: { "content-type": "text/html; charset=utf-8" } });
+        return new Response(Bun.file(join(uiDir, "index.html")), {
+          headers: {
+            "content-type": "text/html; charset=utf-8",
+            "set-cookie": `dev_memory_token=${token}; Path=/; SameSite=Strict; HttpOnly`,
+          },
+        });
       }
       if (url.pathname === "/app.js" || url.pathname === "/style.css") {
         const file = Bun.file(join(uiDir, url.pathname.slice(1)));

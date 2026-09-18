@@ -168,3 +168,24 @@ test("contentHash is stable and changes with the content", () => {
   expect(contentHash("abc")).toBe(contentHash("abc"));
   expect(contentHash("abc")).not.toBe(contentHash("abd"));
 });
+
+test("the page's stylesheet and script load, because the first load sets a cookie", async () => {
+  const { server } = await scenario();
+  const page = await fetch(`http://127.0.0.1:${server.port}/?token=${server.token}`);
+  expect(page.status).toBe(200);
+
+  const cookie = page.headers.get("set-cookie") ?? "";
+  expect(cookie).toContain(`dev_memory_token=${server.token}`);
+  expect(cookie).toContain("SameSite=Strict"); // another site cannot drive this server
+
+  // A <link> or <script> request carries the cookie but no header and no query token.
+  const withCookie = (path: string) =>
+    fetch(`http://127.0.0.1:${server.port}${path}`, { headers: { cookie: `dev_memory_token=${server.token}` } });
+
+  expect((await withCookie("/style.css")).status).toBe(200);
+  expect((await withCookie("/app.js")).status).toBe(200);
+  expect((await withCookie("/api/pages")).status).toBe(200);
+
+  const wrongCookie = await fetch(`http://127.0.0.1:${server.port}/style.css`, { headers: { cookie: "dev_memory_token=nope" } });
+  expect(wrongCookie.status).toBe(401);
+});

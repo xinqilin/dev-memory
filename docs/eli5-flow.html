@@ -214,7 +214,7 @@
   <header>
     <div class="kicker">五歲小孩也看得懂的版本 · 完整流程</div>
     <h1>一段對話，<br>怎麼變成全隊的百科</h1>
-    <p class="lead">從裝好 plugin，到隊友搜得到你的決定。前三步已經能用，後面四步還在做。</p>
+    <p class="lead">從裝好 plugin，到隊友搜得到你的決定。七個步驟現在都跑得起來了。</p>
     <div class="route" aria-label="整條路線">
       <span class="stop">記日記</span><span class="to">→</span>
       <span class="stop">搜得到</span><span class="to">→</span>
@@ -539,6 +539,34 @@
   </section>
 
   <section>
+    <h2>哪一步在哪裡做</h2>
+    <p class="lead">對話裡只挑內容、對計畫。真正的編輯跟審核在瀏覽器，不是在對話視窗裡。</p>
+    <div class="checks">
+      <div class="check">
+        <span>存決策、挑卡片、對整理計畫<small>確認點 ① ②，一句話回覆就好</small></span>
+        <b class="chip done">對話裡</b>
+      </div>
+      <div class="check">
+        <span>AI 寫頁面<small>寫在獨立的 worktree，你自己的 clone 完全不受影響</small></span>
+        <b class="chip done">磁碟上</b>
+      </div>
+      <div class="check">
+        <span>編輯、預覽、跟 main 比對、看來源、核准、送出<small>確認點 ③，本機網頁，只綁 127.0.0.1</small></span>
+        <b class="chip done">瀏覽器</b>
+      </div>
+      <div class="check">
+        <span>CI 檢查與 merge<small>gitleaks 掃全 repo，結構檢查只掃 wiki 跟 records</small></span>
+        <b class="chip done">GitHub</b>
+      </div>
+      <div class="check">
+        <span>隊友把記憶拉回本機<small>一個指令：sync</small></span>
+        <b class="chip done">終端機</b>
+      </div>
+    </div>
+    <p class="legend">審核頁、IDE、對話三種改法改的是同一個檔案；同時改到會跳出「重新載入 / 保留我的版本」，不會默默蓋掉。</p>
+  </section>
+
+  <section>
     <h2>現在做到哪</h2>
     <div class="checks">
       <div class="check">
@@ -550,8 +578,12 @@
         <b class="chip done">可用</b>
       </div>
       <div class="check">
-        <span>第 4～7 步：wiki、審核頁、送 PR、隊友同步<small>Phase 2 才做</small></span>
-        <b class="chip wait">還沒做</b>
+        <span>第 4～6 步：整理計畫、審核頁、送出 PR<small>本機審核頁可以編輯、預覽、跟 main 比對、看來源，有問題就擋住核准</small></span>
+        <b class="chip done">可用</b>
+      </div>
+      <div class="check">
+        <span>第 7 步：隊友同步<small>sync 從 main 匯入紀錄跟頁面；已被取代的頁面不會出現在搜尋結果</small></span>
+        <b class="chip done">可用</b>
       </div>
       <div class="check">
         <span>Claude Code 三條路徑全通<small>hook 每次 session 都寫 log、skill 回應、MCP 工具叫得到</small></span>
@@ -580,7 +612,7 @@
     </div>
   </section>
 
-  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-18 · Phase 1 步驟 1–8 完成（Codex 待測，wiki 尚未開始）</footer>
+  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-18 · Phase 2 完成（Codex 待測；Phase 3 的 entity 頁與 lint 還沒做）</footer>
 
 </div>
 </body>
