@@ -168,6 +168,28 @@
   .chip.done { color: var(--ok); }
   .chip.wait { color: var(--warn); border-style: dashed; }
 
+  .flow {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  .flow th, .flow td {
+    border-bottom: 1px solid var(--line);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .flow th { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .flow td:first-child { font-family: var(--f-hand); font-size: 18px; white-space: nowrap; }
+  .flow code { white-space: nowrap; }
+  .flow-wrap { overflow-x: auto; }
+  .note {
+    border-left: 3px solid var(--accent);
+    padding: 4px 0 4px 14px;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
   footer { color: var(--muted); font-size: 14px; }
 
   .skip {
@@ -555,6 +577,148 @@
       </div>
 
     </div>
+  </section>
+
+  <section>
+    <h2>資料從哪來、存到哪</h2>
+    <p class="lead">同一份內容會換三種身分：對話 → 卡片 → 頁面。每次換身分都有人點頭。</p>
+
+    <div class="ideas">
+      <div class="idea">
+        <div class="pic">
+          <svg viewBox="0 0 320 220" role="img" aria-label="對話存成檔案，hook 讀進資料庫，斷詞後進索引">
+            <rect class="f-paper s-ink" x="90" y="10" width="140" height="34" rx="6"/>
+            <text class="t" x="160" y="33" text-anchor="middle" font-size="16">你跟 AI 的對話</text>
+            <path class="f-none s-ink" d="M160 44 V60"/><polygon class="f-ink" points="154,58 160,70 166,58"/>
+
+            <rect class="f-soft s-ink" x="70" y="70" width="180" height="34" rx="4"/>
+            <text class="t t-mono" x="160" y="92" text-anchor="middle" font-size="11">~/.claude · ~/.codex 的檔案</text>
+            <text class="t t-muted" x="286" y="92" text-anchor="middle" font-size="11">14 天</text>
+            <path class="f-none s-accent" d="M160 104 V120"/><polygon class="f-accent" points="154,118 160,130 166,118"/>
+            <text class="t t-accent" x="196" y="118" text-anchor="middle" font-size="12">每回合</text>
+
+            <rect class="f-card s-edge" x="70" y="130" width="180" height="34" rx="4"/>
+            <text class="t t-card" x="160" y="152" text-anchor="middle" font-size="15">turn 表（原文）</text>
+            <path class="f-none s-accent" d="M160 164 V180"/><polygon class="f-accent" points="154,178 160,190 166,178"/>
+            <text class="t t-accent" x="206" y="178" text-anchor="middle" font-size="12">切詞</text>
+
+            <rect class="f-card s-edge" x="70" y="190" width="180" height="30" rx="4"/>
+            <text class="t t-card" x="160" y="210" text-anchor="middle" font-size="15">fts 索引（切過的）</text>
+          </svg>
+        </div>
+        <h3>① 蒐集：檔案 → 資料庫</h3>
+        <p>Stop hook 每回合從上次讀到的位置往下讀，濾掉工具輸出跟系統訊息，只留你跟 AI 真的說的話。原文存一份，另外切詞存一份給搜尋用。</p>
+      </div>
+
+      <div class="idea">
+        <div class="pic">
+          <svg viewBox="0 0 320 220" role="img" aria-label="卡片匯出成檔案，AI 寫頁面，審核頁讀的是檔案">
+            <rect class="f-card s-edge" x="16" y="16" width="120" height="34" rx="4"/>
+            <text class="t t-card" x="76" y="38" text-anchor="middle" font-size="15">record 卡片</text>
+            <path class="f-none s-accent" d="M76 50 V72"/><polygon class="f-accent" points="70,70 76,82 82,70"/>
+            <text class="t t-accent" x="112" y="68" text-anchor="middle" font-size="12">export</text>
+
+            <rect class="f-none s-line dash" x="16" y="82" width="288" height="86" rx="8"/>
+            <text class="t t-muted" x="160" y="100" text-anchor="middle" font-size="12">worktree（磁碟上的另一份工作目錄）</text>
+            <rect class="f-paper s-ink" x="30" y="110" width="118" height="44" rx="4"/>
+            <text class="t t-mono" x="89" y="130" text-anchor="middle" font-size="10">records/*.jsonl</text>
+            <text class="t t-muted" x="89" y="146" text-anchor="middle" font-size="11">卡片原文</text>
+            <rect class="f-paper s-ink" x="170" y="110" width="118" height="44" rx="4"/>
+            <text class="t t-mono" x="229" y="130" text-anchor="middle" font-size="10">wiki/*.md</text>
+            <text class="t t-muted" x="229" y="146" text-anchor="middle" font-size="11">AI 寫的頁面</text>
+
+            <path class="f-none s-ok" d="M160 168 V186"/><polygon class="f-ok" points="154,184 160,196 166,184"/>
+            <rect class="f-ok" x="96" y="196" width="128" height="24" rx="12"/>
+            <text class="t t-paper" x="160" y="213" text-anchor="middle" font-size="14">審核頁讀這些檔案</text>
+          </svg>
+        </div>
+        <h3>② 產出：資料庫 → 檔案</h3>
+        <p>卡片匯出成 JSONL，AI 把頁面寫在另一個工作目錄裡（你自己的 clone 完全不動）。<strong>審核頁看的是檔案，不是資料庫</strong>，所以你在頁面上改、用 IDE 改、叫 AI 改，改的都是同一份。</p>
+      </div>
+
+      <div class="idea">
+        <div class="pic">
+          <svg viewBox="0 0 320 220" role="img" aria-label="merge 之後 sync 把正本讀回本機索引">
+            <polygon class="f-soft s-ink" points="110,14 160,-2 210,14"/>
+            <rect class="f-paper s-ink" x="118" y="16" width="84" height="36" rx="3"/>
+            <text class="t" x="160" y="40" text-anchor="middle" font-size="15">團隊 repo</text>
+            <text class="t t-mono t-muted" x="160" y="66" text-anchor="middle" font-size="11">main（正本）</text>
+
+            <path class="f-none s-accent dash" d="M160 74 V96"/><polygon class="f-accent" points="154,94 160,106 166,94"/>
+            <text class="t t-accent" x="200" y="92" text-anchor="middle" font-size="12">sync</text>
+
+            <rect class="f-card s-edge" x="20" y="108" width="130" height="34" rx="4"/>
+            <text class="t t-card" x="85" y="130" text-anchor="middle" font-size="14">record（已合併）</text>
+            <rect class="f-card s-edge" x="170" y="108" width="130" height="34" rx="4"/>
+            <text class="t t-card" x="235" y="130" text-anchor="middle" font-size="14">page 頁面</text>
+
+            <path class="f-none s-accent" d="M85 142 V162 H160" /><path class="f-none s-accent" d="M235 142 V162 H160"/>
+            <polygon class="f-accent" points="154,160 160,172 166,160"/>
+            <text class="t t-accent" x="206" y="158" text-anchor="middle" font-size="12">切詞</text>
+
+            <rect class="f-card s-edge" x="80" y="172" width="160" height="30" rx="4"/>
+            <text class="t t-card" x="160" y="192" text-anchor="middle" font-size="15">fts 索引</text>
+            <text class="t t-muted" x="160" y="216" text-anchor="middle" font-size="12">隊友這時就搜得到了</text>
+          </svg>
+        </div>
+        <h3>③ 回流：檔案 → 資料庫</h3>
+        <p>PR 合併後，<code>sync</code> 直接讀 main 上的版本（不是讀別人硬碟上的工作檔），寫回本機的卡片跟頁面，再切一次詞進索引。被取代的頁面留著，但不會出現在搜尋結果。</p>
+      </div>
+    </div>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>這一步</th><th>資料從哪來</th><th>存到哪</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>自動記錄</td>
+            <td>對話紀錄檔，從上次讀到的位置往下讀</td>
+            <td><code>turn</code> 表（原文）＋ <code>fts</code>（切過詞）</td>
+          </tr>
+          <tr>
+            <td>搜尋</td>
+            <td>你的問句，一樣先切詞</td>
+            <td>不存，只回結果；片段取自原文，不是切過的內容</td>
+          </tr>
+          <tr>
+            <td>存卡片</td>
+            <td>AI 從對話萃取，你確認過的版本</td>
+            <td><code>record</code> 表，狀態 <code>local</code></td>
+          </tr>
+          <tr>
+            <td>整理 wiki</td>
+            <td>搜尋結果（卡片＋對話）＋ repo 裡的 <code>schema.md</code> 規則</td>
+            <td>worktree 裡的 <code>wiki/*.md</code>；卡片匯出成 <code>records/*.jsonl</code>，狀態轉 <code>submitted</code></td>
+          </tr>
+          <tr>
+            <td>審核頁</td>
+            <td><strong>worktree 的檔案</strong>；「跟 main 比較」來自 git 上的版本；「來源紀錄」才去本機資料庫撈卡片</td>
+            <td>直接寫回檔案（停止打字 800ms 自動存）</td>
+          </tr>
+          <tr>
+            <td>核准 / 送出 PR</td>
+            <td>worktree 的檔案</td>
+            <td>commit 在 worktree；送出才 push 並開 PR</td>
+          </tr>
+          <tr>
+            <td>CI</td>
+            <td>PR 裡的檔案</td>
+            <td>不存，只擋：機密掃描＋結構檢查</td>
+          </tr>
+          <tr>
+            <td>隊友同步</td>
+            <td>main 上的版本（用 git 直接讀，不碰別人的工作檔）</td>
+            <td><code>record</code>（<code>merged</code>）、<code>page</code>，再進 <code>fts</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note"><strong>切詞做兩次，而且只做在索引跟查詢上。</strong> 存進資料庫的永遠是原文；另外存一份切過詞的給搜尋比對用。查詢時把問句用同樣方式切一次，兩邊才對得起來。所以你看到的搜尋片段是人看得懂的原文，不是「拋例 例外 外要」那種切碎的東西。</p>
+
+    <p class="note"><strong>本機資料庫隨時可以刪。</strong> 正本在團隊 repo，原始對話還在你自己的硬碟上。刪掉重建就好，這也是為什麼不把資料庫檔案提交上去。</p>
   </section>
 
   <section>
