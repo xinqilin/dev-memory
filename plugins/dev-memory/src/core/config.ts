@@ -13,10 +13,16 @@ export interface Config {
     model: string | null;
     endpoint: string;
   };
+  /** Local clone of the memory repo; sync and publish work against it. */
+  memory: {
+    repo: string | null;
+    branch: string;
+  };
 }
 
 export const DEFAULT_CONFIG: Config = {
   embedding: { provider: "none", model: null, endpoint: "http://127.0.0.1:11434" },
+  memory: { repo: null, branch: "main" },
 };
 
 // Bun parses TOML but cannot serialize it (1.3.4), so the default file is a template.
@@ -27,6 +33,10 @@ const CONFIG_TEMPLATE = `# dev-memory configuration
 provider = "none"                     # "none" | "ollama"
 model = ""                            # e.g. "qwen3-embedding:0.6b" when provider = "ollama"
 endpoint = "http://127.0.0.1:11434"
+
+[memory]
+repo = ""                             # path to your clone of the memory repo
+branch = "main"
 `;
 
 export function homeDir(): string {
@@ -60,15 +70,21 @@ export async function loadConfig(): Promise<Config> {
   const file = Bun.file(configPath());
   if (!(await file.exists())) return DEFAULT_CONFIG;
 
-  const parsed = Bun.TOML.parse(await file.text()) as Partial<{ embedding: Partial<Config["embedding"]> }>;
+  const parsed = Bun.TOML.parse(await file.text()) as Partial<{
+    embedding: Partial<Config["embedding"]>;
+    memory: Partial<Config["memory"]>;
+  }>;
   const embedding = parsed.embedding ?? {};
-  const provider = embedding.provider === "ollama" ? "ollama" : "none";
-  const model = embedding.model ? String(embedding.model) : null;
+  const memory = parsed.memory ?? {};
   return {
     embedding: {
-      provider,
-      model,
+      provider: embedding.provider === "ollama" ? "ollama" : "none",
+      model: embedding.model ? String(embedding.model) : null,
       endpoint: embedding.endpoint ? String(embedding.endpoint) : DEFAULT_CONFIG.embedding.endpoint,
+    },
+    memory: {
+      repo: memory.repo ? String(memory.repo) : null,
+      branch: memory.branch ? String(memory.branch) : DEFAULT_CONFIG.memory.branch,
     },
   };
 }

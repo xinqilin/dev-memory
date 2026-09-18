@@ -7,6 +7,7 @@ import { configPath, dbPath, ensureConfig, homeDir, loadConfig } from "./core/co
 import { hasFts5, openDb, schemaVersion, sqliteVersion } from "./core/db";
 import { formatReport, parseCases, runEval } from "./core/eval";
 import { initRepo } from "./core/init-repo";
+import { sync as syncRepo } from "./core/sync";
 import { repoIdFromDir } from "./core/repo-id";
 import { type RecordInput, addRecord, contentHash, findByContentHash } from "./core/record";
 import { type Kind, get, search } from "./core/search";
@@ -22,6 +23,7 @@ Usage:
   dev-memory record                   Save one record; reads its JSON from stdin
   dev-memory eval <file.yaml>         Measure retrieval against a case file (--limit, --json)
   dev-memory init-repo <dir>          Add the memory repo scaffolding to an existing repository
+  dev-memory sync                     Import the memory repo's main branch into the local index (--repo, --no-fetch)
 `;
 
 /** The mem-save skill pipes JSON in, which avoids quoting a multi-line body on a command line. */
@@ -50,6 +52,32 @@ async function addRecordFromStdin(): Promise<number> {
     console.log(`saved ${record.id} (${record.type}) ${record.title}`);
     console.log(`author ${record.author}  repos ${record.repos.join(", ") || "none"}  branch ${record.branch ?? "none"}`);
     return 0;
+  } finally {
+    db.close();
+  }
+}
+
+async function runSync(args: string[]): Promise<number> {
+  const { values } = parseArgs({ args, options: { repo: { type: "string" }, fetch: { type: "boolean", default: true } } });
+  const config = await loadConfig();
+  const repo = values.repo ?? config.memory.repo;
+  if (!repo) {
+    console.error("No memory repo configured. Set memory.repo in ~/.dev-memory/config.toml, or pass --repo <path>.");
+    return 2;
+  }
+
+  const db = openDb();
+  try {
+    const result = syncRepo(db, repo, { branch: config.memory.branch, fetch: values.fetch });
+    console.log(
+      `records: ${result.records.imported} imported, ${result.records.alreadyThere} already here` +
+        (result.records.markedMerged ? ` (${result.records.markedMerged} of mine are now on ${config.memory.branch})` : ""),
+    );
+    console.log(`pages:   ${result.pages.imported} indexed, ${result.pages.removed} removed`);
+    return 0;
+  } catch (error) {
+    console.error(`sync failed: ${error instanceof Error ? error.message : error}`);
+    return 1;
   } finally {
     db.close();
   }
@@ -227,6 +255,8 @@ switch (command) {
     process.exit(await runEvalFile(rest));
   case "init-repo":
     process.exit(await runInitRepo(rest));
+  case "sync":
+    process.exit(await runSync(rest));
   case undefined:
   case "-h":
   case "--help":
