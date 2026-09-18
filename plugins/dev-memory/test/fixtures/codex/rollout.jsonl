@@ -1,0 +1,11 @@
+{"timestamp":"2026-09-18T01:10:00.000Z","type":"session_meta","payload":{"session_id":"01999000-fixture-codex","id":"01999000-fixture-codex","cwd":"/Users/demo/project-alpha","originator":"codex_cli_rs","cli_version":"0.154.0","source":"cli","git":{"commit_hash":"0d1f2a3b4c5d6e7f","branch":"feature/export-report","repository_url":"git@github.com:example-org/example-repo.git"}}}
+{"timestamp":"2026-09-18T01:10:01.000Z","type":"turn_context","payload":{"cwd":"/Users/demo/project-alpha","model":"gpt-5.4-codex","approval_policy":"on-request","current_date":"2026-09-18","turn_id":"turn-1"}}
+{"timestamp":"2026-09-18T01:10:02.000Z","type":"event_msg","payload":{"type":"user_message","message":"匯出報表失敗時不要整批中斷","images":null,"local_images":null,"text_elements":[]}}
+{"timestamp":"2026-09-18T01:10:03.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"匯出報表失敗時不要整批中斷"}]}}
+{"timestamp":"2026-09-18T01:10:04.000Z","type":"response_item","payload":{"type":"reasoning","summary":[],"content":null}}
+{"timestamp":"2026-09-18T01:10:05.000Z","type":"response_item","payload":{"type":"function_call","name":"shell","arguments":"{\"command\":[\"bash\",\"-lc\",\"bun test\"]}","call_id":"call_1"}}
+{"timestamp":"2026-09-18T01:10:06.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call_1","output":"39 pass"}}
+{"timestamp":"2026-09-18T01:10:07.000Z","type":"event_msg","payload":{"type":"agent_message","message":"決定：單筆失敗寫進 failedRows，整批繼續；retry 上限 3 次","phase":null,"memory_citation":null}}
+{"timestamp":"2026-09-18T01:10:08.000Z","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":1200,"output_tokens":300}}}}
+{"timestamp":"2026-09-18T01:10:09.000Z","type":"response_item","payload":{"type":"message","role":"developer","content":[{"type":"input_text","text":"系統指示，不該進記憶"}]}}
+{"timestamp":"2026-09-18T01:10:10.000Z","type":"event_msg","payload":{"type":"agent_message"

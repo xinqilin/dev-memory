@@ -13,6 +13,8 @@ node_modules/
 
 # Transcripts and rollouts (real conversations stay local)
 *.jsonl
+# except the synthetic fixtures, which contain no real conversation
+!plugins/dev-memory/test/fixtures/**/*.jsonl
 
 # Secrets
 .env*
