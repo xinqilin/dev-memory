@@ -6,6 +6,7 @@ import { archiveFile, sweep, totals } from "./core/archive";
 import { configPath, dbPath, ensureConfig, homeDir, loadConfig } from "./core/config";
 import { hasFts5, openDb, schemaVersion, sqliteVersion } from "./core/db";
 import { formatReport, parseCases, runEval } from "./core/eval";
+import { initRepo } from "./core/init-repo";
 import { repoIdFromDir } from "./core/repo-id";
 import { type RecordInput, addRecord, contentHash, findByContentHash } from "./core/record";
 import { type Kind, get, search } from "./core/search";
@@ -20,6 +21,7 @@ Usage:
   dev-memory get <kind> <ref>         Print the full text behind a search hit
   dev-memory record                   Save one record; reads its JSON from stdin
   dev-memory eval <file.yaml>         Measure retrieval against a case file (--limit, --json)
+  dev-memory init-repo <dir>          Add the memory repo scaffolding to an existing repository
 `;
 
 /** The mem-save skill pipes JSON in, which avoids quoting a multi-line body on a command line. */
@@ -51,6 +53,23 @@ async function addRecordFromStdin(): Promise<number> {
   } finally {
     db.close();
   }
+}
+
+async function runInitRepo(args: string[]): Promise<number> {
+  const target = args[0];
+  if (!target) {
+    console.error("init-repo needs the path of the repository to set up");
+    return 2;
+  }
+
+  const { created, kept } = await initRepo(target);
+  for (const file of created) console.log(`created  ${file}`);
+  for (const file of kept) console.log(`kept     ${file}`);
+  console.log(`\n${created.length} added, ${kept.length} already there. Nothing was overwritten.`);
+  if (created.length > 0) {
+    console.log("Next: fill in repos.yaml, list the existing docs in wiki/index.md, then commit.");
+  }
+  return 0;
 }
 
 async function runEvalFile(args: string[]): Promise<number> {
@@ -206,6 +225,8 @@ switch (command) {
     process.exit(await addRecordFromStdin());
   case "eval":
     process.exit(await runEvalFile(rest));
+  case "init-repo":
+    process.exit(await runInitRepo(rest));
   case undefined:
   case "-h":
   case "--help":

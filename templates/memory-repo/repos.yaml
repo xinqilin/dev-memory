@@ -1,0 +1,9 @@
+# 產品跟 code repo 的對應。ingest 用它判斷一筆紀錄屬於哪個產品。
+# 一個 memory repo 只放一個產品；其他產品另外開一份。
+products:
+  billing:
+    repos:
+      - 104corp/104mis-billing-api-aws
+      - 104corp/104mis-billing-batch-aws
+      - 104corp/104mis-billing-backend-aws
+      - 104corp/104mis-billing-frontend-aws
