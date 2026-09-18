@@ -824,6 +824,86 @@
   </section>
 
   <section>
+    <h2>這個設計借了什麼</h2>
+    <p class="lead">核心想法來自 Karpathy 的 LLM Wiki 跟 nashsu/llm_wiki：不要每次問問題都從頭翻原始資料，而是讓 LLM 維護一層整理過的 wiki。我們把它從「讀文件」改造成「記開發」。</p>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>借來的概念</th><th>原本的用法</th><th>我們的用法</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>三層結構</td>
+            <td>原始素材（不可變）→ LLM 維護的 wiki → 規則檔</td>
+            <td>一樣：卡片只增不改 → wiki 頁面 → <code>schema.md</code></td>
+          </tr>
+          <tr>
+            <td>兩步 ingest</td>
+            <td>先分析要動哪些頁，再產生內容</td>
+            <td>一樣，而且兩步中間都要作者點頭（確認點 ①②）</td>
+          </tr>
+          <tr>
+            <td>index.md 導航</td>
+            <td>LLM 查東西的入口，每次 ingest 都更新</td>
+            <td>一樣；另外拿它連到 repo 裡既有的人工文件</td>
+          </tr>
+          <tr>
+            <td>log.md 變更紀錄</td>
+            <td>只增不改，格式固定方便 grep</td>
+            <td>一樣</td>
+          </tr>
+          <tr>
+            <td>frontmatter 與 <code>[[連結]]</code></td>
+            <td><code>type</code>、<code>title</code>、<code>sources[]</code>、頁面互連</td>
+            <td>一樣，另外加 <code>product</code>、<code>status</code>、<code>code_refs</code></td>
+          </tr>
+          <tr>
+            <td>entity 頁</td>
+            <td>人物、概念各自一頁</td>
+            <td>改成資料表、API、queue、外部系統——跨 repo 最需要的就是這個</td>
+          </tr>
+          <tr>
+            <td>Lint</td>
+            <td>矛盾、孤兒頁、壞掉的連結</td>
+            <td>一樣，另外檢查來源存不存在</td>
+          </tr>
+          <tr>
+            <td>新資料推翻舊主張</td>
+            <td>標記而不是刪掉，保留可追溯</td>
+            <td>一樣：舊頁標成「已被取代」，搜尋不再列出，但歷史留著</td>
+          </tr>
+          <tr>
+            <td>人 curate、LLM maintain</td>
+            <td>人決定方向，LLM 做整理跟記帳</td>
+            <td>一樣，再加上本機審核頁跟 PR，改什麼都看得到</td>
+          </tr>
+          <tr>
+            <td>問答回填</td>
+            <td>有價值的答案存回 wiki 變成一頁</td>
+            <td>一樣。這條原本沒做，補進來了</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ideas">
+      <div class="idea">
+        <h3>我們加的</h3>
+        <p><strong>素材自動來</strong>：原作要人工餵文件、PDF；我們從開發對話跟 git 自動收，人只負責確認。<br>
+        <strong>團隊共享</strong>：原作是單人本機知識庫；我們加了 PR、CI、機密掃描、跨 repo 的產品對照表。<br>
+        <strong>文件會說自己過期</strong>：頁面記著它描述哪些程式檔，那些檔案被改過就標出來。原作的素材不是程式碼，沒有這個問題。<br>
+        <strong>中文搜得到</strong>：中文切成兩字一塊，還有評測集量準確度。</p>
+      </div>
+      <div class="idea">
+        <h3>沒有採用的</h3>
+        <p><strong>連帶刪除</strong>：原作刪掉來源會連帶清掉衍生頁。我們的卡片只增不改，這個語意對不上——決策被推翻是標記取代，不是刪除。</p>
+        <p class="legend">來源：Karpathy 的 LLM Wiki gist、nashsu/llm_wiki</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <h2>記住幾件事</h2>
     <div class="ideas">
 
