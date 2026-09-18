@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
-import { buildMatchQuery, identifierParts, tokenizeForIndex } from "../src/core/tokenize";
+import { buildMatchQuery, buildSearchQuery, identifierParts, tokenizeForIndex } from "../src/core/tokenize";
 
 describe("tokenizeForIndex", () => {
   test("CJK runs become overlapping bigrams", () => {
@@ -38,6 +38,18 @@ describe("buildMatchQuery", () => {
     expect(buildMatchQuery("例外處理 sapStatus")).toBe('"例外 外處 處理" "sapstatus"');
     expect(buildMatchQuery("例")).toBe('"例"*');
     expect(buildMatchQuery("  ，。 ")).toBeNull();
+  });
+});
+
+describe("buildSearchQuery", () => {
+  test("a run contributes the whole phrase and its bigrams, all OR-ed", () => {
+    expect(buildSearchQuery("例外處理")).toBe('"例外 外處 處理" OR "例外" OR "外處" OR "處理"');
+    expect(buildSearchQuery("retry 策略")).toBe('"retry" OR "策略"');
+  });
+
+  test("a lone particle is dropped from a longer question", () => {
+    expect(buildSearchQuery("中文 的 斷詞")).toBe('"中文" OR "斷詞"');
+    expect(buildSearchQuery("的")).toBe('"的"*'); // unless it is the whole query
   });
 });
 

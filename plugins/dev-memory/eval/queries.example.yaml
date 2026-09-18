@@ -1,0 +1,37 @@
+# Retrieval evaluation cases.
+#
+# Write the query the way a teammate would ask months later — deliberately NOT in the words
+# stored in the memory, because that is the case that actually fails. A hit counts when its
+# text contains every string in all_of, or any string in any_of.
+#
+# Run:  bun src/cli.ts eval eval/queries.yaml
+#
+# This file is an example. The real set lives in eval/queries.yaml and has to be written by
+# someone who remembers the decisions: only they can say which answer is the right one.
+
+cases:
+  - id: chinese-tokenizer
+    query: 中文的搜尋是怎麼切字的
+    expect:
+      any_of: ["bigram", "unicode61"]
+
+  - id: why-not-claude-mem
+    query: 為什麼不繼續用原本那套記憶工具
+    expect:
+      any_of: ["claude-mem", "中文搜不到", "FTS5 預設"]
+
+  - id: identifier-search
+    query: 那個一直維持某個狀態的欄位叫什麼
+    expect:
+      all_of: ["WAIT_FOR_INSERT_MIDDLE_DB"]
+
+  - id: codex-mcp-config
+    query: Codex 要讀哪一個 MCP 設定檔
+    expect:
+      all_of: ["mcp.json"]
+      any_of: ["不讀", "只讀"]
+
+  - id: push-policy
+    query: 誰可以執行 push
+    expect:
+      any_of: ["使用者自己", "不會替你 push", "AI 不會"]

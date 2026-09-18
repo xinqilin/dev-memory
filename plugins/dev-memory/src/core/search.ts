@@ -4,7 +4,7 @@
 // Snippets come from the original text, never from the FTS body: the indexed body is
 // pre-tokenized (Chinese split into bigrams), which is unreadable for a human.
 import type { Database } from "bun:sqlite";
-import { buildMatchQuery, queryTerms } from "./tokenize";
+import { buildSearchQuery, queryTerms } from "./tokenize";
 
 export type Kind = "page" | "record" | "turn";
 
@@ -28,9 +28,9 @@ export interface SearchOptions {
 const KIND_WEIGHT: Record<Kind, number> = { page: 3, record: 2, turn: 1 };
 const SNIPPET_RADIUS = 60;
 
-/** bm25 returns smaller-is-better; flip it so bigger is better and keep it on a sane scale. */
+/** FTS5's bm25 is negative and more negative means a better match; flip it so bigger is better. */
 function relevance(bm25: number): number {
-  return 1 / (1 + Math.max(0, -bm25));
+  return Math.max(0, -bm25);
 }
 
 export function makeSnippet(text: string, query: string): string {
@@ -90,7 +90,7 @@ function describe(db: Database, kind: Kind, ref: string): Source {
 }
 
 export function search(db: Database, query: string, options: SearchOptions = {}): SearchHit[] {
-  const match = buildMatchQuery(query);
+  const match = buildSearchQuery(query);
   if (!match) return [];
 
   const limit = options.limit ?? 10;

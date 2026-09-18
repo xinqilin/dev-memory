@@ -5,6 +5,7 @@ import type { Host } from "./adapters/types";
 import { archiveFile, sweep, totals } from "./core/archive";
 import { configPath, dbPath, ensureConfig, homeDir, loadConfig } from "./core/config";
 import { hasFts5, openDb, schemaVersion, sqliteVersion } from "./core/db";
+import { formatReport, parseCases, runEval } from "./core/eval";
 import { repoIdFromDir } from "./core/repo-id";
 import { type RecordInput, addRecord, contentHash, findByContentHash } from "./core/record";
 import { type Kind, get, search } from "./core/search";
@@ -18,6 +19,7 @@ Usage:
   dev-memory search <query>           Keyword search (--repo, --kind, --limit, --json)
   dev-memory get <kind> <ref>         Print the full text behind a search hit
   dev-memory record                   Save one record; reads its JSON from stdin
+  dev-memory eval <file.yaml>         Measure retrieval against a case file (--limit, --json)
 `;
 
 /** The mem-save skill pipes JSON in, which avoids quoting a multi-line body on a command line. */
@@ -45,6 +47,29 @@ async function addRecordFromStdin(): Promise<number> {
     const record = addRecord(db, input);
     console.log(`saved ${record.id} (${record.type}) ${record.title}`);
     console.log(`author ${record.author}  repos ${record.repos.join(", ") || "none"}  branch ${record.branch ?? "none"}`);
+    return 0;
+  } finally {
+    db.close();
+  }
+}
+
+async function runEvalFile(args: string[]): Promise<number> {
+  const { values, positionals } = parseArgs({
+    args,
+    options: { limit: { type: "string" }, json: { type: "boolean" } },
+    allowPositionals: true,
+  });
+  const path = positionals[0];
+  if (!path) {
+    console.error("eval needs a case file");
+    return 2;
+  }
+
+  const cases = parseCases(await Bun.file(path).text());
+  const db = openDb();
+  try {
+    const report = runEval(db, cases, values.limit ? Number(values.limit) : 5);
+    console.log(values.json ? JSON.stringify(report, null, 2) : formatReport(report));
     return 0;
   } finally {
     db.close();
@@ -179,6 +204,8 @@ switch (command) {
     process.exit(runGet(rest));
   case "record":
     process.exit(await addRecordFromStdin());
+  case "eval":
+    process.exit(await runEvalFile(rest));
   case undefined:
   case "-h":
   case "--help":

@@ -41,7 +41,8 @@ test("finds Chinese and identifiers in archived turns", () => {
     turn(3, "順便把 retry 次數設成 3"),
   ]);
 
-  expect(search(db, "整批中斷").map((h) => h.ref)).toEqual(["claude-code:s1:1"]);
+  // Loose matching also returns the turn that only shares "整批", but the exact phrase ranks first.
+  expect(search(db, "整批中斷")[0].ref).toBe("claude-code:s1:1");
   expect(search(db, "failedRows").map((h) => h.ref)).toEqual(["claude-code:s1:2"]);
   expect(search(db, "沒有這種東西")).toEqual([]);
   db.close();

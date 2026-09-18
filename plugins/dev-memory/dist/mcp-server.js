@@ -34866,25 +34866,33 @@ function bigrams(run) {
 function queryTerms(query) {
   return [...segments(query)].map((segment) => segment.text);
 }
-function buildMatchQuery(query) {
+function buildSearchQuery(query) {
+  const parts = [...segments(query)];
+  const kept = parts.length > 1 ? parts.filter((seg) => seg.kind === "word" || Array.from(seg.text).length > 1) : parts;
   const terms = [];
-  for (const seg of segments(query)) {
+  for (const seg of kept) {
     if (seg.kind === "word") {
       terms.push(`"${seg.text.toLowerCase()}"`);
-    } else if (Array.from(seg.text).length === 1) {
-      terms.push(`"${seg.text}"*`);
-    } else {
-      terms.push(`"${bigrams(seg.text).join(" ")}"`);
+      continue;
     }
+    const chars = Array.from(seg.text);
+    if (chars.length === 1) {
+      terms.push(`"${seg.text}"*`);
+      continue;
+    }
+    const grams = bigrams(seg.text);
+    if (grams.length > 1)
+      terms.push(`"${grams.join(" ")}"`);
+    terms.push(...grams.map((gram) => `"${gram}"`));
   }
-  return terms.length ? terms.join(" ") : null;
+  return terms.length ? [...new Set(terms)].join(" OR ") : null;
 }
 
 // src/core/search.ts
 var KIND_WEIGHT = { page: 3, record: 2, turn: 1 };
 var SNIPPET_RADIUS = 60;
 function relevance(bm25) {
-  return 1 / (1 + Math.max(0, -bm25));
+  return Math.max(0, -bm25);
 }
 function makeSnippet(text, query) {
   const flat = text.replace(/\s+/g, " ").trim();
@@ -34927,7 +34935,7 @@ function describe3(db, kind, ref) {
   return { title: row?.title ?? ref, body: row?.body ?? "", repoId: null, ts: row?.updated ?? null };
 }
 function search(db, query, options = {}) {
-  const match = buildMatchQuery(query);
+  const match = buildSearchQuery(query);
   if (!match)
     return [];
   const limit = options.limit ?? 10;
