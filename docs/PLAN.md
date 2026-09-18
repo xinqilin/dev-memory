@@ -379,6 +379,12 @@ updated: 2026-09-04
 - **評測集**：`dev-memory eval --suggest` 從現有記憶生候選題目（標題當種子、識別字跟數字當判斷關鍵詞），但明講「query 要改寫成你自己的問法」——50 題的正式評測集仍然要人來寫。
 
 ### Phase 4：語意搜尋選配（Ollama + 使用者選模型，約 1 週）
+
+> **v1 不含這個階段（2026-09-18 決定）**。第一版只用關鍵字搜尋，`provider = "none"`，隊友什麼都不用裝。
+> 理由：關鍵字搜尋已經可用（中文逐字比對全中，問句式 Recall@5 40%），而語意搜尋要每個人本機多跑一個模型服務，
+> 導入成本直接壓在推廣上。等實際用一陣子、評測集累積到夠多題目、確定關鍵字搜尋不夠用，再回頭做。
+> 程式的架構已經預留：`vector`、`embed_queue` 兩張表在 schema 裡，provider 介面也設計好了，之後加不用改動搜尋以外的東西。
+
 | 步驟 | 驗證 |
 |---|---|
 | 1. `core/embedding/provider.ts` 介面 `embed(texts, kind: "query"\|"document")`、`info()`；實作 `none` 跟 `ollama`，查詢前綴依模型處理 | `bun test`：`none` 不打任何網路請求；`ollama` 用 mock server 測批次、`dimensions`、`keep_alive`、逾時降級 |

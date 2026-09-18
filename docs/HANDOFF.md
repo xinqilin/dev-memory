@@ -90,7 +90,9 @@
   - FTS5，中文轉 bigram，識別字依 camelCase/snake_case 拆開
   - AI 會自己改寫查詢多試幾次
   - 先讀 wiki 的 `index.md` 導航
-- **語意搜尋由使用者自己選**：透過 `/mem-setup` 選擇，預設 `none`（只用關鍵字）。
+- **v1 不做語意搜尋（2026-09-18 決定）**：第一版只有關鍵字搜尋，隊友不用裝 Ollama。關鍵字已經夠用（中文逐字全中、問句 Recall@5 40%），而多跑一個本機模型服務會直接墊高導入門檻。schema 的 `vector`、`embed_queue` 表先留著，要加的時候不用動其他部分。
+- **這不是「知識蒸餾」**：知識蒸餾是拿大模型輸出訓練小模型做壓縮（teacher/student），我們一個模型都沒訓練。我們做的是自動化的團隊知識管理：開發過程自動留痕 → LLM 整理成 wiki → PR review 把關。
+- **語意搜尋由使用者自己選**（Phase 4 之後）：透過 `/mem-setup` 選擇，預設 `none`（只用關鍵字）。
   - 選 Ollama 時可挑 qwen3-embedding 0.6b/4b/8b 或 bge-m3。
   - plugin 不會自己安裝軟體，要使用者同意。
   - 向量一律存在 SQLite、統一 1024 維，不放進 repo，所以每個人可以選不同模型。
