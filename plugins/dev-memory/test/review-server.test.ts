@@ -189,3 +189,49 @@ test("the page's stylesheet and script load, because the first load sets a cooki
   const wrongCookie = await fetch(`http://127.0.0.1:${server.port}/style.css`, { headers: { cookie: "dev_memory_token=nope" } });
   expect(wrongCookie.status).toBe(401);
 });
+
+test("the page list says whether anything is waiting to be committed", async () => {
+  const { api, worktree } = await scenario();
+  const before = (await (await api("/api/pages")).json()) as any;
+  expect(before.dirty).toBe(true); // wiki/new.md is written but not committed
+  expect(before.ahead).toBe(0); // so there is nothing to publish yet
+
+  await api("/api/approve", { method: "POST" });
+
+  const after = (await (await api("/api/pages")).json()) as any;
+  expect(after.dirty).toBe(false);
+  expect(after.ahead).toBe(1); // now the publish button is the one to press
+  void worktree;
+});
+
+test("records files and repos.yaml are not judged by wiki page rules", async () => {
+  const { api, worktree } = await scenario();
+  await Bun.write(join(worktree, "repos.yaml"), "products:\n  billing:\n    repos: []\n");
+  await Bun.write(
+    join(worktree, "records", "billing", "2026-09", "bill.lin.jsonl"),
+    JSON.stringify({
+      id: "01JBREVIEW000000000000001",
+      author: "bill.lin",
+      host: "claude-code",
+      type: "decision",
+      title: "t",
+      body: "b",
+      content_hash: "sha256:x",
+      created_at: "2026-09-18T00:00:00.000Z",
+    }) + "\n",
+  );
+
+  const approved = await api("/api/approve", { method: "POST" });
+  expect(approved.status).toBe(200); // a JSONL file has no frontmatter, and that is fine
+  expect(git(worktree, "status", "--porcelain")).toBe("");
+});
+
+test("a broken records line blocks approval", async () => {
+  const { api, worktree } = await scenario();
+  await Bun.write(join(worktree, "records", "billing", "2026-09", "bill.lin.jsonl"), "{ not json\n");
+
+  const rejected = await api("/api/approve", { method: "POST" });
+  expect(rejected.status).toBe(422);
+  const body = (await rejected.json()) as any;
+  expect(body.failing.some((f: any) => f.checks.some((c: any) => c.message.includes("不是合法 JSON")))).toBe(true);
+});

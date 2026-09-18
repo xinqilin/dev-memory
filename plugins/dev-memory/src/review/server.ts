@@ -8,7 +8,7 @@ import type { Server } from "bun";
 import { spawnSync } from "node:child_process";
 import { watch } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { type Check, checkPage, hasErrors } from "./checks";
+import { type Check, checkFile, hasErrors } from "./checks";
 import { baseVersion, changedPages } from "../core/worktree";
 import { openDb } from "../core/db";
 import { get as getEntry } from "../core/search";
@@ -109,7 +109,10 @@ export function startReviewServer(options: ReviewOptions): ReviewServer {
           const file = Bun.file(join(worktree, page.path));
           return { ...page, exists: file.size > 0 };
         });
-        return json({ branch, base, pages });
+        // The page needs this to know which button to offer: approve first, then publish.
+        const dirty = git(worktree, ["status", "--porcelain"]).out !== "";
+        const ahead = git(worktree, ["log", "--oneline", `${base}..HEAD`]).out.split("\n").filter(Boolean).length;
+        return json({ branch, base, pages, dirty, ahead });
       }
 
       if (url.pathname === "/api/page") {
@@ -125,7 +128,7 @@ export function startReviewServer(options: ReviewOptions): ReviewServer {
             content,
             hash: contentHash(content),
             base: baseVersion(worktree, relPath, base),
-            checks: checkPage(relPath, content),
+            checks: checkFile(relPath, content),
           });
         }
 
@@ -141,7 +144,7 @@ export function startReviewServer(options: ReviewOptions): ReviewServer {
           }
 
           await Bun.write(path, body.content);
-          const checks = checkPage(relPath, body.content);
+          const checks = checkFile(relPath, body.content);
           return json({ hash: contentHash(body.content), checks });
         }
       }
@@ -167,7 +170,7 @@ export function startReviewServer(options: ReviewOptions): ReviewServer {
         for (const page of pages) {
           if (page.status === "deleted") continue;
           const content = await Bun.file(join(worktree, page.path)).text();
-          const checks = checkPage(page.path, content);
+          const checks = checkFile(page.path, content);
           if (hasErrors(checks)) failing.push({ path: page.path, checks });
         }
         if (failing.length > 0) return json({ error: "checks failed", failing }, 422);

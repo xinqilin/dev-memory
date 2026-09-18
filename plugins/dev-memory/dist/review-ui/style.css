@@ -123,6 +123,22 @@ textarea {
   resize: none;
   min-height: 0;
 }
+.preview-pane { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 8px; min-height: 0; }
+.meta {
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  max-height: 84px;
+  overflow: auto;
+}
+.stage { font-size: 13px; color: var(--accent); font-weight: 500; }
+.status { font-size: 13px; }
+.status.good { color: var(--ok); }
+.status.bad { color: var(--warn); }
+
 .preview {
   padding: 14px 18px;
   border: 1px solid var(--line);
@@ -141,6 +157,8 @@ textarea {
 .diff ins { background: var(--added); text-decoration: none; }
 .diff del { background: var(--removed); }
 
+.failing { padding: 10px 12px; margin-bottom: 10px; border: 1px solid var(--warn); border-radius: 8px; cursor: pointer; }
+.failing strong { display: block; font-size: 13px; margin-bottom: 4px; }
 .check { display: flex; gap: 8px; padding: 6px 0; }
 .check.error { color: var(--warn); }
 .check.warning { color: var(--muted); }

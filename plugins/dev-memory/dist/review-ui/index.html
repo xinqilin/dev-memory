@@ -13,9 +13,10 @@
     <span id="branch" class="muted"></span>
   </div>
   <div class="actions">
-    <span id="status" class="muted"></span>
+    <span id="stage" class="stage"></span>
+    <span id="status" class="status muted"></span>
     <button id="approve">核准並 commit</button>
-    <button id="publish" class="primary">送出 PR</button>
+    <button id="publish">送出 PR</button>
   </div>
 </header>
 
@@ -37,7 +38,10 @@
     <div class="panel is-active" data-panel="edit">
       <div class="split">
         <textarea id="editor" spellcheck="false" placeholder="選一頁開始編輯"></textarea>
-        <article id="preview" class="preview"></article>
+        <div class="preview-pane">
+          <div id="meta" class="meta" hidden></div>
+          <article id="preview" class="preview"></article>
+        </div>
       </div>
     </div>
     <div class="panel" data-panel="diff"><div id="diff" class="diff"></div></div>

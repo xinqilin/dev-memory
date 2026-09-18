@@ -1,5 +1,8 @@
-// What must be true before a page can be approved. The CI in the memory repo checks the same
+// What must be true before an ingest can be approved. The CI in the memory repo checks the same
 // things, but finding a leaked key here means it never reaches GitHub at all.
+//
+// Different files have different rules: a wiki page needs frontmatter, a records file must be
+// valid JSONL, and everything else (repos.yaml, .gitattributes) only gets the secret scan.
 
 export interface Check {
   level: "error" | "warning";
@@ -25,20 +28,47 @@ const PII_PATTERNS: [RegExp, string][] = [
 
 const PAGE_TYPES = new Set(["overview", "feature", "decision", "entity", "repo", "runbook"]);
 const PAGE_STATUS = new Set(["active", "superseded"]);
+const REQUIRED_RECORD_FIELDS = ["id", "author", "host", "type", "title", "body", "content_hash", "created_at"];
 
-export function checkPage(path: string, content: string): Check[] {
+/** A wiki page the author wrote; index.md and log.md are navigation and have no frontmatter. */
+function isWikiPage(path: string): boolean {
+  return path.startsWith("wiki/") && path.endsWith(".md") && !/\/(index|log)\.md$/.test(path);
+}
+
+function isRecordsFile(path: string): boolean {
+  return path.startsWith("records/") && path.endsWith(".jsonl");
+}
+
+function scanSecrets(content: string): Check[] {
   const checks: Check[] = [];
-
   for (const [pattern, what] of SECRET_PATTERNS) {
     if (pattern.test(content)) checks.push({ level: "error", message: `疑似機密：${what}` });
   }
   for (const [pattern, what] of PII_PATTERNS) {
     if (pattern.test(content)) checks.push({ level: "warning", message: `疑似個資：${what}` });
   }
+  return checks;
+}
 
-  // index.md and log.md are navigation, not pages, so they have no frontmatter.
-  if (/\/(index|log)\.md$/.test(path)) return checks;
+function checkRecords(content: string): Check[] {
+  const checks: Check[] = [];
+  content.split("\n").forEach((line, index) => {
+    if (!line.trim()) return;
+    let record: Record<string, unknown>;
+    try {
+      record = JSON.parse(line);
+    } catch (error) {
+      checks.push({ level: "error", message: `第 ${index + 1} 行不是合法 JSON：${error}` });
+      return;
+    }
+    const missing = REQUIRED_RECORD_FIELDS.filter((field) => !record[field]);
+    if (missing.length > 0) checks.push({ level: "error", message: `第 ${index + 1} 行缺少欄位：${missing.join("、")}` });
+  });
+  return checks;
+}
 
+function checkWikiPage(content: string): Check[] {
+  const checks: Check[] = [];
   const match = content.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!match) {
     checks.push({ level: "error", message: "缺少 YAML frontmatter" });
@@ -71,8 +101,14 @@ export function checkPage(path: string, content: string): Check[] {
   if (!match[2].trim()) {
     checks.push({ level: "error", message: "頁面沒有內容" });
   }
-
   return checks;
+}
+
+export function checkFile(path: string, content: string): Check[] {
+  const checks = scanSecrets(content);
+  if (isRecordsFile(path)) return [...checks, ...checkRecords(content)];
+  if (isWikiPage(path)) return [...checks, ...checkWikiPage(content)];
+  return checks; // repos.yaml, .gitattributes, index.md, log.md: the secret scan is the whole rule
 }
 
 export function hasErrors(checks: Check[]): boolean {
