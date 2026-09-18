@@ -145,11 +145,15 @@ sqlite_version=3.51.0 platform=darwin/arm64 ENABLE_FTS5=true
 5. Phase 0 步驟 5 的數字改成「MATCH = LIKE」，不寫死筆數。
 6. 風險：plugin 的 hook／MCP 依賴 PATH 裡有 `bun`；git 來源的 marketplace 沒有 `node_modules` → Phase 1 的 MCP server 要嘛零依賴、要嘛打包成單檔。
 
-## 需要你決定
+## 需要你決定 → 已決定（2026-09-18）
 
-1. **repo ID 規則**：目前統一小寫並去掉 host（GitHub 不分大小寫，SSH host alias 也能對上）。代價是不同 host 上的同名 `owner/repo` 會被當成同一個 repo，104corp 只用 GitHub 的話沒影響。要不要保留 host？
-2. **Phase 1 MCP server 怎麼散佈**：(a) 用 `@modelcontextprotocol/sdk`，`bun build` 打包成單檔再 commit；(b) 維持零依賴手寫 JSON-RPC。建議 (a)，因為 Phase 1 要 `memory_search`／`memory_get`，還要處理 schema 驗證。
-3. **私有 marketplace 安裝**（HANDOFF Next Steps 提到的）：要先 push 到 GitHub 私有 repo 才能驗證，這次沒做。
+1. **repo ID 規則**：維持統一小寫、去掉 host。
+2. **Phase 1 MCP server 怎麼散佈**：用 `@modelcontextprotocol/sdk`，`bun build` 打包成單檔 commit 進 repo。Phase 0 的零依賴版只是 spike。
+3. **私有 marketplace 安裝**：plugin repo 已經建好並 push 到 `xinqilin/dev-memory`（private），改成跟工具內驗證一起做：
+   ```bash
+   claude plugin marketplace add git@github.com:xinqilin/dev-memory.git
+   claude plugin install dev-memory@project-plugin
+   ```
 
 ## 待你執行：工具內驗證
 

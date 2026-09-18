@@ -58,8 +58,8 @@ Codex CLI  ──┴───────> dev-memory CLI（核心） ──> ~/
 | Claude Code plugin + Codex plugin（同一份原始碼、兩份 manifest） | 蒐集、萃取、ingest、搜尋 | 必要 |
 | Bun + `bun:sqlite` | CLI、MCP server、本機索引。macOS 用**系統** SQLite（Phase 0 實測 3.51.0 有 FTS5），Linux/Windows 用 Bun 自帶的；`dev-memory init` 要檢查 `ENABLE_FTS5` | 必要（`brew install bun`，PATH 裡要有 `bun`） |
 | git + `gh` | 同步 memory repo、開 PR；用 `gh auth login` 或 SSH 認證，**不需要 PAT** | 必要 |
-| GitHub 私有 repo ×2 | marketplace（就是 `project-plugin`）、memory repo | 必要 |
-| GitHub Actions | 結構 lint、gitleaks CLI（用內建的 `GITHUB_TOKEN`） | 必要 |
+| GitHub 私有 repo ×3 | ① plugin／marketplace：`xinqilin/dev-memory`（已建，private；未來搬 104corp）<br>② 測試記憶：`xinqilin/dev-memory-test`（假資料，還沒建）<br>③ 正式記憶：沿用既有的 `104corp/104mis-billing-doc` | 必要 |
+| GitHub Actions | gitleaks 掃全 repo；結構 lint **只掃 `wiki/` 與 `records/`**（用內建的 `GITHUB_TOKEN`）。既有文件沒有 frontmatter，不納入 lint | 必要 |
 | Ollama + embedding 模型（qwen3-embedding 0.6b/4b/8b 或 bge-m3） | 語意搜尋，向量存在 SQLite | **使用者自己選**，預設不裝；見下方「語意搜尋選配」 |
 | claude-mem | **不使用**，Phase 5 驗收後停用 | 退場 |
 | Chroma | **不使用**：它只負責存向量、找相近向量，這件事 SQLite 就能做；而且它預設的模型 all-MiniLM-L6-v2 是英文模型，又要額外開一個 Python 程序 | 不用 |
@@ -195,14 +195,12 @@ dev-memory 審核  |  branch: mem/bill.lin/20260917-sap-create-bu-data
 ## 跨 repo 設計
 
 1. **Repo ID**：統一轉成 `104corp/104mis-billing-batch-aws` 這種格式。Claude Code 從 `git remote get-url origin` 取；Codex 從 `session_meta.git.repository_url` 取。不在 git 裡的目錄 ID 是 `null`，預設不提交。
-2. **產品登錄表** `repos.yaml`（放在 memory repo）：
+2. **產品登錄表** `repos.yaml`（放在 memory repo）。memory repo 沿用 `104mis-billing-doc`，**只放 billing**，所以目前只登記 billing 底下的 code repo；crm、aisr 等其他產品要用時另外開一份 memory repo，不 rename 也不混進來：
    ```yaml
    products:
      billing:
        repos: [104corp/104mis-billing-api-aws, 104corp/104mis-billing-batch-aws,
                104corp/104mis-billing-backend-aws, 104corp/104mis-billing-frontend-aws]
-     crm:
-       repos: [104corp/104mis-crm-api, 104corp/104mis-aisr]   # 依實際調整
    ```
 3. **一段對話可能碰到多個 repo**：每輪對話依 `cwd` 判斷 repo；改過的檔案往上找 `.git` 對應到 repo。所以一筆紀錄的 `repos[]` 可以有多個。
 4. **wiki 依產品跟主題分**：
@@ -247,10 +245,22 @@ project-plugin/
 
 ## 資料格式
 
-### Memory repo
-- `records/<product>/<yyyy-mm>/<author>.jsonl`：只新增、不修改；一人一月一個檔。
-- `wiki/index.md`：總目錄；`wiki/log.md`：變更紀錄。
-- `wiki/<product>/{overview.md, features/, decisions/, entities/, repos/, runbooks/}`
+### Memory repo（沿用既有的 `104corp/104mis-billing-doc`，就地加目錄）
+```
+104mis-billing-doc/
+├── README.md, maintenance/, spec/, guidelines/, bank/, dr/, poc/, config/   ← 既有 39 份，原地不動
+├── wiki/
+│   ├── index.md            ← 總目錄，同時連到既有文件
+│   ├── log.md              ← 變更紀錄
+│   └── billing/{overview.md, features/, decisions/, entities/, repos/, runbooks/}
+├── records/<product>/<yyyy-mm>/<author>.jsonl   ← 只新增、不修改；一人一月一個檔
+├── schema.md               ← 規則，取代原本放在 n8n 的 prompt
+├── repos.yaml              ← 產品跟 repo 的對應（目前只有 billing）
+├── .gitattributes          ← records/** linguist-generated=true，讓 GitHub 摺疊 JSONL diff
+└── .github/workflows/lint.yml
+```
+- **為什麼沿用而不另開**：舊流程（n8n、Apps Script）已停用，不會跟記憶 PR 打架；既有文件的 commit 歷史跟連結都留著，也省掉「匯入」這一步。
+- **既有文件不動**：它們沒有 frontmatter，結構 lint 不掃它們，只由 `wiki/index.md` 連過去。
 
 ### 紀錄（JSONL 一行；向量不放 repo）
 ```json
@@ -325,12 +335,12 @@ updated: 2026-09-04
 ### Phase 2：Memory repo、提交、wiki ingest、本機審核頁（取代 n8n + Apps Script，約 2–2.5 週）
 | 步驟 | 驗證 |
 |---|---|
-| 1. `templates/memory-repo`（`schema.md` 搬入 n8n 的 prompt、`repos.yaml`、CI）+ `dev-memory init-repo` | 故意放一把假的 AWS key，CI 會擋下 PR |
+| 1. `templates/memory-repo`（`schema.md` 搬入 n8n 的 prompt、`repos.yaml`、`.gitattributes`、CI）+ `dev-memory init-repo`。**就地套用到既有的 `104mis-billing-doc`**，不另開 repo；先在 `xinqilin/dev-memory-test` 用假資料跑通 | 故意放一把假的 AWS key，CI 會擋下 PR；既有 39 份文件不被 lint 影響 |
 | 2. `sync`：`git fetch` 後用 plumbing 指令讀 `origin/main`；把已 merge 的紀錄標成 `merged` | 隊友的 PR merge 後，本機 sync 就搜得到 |
 | 3. `/wiki-ingest`：<br>a. 決定範圍<br>b. 從對話萃取候選紀錄，由作者確認<br>c. 第一步分析，只能從固定的幾種動作裡選，由作者確認<br>d. 第二步產生 wiki 頁<br>e. 檢查有沒有 secret 或個資，匯出 JSONL<br>f. 啟動本機審核頁（見步驟 4），交給作者 | 用 sap-create-bu-data 重跑一次，產出的 decision 頁要有原因跟決定；跟 n8n 產的版本 diff 比品質；兩個工具產出的結構一致 |
 | 4. 本機審核頁 `dev-memory review`：<br>- 頁面清單<br>- 左右並排的編輯與預覽（沿用 `Page.html`）<br>- 跟 main 比較、來源紀錄、檢查結果<br>- 捨棄、核准並 commit<br>- token 驗證、自動存檔、用 SSE 同步外部修改 | ① 在頁面改完，檔案內容一致<br>② 在對話叫 AI 修改，頁面會自動重新載入<br>③ 兩邊同時改會跳出衝突提示，不會直接蓋掉<br>④ 沒帶 token 呼叫 API 會回 401<br>⑤ 檢查到假的 secret 時「核准」按鈕不能按<br>⑥ 斷網時預覽照常運作（不依賴 CDN）<br>⑦ markdown 裡的 `<script>` 不會執行 |
 | 5. `publish`：`git push` + `gh pr create`，只能由使用者在審核頁按「送出 PR」或自己執行指令觸發 | PR 作者是使用者本人；完成後頁面顯示 PR 連結，伺服器自動關閉 |
-| 6. 匯入 `104mis-billing-doc` 現有文件當初始資料 | 產出初版 `index.md` 跟 overview |
+| 6. 把 `104mis-billing-doc` 既有的 39 份文件登記進 `wiki/index.md`（原地不動、不搬檔、不改格式）；之後有頁面要被 `/wiki-lint` 檢查時再逐步補 frontmatter | `index.md` 同時涵蓋既有文件跟新產生的頁；既有文件的連結跟 commit 歷史都沒斷 |
 | 7. 兩個作者同一個月各自提交 | `records/` 不會衝突 |
 
 ### Phase 3：跨 repo 知識與 Lint（約 1 週）
@@ -370,9 +380,11 @@ updated: 2026-09-04
 - **transcript 格式不是穩定介面**：兩個 adapter 都要用 fixture 測試、寬鬆解析；解析失敗只記 log，不能影響 session。
 - **Codex 的 SessionEnd 最多 3 秒**：所以主要靠 Stop 增量存檔，加上 SessionStart 補掃。
 - **Codex hook 要使用者手動信任**才會執行，也就才開始蒐集。
-- **Codex 能不能帶本機 stdio MCP**：Phase 0 實測可以（只讀 `mcp.json`）。**能不能從私有 marketplace 安裝**：要先 push 到 GitHub 私有 repo，還沒驗證。
+- **Codex 能不能帶本機 stdio MCP**：Phase 0 實測可以（只讀 `mcp.json`）。**能不能從私有 marketplace 安裝**：plugin repo 已推上 `xinqilin/dev-memory`（private），待實測。
+- **plugin repo 會隨安裝散佈**：Codex 安裝時把整個 plugin 目錄複製到 `~/.codex/plugins/cache/`，Claude Code 會 clone 整個 marketplace repo。所以記憶、transcript、真實資料一律不能進 plugin repo；`.gitignore` 已擋 `*.jsonl`、`*.db`，Phase 1 加 fixture 時只開白名單給去敏感化過的檔案。
+- **既有文件沒有 frontmatter**：`104mis-billing-doc` 那 39 份是人寫的 SOP 跟規格，結構 lint 只能掃 `wiki/` 與 `records/`，否則一開 CI 就全紅。
 - **plugin 的 hook 跟 MCP 依賴 PATH 裡有 `bun`**：Agent Plugins 規格規定裸指令名稱由 client 決定怎麼找，README 要寫明；GUI 啟動的工具可能拿不到 shell 的 PATH。
-- **repo ID 規則**：統一小寫並去掉 host（Phase 0 預設）。不同 host 上的同名 `owner/repo` 會被當成同一個，待 Bill 確認。
+- **repo ID 規則**：統一小寫並去掉 host（**Bill 已確認**）。代價是不同 host 上的同名 `owner/repo` 會被當成同一個；104corp 只用 GitHub，不受影響。
 - **Skill 不能寫死工具專屬的 tool 名稱**。
 - **Ollama 預設把模型留在記憶體 5 分鐘**：一律帶 `keep_alive: "30s"`。
 - **Qwen3-Embedding 查詢沒加前綴會掉 1–5% 準確度**：provider 依模型處理。
@@ -384,18 +396,24 @@ updated: 2026-09-04
 - **markdown 預覽可能執行夾帶的 HTML**：先用 DOMPurify 清理再顯示。
 - **本機審核頁不能在手機上看**：要用手機，只能等 PR 開出來後在 GitHub app 看。
 
-## 待確認決策（目前採用的預設值）
-1. **Memory repo**：另開 104corp 團隊 repo，`104mis-billing-doc` 當初始資料匯入。
-2. **名稱**：plugin `dev-memory`、marketplace `project-plugin`、memory repo `<team>-dev-memory`。
-3. **Runtime**：Bun。
-4. **claude-mem 現有資料**：不匯入，只拿來當 tokenizer 的測試資料。
-5. **預設搜尋模式**：`none`；Ollama 的模型選項先提供 qwen3-embedding 0.6b/4b/8b 跟 bge-m3；Bedrock 放在 Phase 6。
-6. **審核方式（Bill 已確認）**：Phase 2 必做本機審核頁，不再用 Google Chat 加 Apps Script 連結。
+## 決策（Bill 已確認）
+1. **Memory repo**：沿用既有的 `104corp/104mis-billing-doc`，就地加 `wiki/`、`records/`、`schema.md`、`repos.yaml`、CI，**不另開**。
+2. **範圍**：只放 billing 的記憶。crm、aisr 等其他產品要用時另開一份 memory repo，不 rename 現有的。
+3. **測試資料**：測試期用假資料，放獨立的 `xinqilin/dev-memory-test`（private）；**絕不放進 plugin repo**，因為 plugin 會整包散佈給安裝的人。
+4. **CI 範圍**：gitleaks 掃全 repo；結構 lint 只掃 `wiki/` 與 `records/`。
+5. **repo ID**：`owner/repo`，統一小寫、去掉 host。
+6. **MCP server**：用 `@modelcontextprotocol/sdk`，`bun build` 打包成單檔 commit 進 repo（git 來源的 marketplace 不會有 `node_modules`）。
+7. **審核方式**：Phase 2 必做本機審核頁，不再用 Google Chat 加 Apps Script 連結。
+8. **Runtime**：Bun。
+9. **claude-mem 現有資料**：不匯入，只拿來當 tokenizer 的測試資料。
+10. **預設搜尋模式**：`none`；Ollama 的模型選項先提供 qwen3-embedding 0.6b/4b/8b 跟 bge-m3；Bedrock 放在 Phase 6。
+
+## 待確認
+- **名稱**：plugin `dev-memory`、plugin repo `xinqilin/dev-memory`（已建）。marketplace 名稱目前是 `project-plugin`，所以安裝字串是 `dev-memory@project-plugin`；要搬到 104corp 時再一併決定要不要改名。
 
 ## 前置需求（Bill 提供）
-- n8n workflow export JSON
-- 產品跟 repo 的對應清單
-- 104corp 能不能建私有 repo
+- n8n workflow export JSON（`schema.md` 要沿用它的 prompt 跟 category/slug 規則）
+- billing 底下要納入的 code repo 清單（填進 `repos.yaml`）
 
 ## Sources
 - Karpathy LLM Wiki gist: https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f

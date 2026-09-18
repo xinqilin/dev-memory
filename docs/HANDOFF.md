@@ -56,14 +56,22 @@
 - **只存 archive 檔案、不建 DB**（初版建議）：一年下來資料沒有結構，無法整理。
 - **transcript 只用單一 branch 過濾**：同一個功能分散在 `batch/sap-create-bu-data`（106 筆）和 `review/sap-create-bu-data`（325 筆）兩個 branch。
 - **WebSearch 摘要說 RDS 支援 zhparser/pg_jieba**：查 AWS 官方清單後是錯的，實際只支援 pg_bigm、pg_trgm、pgvector 0.8.2。
+- **另開 memory repo 再把 `104mis-billing-doc` 匯入**（2026-09-18 改掉）：當初的理由是「舊流程還在往那個 repo 開 PR，兩套系統會打架」，但 n8n 跟 Apps Script 已經停用，理由不成立。改成就地沿用：既有文件的 commit 歷史跟連結都留著，也省掉匯入那一步。
+- **把測試用的記憶放進 plugin repo**：不行。Codex 安裝時會把整個 plugin 目錄複製到 cache，Claude Code 會 clone 整個 marketplace repo，等於把資料發給每個安裝的人。測試記憶要獨立一份 repo。
 
 ## Key Decisions Made
 
-- **正本**：放在 GitHub 的 memory repo。
+- **三個 repo 的角色（2026-09-18 定案）**：
+  - `xinqilin/dev-memory`（private，**已建並 push**）：plugin 原始碼＋marketplace。會隨安裝散佈給每個人，所以**任何記憶或真實資料都不能放**。
+  - `xinqilin/dev-memory-test`（還沒建）：測試期的假資料 memory repo。
+  - `104corp/104mis-billing-doc`（既有）：正式 memory repo，**沿用不另開**，只放 billing。
+- **正本**：放在 memory repo，就地加在既有文件旁邊。
   - `records/<product>/<yyyy-mm>/<author>.jsonl`：只新增不修改，一人一月一檔
-  - `wiki/`：LLM 維護的文件
+  - `wiki/`：LLM 維護的文件，`wiki/index.md` 同時連到既有的 39 份文件
   - `schema.md`：規則，取代原本放在 n8n 裡的 prompt
-  - `repos.yaml`：產品跟 repo 的對應
+  - `repos.yaml`：產品跟 repo 的對應（目前只有 billing）
+  - `.gitattributes`：`records/** linguist-generated=true`，讓 GitHub 摺疊 JSONL 的 diff
+  - CI：gitleaks 掃全 repo；結構 lint 只掃 `wiki/` 與 `records/`，既有文件沒有 frontmatter，不納入
 - **本機**：`~/.dev-memory/memory.db`（SQLite），只是索引，隨時可以重建；原始對話只留在本機，不提交。
 - **不用**：claude-mem、n8n、Apps Script；本機不用 PostgreSQL。
 - **搜尋**：
@@ -89,7 +97,8 @@
 - **認證**：`gh auth login` 或 SSH，不需要 PAT；CI 用內建的 `GITHUB_TOKEN`。
 - **Runtime**：Bun + `bun:sqlite`。macOS 上 Bun 用的是**系統** SQLite，不是 Bun 自帶的；Phase 0 實測 macOS arm64 是 3.51.0，有開 FTS5。「Bun build flag 有開 FTS5」只適用 Linux/Windows。
 - **FTS5 斷詞（Phase 0 實測通過）**：`unicode61 tokenchars '_'`，由 `core/tokenize.ts` 預先斷詞（中文 bigram、識別字完整形式加上拆開的部分），查詢時組成 bigram phrase。
-- **repo ID（Phase 0 預設，待 Bill 確認）**：`owner/repo`，統一小寫並去掉 host。
+- **repo ID（已確認）**：`owner/repo`，統一小寫並去掉 host。
+- **MCP server（已確認）**：Phase 1 改用 `@modelcontextprotocol/sdk`，`bun build` 打包成單檔 commit 進 repo。Phase 0 的零依賴版本只是 spike。
 - **plugin 檔案配置（Phase 0 實測）**：
   - Claude Code 讀 `.claude-plugin/plugin.json`、`.mcp.json`。
   - Codex 讀根目錄 `plugin.json`（Agent Plugins 1.0.0）、`mcp.json`，**不讀** `.mcp.json`。
@@ -99,10 +108,8 @@
   - manifest 跟 MCP 設定各一份
   - skills 共用，內容不寫死任何工具專屬的 tool 名稱
   - 主要靠 Stop hook 增量存檔
-- **預設值（待 Bill 確認）**：
-  - memory repo 另開一個 104corp 團隊 repo（因為會跨 billing、crm、aisr 等產品）
-  - plugin 名稱用 `dev-memory`
-  - 不匯入 claude-mem 現有的 observation
+- **名稱**：plugin `dev-memory`；plugin repo `xinqilin/dev-memory`。marketplace 名稱仍是 `project-plugin`，所以安裝字串是 `dev-memory@project-plugin`，等搬到 104corp 再決定要不要改名。
+- **不匯入 claude-mem 現有的 observation**，只拿來當 tokenizer 的測試資料。
 
 ## Next Steps
 
@@ -110,14 +117,14 @@
    - Claude Code：`claude --plugin-dir ./plugins/dev-memory`
    - Codex：`codex plugin marketplace add ./` → `codex plugin add dev-memory@project-plugin` → 信任 hook → 重開 session
    - 重點看 Codex 的 hook 有沒有輸出 `DEV_MEMORY_HOOK_OK host=codex`。沒有的話，照 spike 文件的退路把 hooks 拆成兩份。
-2. Bill 決定 spike 文件裡的 3 件事：
-   - repo ID 要不要保留 host
-   - Phase 1 的 MCP server 用 SDK 打包成單檔，還是維持零依賴
-   - 什麼時候 push 到私有 repo，驗證私有 marketplace 安裝
-3. Bill 確認 `PLAN.md` 裡的待確認決策，並提供：
-   - n8n workflow 的 export JSON（prompt、category/slug 規則）
-   - 產品跟 repo 的對應清單
-   - 104corp 能不能建私有 repo
+2. 順便驗私有 marketplace 安裝（repo 已經 push 上去了）：
+   ```bash
+   claude plugin marketplace add git@github.com:xinqilin/dev-memory.git
+   claude plugin install dev-memory@project-plugin
+   ```
+3. Bill 提供：
+   - n8n workflow 的 export JSON（`schema.md` 要沿用它的 prompt 跟 category/slug 規則）
+   - billing 底下要納入 `repos.yaml` 的 code repo 清單
 4. 以上確認後進入 Phase 1。`src/hello-*.ts` 跟 `skills/hello` 屬於 Phase 0 的 spike，Phase 1 有正式元件後就移除。
 
 ## Critical Files
