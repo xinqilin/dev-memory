@@ -23,7 +23,7 @@
   - 0.1、0.4、0.5、0.6 實測通過；`bun test` 32/32 通過。
   - 0.2–0.3：Claude Code 的 `claude plugin validate --strict` 通過；Codex 在隔離的 `CODEX_HOME` 實測能安裝，skill 跟 stdio MCP 都看得到。**還沒在兩個工具的真實 session 裡驗證 hook 輸出跟 MCP 呼叫**，要 Bill 照 spike 文件最後一節自己跑。
 - 完整計畫在 `docs/PLAN.md`（已同步 Phase 0 結果），原檔是 `~/.claude/plans/claude-mem-luminous-naur.md`。
-- 圖解在 `docs/eli5.html`，線上版：https://claude.ai/artifact/XFAiD5kPUgS5jmHi4ZDfGq
+- 圖解在 `docs/eli5.html`（一份就夠，原本的比喻版跟流程版已合併；瀏覽器直接開檔，不再放 claude.ai）。
 - `PLAN.md` 最後有「待確認決策」，另外 `docs/spikes/phase-0.md` 有 3 項「需要你決定」。
 
 ## 討論過程（決策怎麼演變）
@@ -149,7 +149,7 @@
 - `docs/spikes/phase-0.md`：Phase 0 的結論、實測數據、要改計畫的地方、待 Bill 執行的工具內驗證清單。
 - `plugins/dev-memory/src/core/{tokenize,repo-id}.ts`：Phase 1 會直接沿用的核心模組。
 - `plugins/dev-memory/test/tokenize.claude-mem.test.ts`：用唯讀方式讀 claude-mem.db 的整合測試，沒有 DB 時自動 skip。
-- `docs/eli5.html`：圖解（瀏覽器開檔，或看上面的線上連結）。
+- `docs/eli5.html`：圖解（安裝、七個步驟、哪一步在哪裡做、會用到的東西、目前進度）。
 - `~/.claude-mem/scripts/sync-to-n8n.sh`：現行撈資料的邏輯，是要取代的對象。
 - `~/.claude/skills/n8n-doc-sync/SKILL.md`：現行 skill。`--feature` 跟 `maintenance/` 路徑的語意要保留；注意 `~/.claude` 有未 commit 的修改。
 - `~/Desktop/appscript/appScript.gs`：現行的審核跟開 PR 流程；為什麼不開 Draft PR 寫在 483–488 行。
