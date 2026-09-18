@@ -1,4 +1,4 @@
-# Handoff — 2026-09-18（Phase 2 步驟 1–7 完成）
+# Handoff — 2026-09-18（Phase 3 完成）
 
 ## Goal
 
@@ -10,6 +10,9 @@
 
 ## Current Status
 
+- **Phase 3 完成（2026-09-18）**：entity 索引、`lint`、`stale`、問答回填、來源檢查、`eval --suggest` 都做好了，`bun test` 134 pass / 0 fail，plugin **0.2.0**。
+  - 一次完整 ingest 已經實跑過：存紀錄 → wiki 頁 → 審核頁 → PR → merge → `sync`，搜尋排序是 wiki 頁 > 紀錄 > 對話。
+  - 實跑抓到 4 個 bug：靜態資源被 token 擋住、新資料夾被當成一個項目列出、核准檢查把 wiki 規則套到 records/repos.yaml、失敗訊息只在小字。都已修並補測試。
 - **Phase 2 步驟 1–7 完成（2026-09-18）**：memory repo 模板、sync、ingest worktree、審核頁、publish、紀錄匯出都做好了，`bun test` 117 pass / 0 fail。
   - plugin 版本升到 **0.1.0**（更新是看版本號，不 bump 的話 `claude plugin update` 不會拉新版）。
   - 測試 repo `xinqilin/dev-memory-test` 已建好並套用骨架。
@@ -137,7 +140,8 @@
 3. Bill 提供：
    - n8n workflow 的 export JSON（`schema.md` 要沿用它的 prompt 跟 category/slug 規則）
    - billing 底下要納入 `repos.yaml` 的 code repo 清單
-4. Phase 1 剩下的：
+4. Phase 4 之後：語意搜尋（Ollama）、團隊推廣。
+5. Phase 1 剩下的：
    - 在 Codex 上實測 hook、skill、MCP（使用者說之後再修）
    - 補 `eval/queries.yaml` 的 30 題（要由記得那些決策的人寫，目前只有 5 題範例）
    - 使用者自己跑一次 `bun src/cli.ts init` 跟 `sweep`，把既有對話灌進 `~/.dev-memory`

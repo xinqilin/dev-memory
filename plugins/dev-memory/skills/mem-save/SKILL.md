@@ -53,6 +53,19 @@ JSON
 
 Show the returned id and tell the user the record is local until it is submitted to the memory repo.
 
+## Filing an answer back
+
+The same flow works for a question you just answered from the memory. If the answer took real
+digging — you pieced it together from several records or from raw conversation — and the wiki does
+not already say it, offer to save it as a `note`:
+
+- **title**: the question, in the words someone would ask it again
+- **body**: the answer, then where it came from (record ids, files, commits)
+
+Do not file answers that only restate an existing page, and do not file anything the user did not
+agree to. This is how the wiki grows from real questions instead of from someone remembering to
+write documentation.
+
 ## Notes
 
 - Search before saving (`memory_search`, or `bun "${CLAUDE_PLUGIN_ROOT}/src/cli.ts" search <words>`): if a record already covers this, update the story in a new record and mention which one it supersedes with `"supersedes": "<id>"`.

@@ -6,8 +6,11 @@ import type { Host } from "./adapters/types";
 import { archiveFile, sweep, totals } from "./core/archive";
 import { configPath, dbPath, ensureConfig, homeDir, loadConfig } from "./core/config";
 import { hasFts5, openDb, schemaVersion, sqliteVersion } from "./core/db";
-import { formatReport, parseCases, runEval } from "./core/eval";
+import { formatReport, parseCases, runEval, suggestCases } from "./core/eval";
+import { entityIndex, missingEntityPages } from "./core/entities";
 import { exportRecords } from "./core/export";
+import { formatLint, lintRepo } from "./core/lint";
+import { findStalePages, formatStale } from "./core/staleness";
 import { indexExistingDocs } from "./core/index-docs";
 import { initRepo } from "./core/init-repo";
 import { publish } from "./core/publish";
@@ -28,11 +31,15 @@ Usage:
   dev-memory get <kind> <ref>         Print the full text behind a search hit
   dev-memory record                   Save one record; reads its JSON from stdin
   dev-memory eval <file.yaml>         Measure retrieval against a case file (--limit, --json)
+  dev-memory eval --suggest           Print candidate eval cases drawn from the memory
   dev-memory init-repo <dir>          Add the memory repo scaffolding to an existing repository
   dev-memory sync                     Import the memory repo's main branch into the local index (--repo, --no-fetch)
   dev-memory ingest-start <slug>      Open a worktree for a new ingest and print where it is
   dev-memory export --branch <b>      Write local records into the worktree as JSONL
   dev-memory index-docs               List the repo's existing docs in wiki/index.md
+  dev-memory entities                 Which tables, APIs and queues the records mention (--product, --json)
+  dev-memory lint                     Check the memory repo: links, orphans, sources, duplicates (--repo)
+  dev-memory stale                    Ask GitHub whether the code behind a page has moved on (--repo)
   dev-memory review --branch <b>      Serve the local review page for that ingest
   dev-memory publish --branch <b>     Push and open the PR. Only run this yourself; the agent must not.
 `;
@@ -115,6 +122,60 @@ async function runExport(args: string[]): Promise<number> {
   } finally {
     db.close();
   }
+}
+
+async function runEntities(args: string[]): Promise<number> {
+  const { values } = parseArgs({ args, options: { product: { type: "string" }, json: { type: "boolean" } } });
+  const db = openDb();
+  try {
+    const entities = entityIndex(db, { product: values.product });
+    const missing = new Set(missingEntityPages(db, entities).map((entity) => `${entity.kind}:${entity.name}`));
+
+    if (values.json) {
+      console.log(JSON.stringify(entities.map((entity) => ({ ...entity, hasPage: !missing.has(`${entity.kind}:${entity.name}`) })), null, 2));
+      return 0;
+    }
+    if (entities.length === 0) {
+      console.log("紀錄裡還沒有提到任何 entity。");
+      return 0;
+    }
+    for (const entity of entities) {
+      const page = missing.has(`${entity.kind}:${entity.name}`) ? "  ← 還沒有頁面" : "";
+      console.log(`${entity.kind.padEnd(9)} ${entity.name}${page}`);
+      if (entity.writers.length > 0) console.log(`          寫入：${entity.writers.join(", ")}`);
+      if (entity.readers.length > 0) console.log(`          讀取：${entity.readers.join(", ")}`);
+      const unknown = entity.uses.filter((use) => use.access === "unknown").map((use) => use.repo);
+      if (unknown.length > 0) console.log(`          未標明讀寫：${[...new Set(unknown)].join(", ")}`);
+      console.log(`          來自 ${entity.recordIds.length} 筆紀錄`);
+    }
+    return 0;
+  } finally {
+    db.close();
+  }
+}
+
+async function runLint(args: string[]): Promise<number> {
+  const { values } = parseArgs({ args, options: { repo: { type: "string" } } });
+  const repo = await memoryRepo(values.repo);
+  if (!repo) return 2;
+
+  const db = openDb();
+  try {
+    const report = await lintRepo(db, repo);
+    console.log(formatLint(report));
+    return report.findings.some((finding) => finding.level === "error") ? 1 : 0;
+  } finally {
+    db.close();
+  }
+}
+
+async function runStale(args: string[]): Promise<number> {
+  const { values } = parseArgs({ args, options: { repo: { type: "string" } } });
+  const repo = await memoryRepo(values.repo);
+  if (!repo) return 2;
+
+  console.log(formatStale(await findStalePages(repo)));
+  return 0;
 }
 
 async function runIndexDocs(args: string[]): Promise<number> {
@@ -221,9 +282,20 @@ async function runInitRepo(args: string[]): Promise<number> {
 async function runEvalFile(args: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args,
-    options: { limit: { type: "string" }, json: { type: "boolean" } },
+    options: { limit: { type: "string" }, json: { type: "boolean" }, suggest: { type: "boolean" } },
     allowPositionals: true,
   });
+
+  if (values.suggest) {
+    const db = openDb();
+    try {
+      console.log(suggestCases(db, values.limit ? Number(values.limit) : 30));
+      return 0;
+    } finally {
+      db.close();
+    }
+  }
+
   const path = positionals[0];
   if (!path) {
     console.error("eval needs a case file");
@@ -381,6 +453,12 @@ switch (command) {
     process.exit(await runExport(rest));
   case "index-docs":
     process.exit(await runIndexDocs(rest));
+  case "entities":
+    process.exit(await runEntities(rest));
+  case "lint":
+    process.exit(await runLint(rest));
+  case "stale":
+    process.exit(await runStale(rest));
   case "review":
     process.exit(await runReview(rest));
   case "publish":

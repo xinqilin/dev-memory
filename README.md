@@ -2,7 +2,7 @@
 
 Claude Code 與 Codex CLI 共用的團隊開發記憶 plugin，搭配由 LLM 維護的 wiki。這個 repo 本身也是 plugin 的 marketplace。
 
-**目前狀態：Phase 1。** 已經可以蒐集對話、建索引、用中文搜尋、存下決策紀錄；還沒有 memory repo 提交、wiki、語意搜尋。完整規劃看 [docs/PLAN.md](docs/PLAN.md)，進度跟決策看 [docs/HANDOFF.md](docs/HANDOFF.md)，Phase 0 的實測結果看 [docs/spikes/phase-0.md](docs/spikes/phase-0.md)。
+**目前狀態：Phase 3。** 蒐集、中文搜尋、決策紀錄、wiki ingest、本機審核頁、PR 提交、entity 索引、lint 跟過時偵測都能用了；語意搜尋（Phase 4）還沒做。完整規劃看 [docs/PLAN.md](docs/PLAN.md)，進度跟決策看 [docs/HANDOFF.md](docs/HANDOFF.md)，Phase 0 的實測結果看 [docs/spikes/phase-0.md](docs/spikes/phase-0.md)。
 
 ## 前置需求
 
@@ -10,7 +10,7 @@ Claude Code 與 Codex CLI 共用的團隊開發記憶 plugin，搭配由 LLM 維
 |---|---|
 | [Bun](https://bun.sh) | `brew install bun`。**`bun` 必須在 PATH 裡**，hook 跟 MCP server 都是用 `bun` 啟動的；GUI 啟動的工具如果拿不到 shell 的 PATH 會整個不動 |
 | git | 一般安裝即可 |
-| `gh auth login` | 之後提交記憶、開 PR 用，Phase 2 才會用到 |
+| `gh auth login` | 提交記憶、開 PR、以及 `stale` 查 GitHub 用 |
 
 ## 安裝
 
@@ -70,7 +70,17 @@ bun src/cli.ts eval eval/queries.example.yaml   # 量搜尋準不準
 | `search <query>` | 關鍵字搜尋（`--repo`、`--here`、`--kind`、`--limit`、`--json`） |
 | `get <kind> <ref>` | 印出某一筆的完整內容 |
 | `record` | 從 stdin 讀 JSON 存成一筆紀錄 |
-| `eval <file.yaml>` | 用評測集量 Recall@5 跟 MRR |
+| `eval <file.yaml>` | 用評測集量 Recall@5 跟 MRR（`--suggest` 從記憶生候選題目） |
+| `init-repo <dir>` | 把 memory repo 的骨架加進既有 repo，不覆蓋任何現有檔案 |
+| `sync` | 從 memory repo 的 main 匯入紀錄跟頁面 |
+| `ingest-start <slug>` | 開一個 worktree 準備整理 wiki |
+| `export --branch <b>` | 把本機紀錄寫成 JSONL 提交到 repo |
+| `index-docs` | 把 repo 既有的人工文件列進 `wiki/index.md` |
+| `entities` | 紀錄提到哪些資料表、API、queue，誰寫誰讀，哪些還沒有頁面 |
+| `lint` | 檢查壞連結、孤兒頁、`sources[]`、同名的 active 頁 |
+| `stale` | 問 GitHub：頁面引用的程式碼在那之後有沒有被改過 |
+| `review --branch <b>` | 開本機審核頁 |
+| `publish --branch <b>` | push 並開 PR（**只有你自己能跑**） |
 
 ## 資料放在哪
 
@@ -80,7 +90,7 @@ bun src/cli.ts eval eval/queries.example.yaml   # 量搜尋準不準
 
 ```bash
 cd plugins/dev-memory
-bun test          # 目前 32 個測試
+bun test          # 目前 134 個測試
 ```
 
 ```
@@ -90,14 +100,16 @@ plugins/dev-memory/
 ├── .mcp.json                    # Claude Code 讀這份
 ├── mcp.json                     # Codex 只讀這份，不讀 .mcp.json
 ├── hooks/hooks.json             # 兩邊共用：SessionStart 補掃、Stop 增量存檔
-├── skills/mem-save/SKILL.md
+├── skills/{mem-save,wiki-ingest,wiki-lint}/SKILL.md
 ├── src/
 │   ├── cli.ts                   # 所有功能的入口
 │   ├── mcp-server.ts            # memory_search / memory_get
 │   ├── hooks/{session-start,stop}.ts
 │   ├── adapters/{claude-code,codex}.ts
-│   └── core/{db,config,archive,search,tokenize,repo-id,record,git-files,eval}.ts
-├── dist/mcp-server.js           # 打包好的 MCP server，改完 src 要 `bun run build`
+│   ├── review/{server,checks,ui}  # 本機審核頁
+│   └── core/{db,config,archive,search,tokenize,repo-id,record,git-files,eval,
+│             sync,worktree,export,index-docs,init-repo,publish,entities,lint,staleness}.ts
+├── dist/{mcp-server.js,review-ui/}  # 打包好的 MCP server 跟審核頁，改完 src 要 `bun run build`
 ├── eval/queries.example.yaml
 └── test/
 ```

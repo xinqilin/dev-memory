@@ -370,6 +370,14 @@ updated: 2026-09-04
 | 5. **來源檢查**（借自 llm_wiki 的 citation 驗證）：`/wiki-lint` 檢查每頁 frontmatter 的 `sources[]` 都指得到真實存在的紀錄，並抽查頁面內容是否真的來自那些紀錄 | 手動把某頁的 `sources[]` 改成不存在的 id，lint 要抓出來；憑空捏造、沒有來源的段落會被標示 |
 | 6. 評測集擴充到 50 題，加入跨 repo 題目 | 跟 Phase 1 的基準線比較 |
 
+**Phase 3 結果（2026-09-18）**：六個步驟完成，`bun test` 134 pass / 0 fail，plugin 0.2.0。
+- `core/entities.ts`：從紀錄的 `entities[]` 加 `repos[]` 整理出「誰寫、誰讀」，並列出哪些 entity 還沒有頁面。只呈現紀錄裡寫的，不猜讀寫關係。
+- `core/lint.ts` ＋ `/wiki-lint` skill：壞連結（`[[slug]]` 跟相對連結都查）、孤兒頁、`superseded_by` 指向、**`sources[]` 指得到真實紀錄**、同名 active 頁。語意矛盾交給 skill 的判斷半。
+- `core/staleness.ts`：用 `gh api repos/{repo}/commits?path=&since=` 查 `code_refs` 的檔案有沒有在頁面更新後被改過。實測對 `xinqilin/dev-memory` 正確抓到 tokenize.ts（2 個 commit）跟 search.ts（3 個）。`gh` 不可用時回報略過，不猜。
+- **問答回填**：SessionStart 注入的指引加一句，mem-save skill 加「Filing an answer back」段落。
+- **來源檢查**：除了 id 存不存在，另外比對頁面標題跟來源紀錄有沒有共同用字，沒有就出警告（標明是提示、要人工確認）。
+- **評測集**：`dev-memory eval --suggest` 從現有記憶生候選題目（標題當種子、識別字跟數字當判斷關鍵詞），但明講「query 要改寫成你自己的問法」——50 題的正式評測集仍然要人來寫。
+
 ### Phase 4：語意搜尋選配（Ollama + 使用者選模型，約 1 週）
 | 步驟 | 驗證 |
 |---|---|

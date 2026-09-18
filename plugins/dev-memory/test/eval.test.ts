@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { storeTurns } from "../src/core/archive";
 import { openDb } from "../src/core/db";
-import { formatReport, parseCases, runEval } from "../src/core/eval";
+import { formatReport, parseCases, runEval, suggestCases } from "../src/core/eval";
 import type { Turn } from "../src/adapters/types";
 
 const dirs: string[] = [];
@@ -93,4 +93,29 @@ test("the shipped example file parses", async () => {
   const cases = parseCases(await Bun.file(join(import.meta.dir, "..", "eval", "queries.example.yaml")).text());
   expect(cases.length).toBeGreaterThanOrEqual(5);
   expect(cases.every((c) => c.id && c.query)).toBe(true);
+});
+
+test("suggested cases come from the memory and parse as a case file", () => {
+  const db = freshDb();
+  db.run(
+    `insert into record (id, author, host, type, title, body, content_hash, created_at, status)
+     values ('01JBSUGGEST00000000000001', 'bill.lin', 'claude-code', 'decision', '搜尋改成 OR', '用 buildSearchQuery 之後 Recall@5 從 0% 變 40%', 'sha256:x', '2026-09-18', 'local')`,
+  );
+
+  const yaml = suggestCases(db, 5);
+  expect(yaml).toContain("搜尋改成 OR");
+  expect(yaml).toContain("buildSearchQuery"); // an identifier is a better expectation than a common word
+  expect(yaml).toContain("← 改成你自己的問法"); // the seeded query is a starting point, not the eval
+
+  const cases = parseCases(yaml);
+  expect(cases).toHaveLength(1);
+  expect(cases[0].expect.any_of!.length).toBeGreaterThan(0);
+  db.close();
+});
+
+test("suggesting from an empty memory says so instead of inventing questions", () => {
+  const db = freshDb();
+  expect(suggestCases(db)).toContain("記憶裡還沒有紀錄或頁面");
+  expect(parseCases(suggestCases(db))).toEqual([]);
+  db.close();
 });

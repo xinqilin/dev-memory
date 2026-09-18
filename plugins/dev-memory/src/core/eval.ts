@@ -65,6 +65,46 @@ export function runEval(db: Database, cases: EvalCase[], limit = 5): EvalReport 
   };
 }
 
+/**
+ * Candidate cases drawn from what the memory actually holds. The query is seeded with the title,
+ * which is exactly what an eval must NOT stay as: the point is to ask in different words from the
+ * stored text. So these are a starting point for a person to rewrite, never a finished suite.
+ */
+export function suggestCases(db: Database, limit = 30): string {
+  const rows = [
+    ...(db.query("select 'page' as kind, path as ref, title, body from page where status != 'superseded' order by updated desc limit ?").all(limit) as any[]),
+    ...(db.query("select 'record' as kind, id as ref, title, body from record order by created_at desc limit ?").all(limit) as any[]),
+  ].slice(0, limit);
+
+  if (rows.length === 0) return "cases: []\n# 記憶裡還沒有紀錄或頁面，先 sweep 或 sync 再來。\n";
+
+  const lines = [
+    "# 候選評測題目，從現有的記憶生出來的。",
+    "# 請把每題的 query 改寫成「半年後你會怎麼問」——用跟內文不一樣的說法，那才測得出 recall。",
+    "# expect 是判斷命中的關鍵詞，需要的話自己調整。",
+    "",
+    "cases:",
+  ];
+
+  rows.forEach((row, index) => {
+    const title = String(row.title ?? "").replace(/"/g, "'");
+    const terms = distinctiveTerms(String(row.body ?? ""));
+    lines.push(`  - id: case-${String(index + 1).padStart(2, "0")}`);
+    lines.push(`    query: "${title}"   # ← 改成你自己的問法`);
+    lines.push(`    expect:`);
+    lines.push(`      any_of: [${terms.map((term) => `"${term}"`).join(", ") || `"${title}"`}]`);
+  });
+
+  return lines.join("\n") + "\n";
+}
+
+/** Identifiers and long-ish words carry more signal than common Chinese words. */
+function distinctiveTerms(body: string): string[] {
+  const identifiers = [...body.matchAll(/[A-Za-z][A-Za-z0-9_]{5,}/g)].map((match) => match[0]);
+  const numbers = [...body.matchAll(/\b\d+(?:[.,]\d+)?%?\b/g)].map((match) => match[0]).filter((value) => value.length > 1);
+  return [...new Set([...identifiers, ...numbers])].slice(0, 3);
+}
+
 export function formatReport(report: EvalReport): string {
   const lines = report.cases.map((c) => `${c.rank === null ? "miss" : `#${c.rank}  `}  ${c.id.padEnd(28)} ${c.query}`);
   return [
