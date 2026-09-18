@@ -4,7 +4,7 @@
     "dev-memory": {
       "type": "stdio",
       "command": "bun",
-      "args": ["${PLUGIN_ROOT}/src/hello-mcp.ts"]
+      "args": ["${PLUGIN_ROOT}/dist/mcp-server.js"]
     }
   }
 }

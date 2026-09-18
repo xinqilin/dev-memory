@@ -97,3 +97,25 @@ test("the snippet marks the matched part", () => {
   expect(hit.title).toStartWith("使用者: ");
   db.close();
 });
+
+test("the snippet comes from the original text, not the tokenized body", () => {
+  const db = freshDb();
+  storeTurns(db, [turn(1, "先確認 stack trace：因為佔位符而拋例外，要找出為什麼那個欄位是空的")]);
+
+  const [hit] = search(db, "例外");
+  expect(hit.snippet).toContain("拋[例外]，要找出");
+  expect(hit.snippet).not.toContain("拋例 例外"); // bigrams must never reach the reader
+  db.close();
+});
+
+test("a long body is trimmed around the match", () => {
+  const db = freshDb();
+  storeTurns(db, [turn(1, "前面".repeat(80) + "關鍵字在中間" + "後面".repeat(80))]);
+
+  const [hit] = search(db, "關鍵字");
+  expect(hit.snippet).toStartWith("… ");
+  expect(hit.snippet).toEndWith(" …");
+  expect(hit.snippet).toContain("[關鍵字]");
+  expect(hit.snippet.length).toBeLessThan(200);
+  db.close();
+});

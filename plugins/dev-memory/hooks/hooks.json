@@ -5,7 +5,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/hello-hook.ts\""
+            "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/hooks/session-start.ts\"",
+            "statusMessage": "dev-memory: catching up"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun \"${CLAUDE_PLUGIN_ROOT}/src/hooks/stop.ts\"",
+            "statusMessage": "dev-memory: archiving"
           }
         ]
       }

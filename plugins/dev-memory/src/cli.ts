@@ -6,6 +6,7 @@ import { archiveFile, sweep, totals } from "./core/archive";
 import { configPath, dbPath, ensureConfig, homeDir, loadConfig } from "./core/config";
 import { hasFts5, openDb, schemaVersion, sqliteVersion } from "./core/db";
 import { repoIdFromDir } from "./core/repo-id";
+import { type RecordInput, addRecord, contentHash, findByContentHash } from "./core/record";
 import { type Kind, get, search } from "./core/search";
 
 const USAGE = `dev-memory
@@ -16,7 +17,39 @@ Usage:
   dev-memory sweep                    Archive every transcript of both tools
   dev-memory search <query>           Keyword search (--repo, --kind, --limit, --json)
   dev-memory get <kind> <ref>         Print the full text behind a search hit
+  dev-memory record                   Save one record; reads its JSON from stdin
 `;
+
+/** The mem-save skill pipes JSON in, which avoids quoting a multi-line body on a command line. */
+async function addRecordFromStdin(): Promise<number> {
+  const raw = await Bun.stdin.text();
+  let input: RecordInput;
+  try {
+    input = JSON.parse(raw);
+  } catch (error) {
+    console.error(`record expects JSON on stdin: ${error}`);
+    return 2;
+  }
+  if (!input?.type || !input?.title || !input?.body) {
+    console.error('record needs at least {"type":"decision","title":"…","body":"…"}');
+    return 2;
+  }
+
+  const db = openDb();
+  try {
+    const existing = findByContentHash(db, contentHash(input));
+    if (existing) {
+      console.log(`already saved as ${existing}`);
+      return 0;
+    }
+    const record = addRecord(db, input);
+    console.log(`saved ${record.id} (${record.type}) ${record.title}`);
+    console.log(`author ${record.author}  repos ${record.repos.join(", ") || "none"}  branch ${record.branch ?? "none"}`);
+    return 0;
+  } finally {
+    db.close();
+  }
+}
 
 function hostFromPath(path: string): Host {
   return path.includes("/.codex/") || /rollout-[^/]*\.jsonl$/.test(path) ? "codex" : "claude-code";
@@ -144,6 +177,8 @@ switch (command) {
     process.exit(runSearch(rest));
   case "get":
     process.exit(runGet(rest));
+  case "record":
+    process.exit(await addRecordFromStdin());
   case undefined:
   case "-h":
   case "--help":

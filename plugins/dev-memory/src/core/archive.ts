@@ -112,8 +112,9 @@ export interface SweepOptions {
 
 /** Scans both tools' transcript directories. Used by SessionStart to catch anything Stop missed. */
 export async function sweep(db: Database, options: SweepOptions = {}): Promise<ArchiveResult[]> {
-  const claudeRoot = options.claudeRoot ?? join(homedir(), ".claude", "projects");
-  const codexRoot = options.codexRoot ?? join(homedir(), ".codex", "sessions");
+  // The env overrides exist so tests never touch the real transcript directories.
+  const claudeRoot = options.claudeRoot ?? process.env.DEV_MEMORY_CLAUDE_ROOT ?? join(homedir(), ".claude", "projects");
+  const codexRoot = options.codexRoot ?? process.env.DEV_MEMORY_CODEX_ROOT ?? join(homedir(), ".codex", "sessions");
   const results: ArchiveResult[] = [];
 
   for (const [root, pattern, host] of [

@@ -30,6 +30,11 @@ export function identifierParts(word: string): string[] {
     .map((p) => p.toLowerCase());
 }
 
+/** The query as a human reads it: CJK runs and words, not the bigrams used for matching. */
+export function queryTerms(query: string): string[] {
+  return [...segments(query)].map((segment) => segment.text);
+}
+
 export function tokenizeForIndex(text: string): string {
   const tokens: string[] = [];
   for (const seg of segments(text)) {

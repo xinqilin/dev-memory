@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { SCHEMA_VERSION } from "../src/core/db";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -37,7 +38,7 @@ test("init creates the home directory, config and database", async () => {
   expect(existsSync(join(home, "config.toml"))).toBe(true);
   expect(existsSync(join(home, "memory.db"))).toBe(true);
   expect(stdout).toContain("(created)");
-  expect(stdout).toContain("schema v1");
+  expect(stdout).toContain(`schema v${SCHEMA_VERSION}`);
   expect(stdout).toContain("FTS5: yes");
   expect(stdout).toContain("search      none");
 });
