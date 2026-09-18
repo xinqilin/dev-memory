@@ -332,6 +332,15 @@ updated: 2026-09-04
 | 8. 回填磁碟上現有的 Claude transcript 跟 Codex rollout | 匯入筆數跟檔案數對得上 |
 | 9. 評測集 `eval/queries.yaml`（30 題，部分故意用跟紀錄不同的說法問）加上 `dev-memory eval` | 輸出「只用關鍵字」跟「AI 改寫查詢多試幾次」兩種的 Recall@5，當作 Phase 4 的基準線 |
 
+**Phase 1 結果（2026-09-18）**：步驟 1–8 完成，`bun test` 77 pass / 0 fail。
+- `core/{db,config,archive,search,record,git-files,eval}.ts`、`adapters/{claude-code,codex}.ts`、`hooks/{session-start,stop}.ts`、`cli.ts`、`mcp-server.ts`（SDK 打包成 `dist/mcp-server.js`）、`skills/mem-save`。
+- 實測：552 份 transcript → 2,596 個 turn；Codex 105/105 有 repo ID。
+- **查出兩個缺陷並修掉**：
+  1. 查詢全部 AND 串起來 → 中文問句是一整個連續段，永遠對不上，Recall 0%。改成 `buildSearchQuery`（整段 phrase 加上各個 bigram 一起 OR），`buildMatchQuery` 保留精準子字串語意。
+  2. `relevance()` 把 bm25 的正負號弄反，越差的結果排越前面。
+- **基準線**：`eval/queries.example.yaml` 5 題，Recall@5 從 0% → 40%，MRR 0.267。語意型問題（「那個一直維持某個狀態的欄位叫什麼」）關鍵字搜尋本來就打不到，是 Phase 4 向量搜尋要解的。
+- **步驟 9 待補**：正式的 30 題評測集要由記得那些決策的人來寫，我只附了 5 題範例跟 runner。
+
 ### Phase 2：Memory repo、提交、wiki ingest、本機審核頁（取代 n8n + Apps Script，約 2–2.5 週）
 | 步驟 | 驗證 |
 |---|---|

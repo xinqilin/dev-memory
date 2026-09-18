@@ -1,4 +1,4 @@
-# Handoff — 2026-09-18（Phase 0 完成）
+# Handoff — 2026-09-18（Phase 1 步驟 1–8 完成）
 
 ## Goal
 
@@ -10,7 +10,11 @@
 
 ## Current Status
 
-- **Phase 0 完成（2026-09-18）**，結果在 `docs/spikes/phase-0.md`。Phase 1 還沒開始。
+- **Phase 1 步驟 1–8 完成（2026-09-18）**：可以蒐集、建索引、中文搜尋、存紀錄，MCP 跟兩個 hook 都接上了。`bun test` 77 pass / 0 fail。
+  - plugin repo 已推上 `xinqilin/dev-memory`（private），Claude Code 從私有 marketplace 安裝、hook、skill、MCP 四項都實測過。
+  - Codex 端還沒實測（使用者說之後再修）。
+  - 步驟 9 的 30 題評測集待補：目前只有 5 題範例，基準線 Recall@5 40%、MRR 0.267。
+- **Phase 0 完成**，結果在 `docs/spikes/phase-0.md`。
   - git repo：branch `master`，共 4 個 commit（初始化、hello plugin、核心 spike、Phase 0 文件），**沒有 push、沒有 remote**。
   - 0.1、0.4、0.5、0.6 實測通過；`bun test` 32/32 通過。
   - 0.2–0.3：Claude Code 的 `claude plugin validate --strict` 通過；Codex 在隔離的 `CODEX_HOME` 實測能安裝，skill 跟 stdio MCP 都看得到。**還沒在兩個工具的真實 session 裡驗證 hook 輸出跟 MCP 呼叫**，要 Bill 照 spike 文件最後一節自己跑。
@@ -125,7 +129,11 @@
 3. Bill 提供：
    - n8n workflow 的 export JSON（`schema.md` 要沿用它的 prompt 跟 category/slug 規則）
    - billing 底下要納入 `repos.yaml` 的 code repo 清單
-4. 以上確認後進入 Phase 1。`src/hello-*.ts` 跟 `skills/hello` 屬於 Phase 0 的 spike，Phase 1 有正式元件後就移除。
+4. Phase 1 剩下的：
+   - 在 Codex 上實測 hook、skill、MCP（使用者說之後再修）
+   - 補 `eval/queries.yaml` 的 30 題（要由記得那些決策的人寫，目前只有 5 題範例）
+   - 使用者自己跑一次 `bun src/cli.ts init` 跟 `sweep`，把既有對話灌進 `~/.dev-memory`
+5. 之後進 Phase 2：memory repo 就地套用到 `104mis-billing-doc`，先在 `xinqilin/dev-memory-test` 用假資料跑通。
 
 ## Critical Files
 
@@ -144,7 +152,14 @@
 ## Gotchas Found This Session
 
 - **本次討論也會被刪**：Bill 的 `cleanupPeriodDays` 設 14，這次討論的 transcript 大約 2026-10-01 就會被刪，只能靠這份檔案保存。
-- **Claude transcript 的 user 行要過濾**：`isMeta`、`tool_result`、`<task-notification>`、`<command-*>`；subagent 的對話另外放在 `subagents/` 目錄。
+- **Claude transcript 的行類型比想像多**（Phase 1 實測）：除了 `user`/`assistant`，還有 `attachment`（數量最多）、`mode`、`permission-mode`、`ai-title`、`last-prompt`、`atis-latch`，全都要濾掉。
+- **subagent 不是放在 `subagents/` 目錄**：同一個檔案裡用 `isSidechain: true` 標記。
+- **user 行要過濾**：`isMeta`、`tool_result`、`<task-notification>`、`<command-*>`、`<local-command-std*>`、`[Request interrupted`；`<system-reminder>` 區塊要剝掉但保留使用者自己打的字。
+- **Codex 的對話會重複兩次**：`event_msg.user_message`／`agent_message` 一次，`response_item.message` 又一次。以 `event_msg` 為準，`response_item` 只在該 role 沒有 `event_msg` 時補。
+- **中文問句是一整個連續段**：bigram phrase 等於精準子字串比對，拿來搜自然語言問句 Recall 是 0%。搜尋要用寬鬆版（整段 phrase 加各個 bigram 一起 OR），精準版留給需要子字串語意的地方。
+- **SQLite 的 bm25 是負數**，越負越相關。換算成分數時弄反過就會整個排序顛倒（這個 bug 被評測集抓到）。
+- **Bun 有 `TOML.parse` 但沒有 `stringify`**（1.3.4），寫設定檔要用模板。`Bun.YAML.parse` 則是可用的。
+- **sandbox 下 `bun add` 要指定 `BUN_INSTALL_CACHE_DIR` 跟 `TMPDIR`**，否則會報 tempdir PermissionDenied。
 - **Codex rollout 的結構**：
   - `session_meta.git` 有 `repository_url`、`branch`、`commit_hash`
   - 改檔常常是透過 `exec_command`，所以要用 git diff 判斷改了哪些檔案

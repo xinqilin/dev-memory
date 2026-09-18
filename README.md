@@ -2,7 +2,7 @@
 
 Claude Code 與 Codex CLI 共用的團隊開發記憶 plugin，搭配由 LLM 維護的 wiki。這個 repo 本身也是 plugin 的 marketplace。
 
-**目前狀態：Phase 0（spike）。** 裡面只有一個 hello plugin 跟三個核心模組（FTS5、中文斷詞、repo ID），還不能實際蒐集記憶。完整規劃看 [docs/PLAN.md](docs/PLAN.md)，進度跟決策看 [docs/HANDOFF.md](docs/HANDOFF.md)，Phase 0 的實測結果看 [docs/spikes/phase-0.md](docs/spikes/phase-0.md)。
+**目前狀態：Phase 1。** 已經可以蒐集對話、建索引、用中文搜尋、存下決策紀錄；還沒有 memory repo 提交、wiki、語意搜尋。完整規劃看 [docs/PLAN.md](docs/PLAN.md)，進度跟決策看 [docs/HANDOFF.md](docs/HANDOFF.md)，Phase 0 的實測結果看 [docs/spikes/phase-0.md](docs/spikes/phase-0.md)。
 
 ## 前置需求
 
@@ -10,7 +10,7 @@ Claude Code 與 Codex CLI 共用的團隊開發記憶 plugin，搭配由 LLM 維
 |---|---|
 | [Bun](https://bun.sh) | `brew install bun`。**`bun` 必須在 PATH 裡**，hook 跟 MCP server 都是用 `bun` 啟動的；GUI 啟動的工具如果拿不到 shell 的 PATH 會整個不動 |
 | git | 一般安裝即可 |
-| `gh auth login` | 之後提交記憶、開 PR 用，Phase 0 還用不到 |
+| `gh auth login` | 之後提交記憶、開 PR 用，Phase 2 才會用到 |
 
 ## 安裝
 
@@ -42,13 +42,35 @@ codex
 
 ## 確認裝好了
 
+安裝後開一個新 session，然後：
+
 | 檢查 | 怎麼看 | 預期 |
 |---|---|---|
-| Hook | 問 AI：「context 裡有 DEV_MEMORY_HOOK_OK 嗎？」 | `DEV_MEMORY_HOOK_OK host=claude-code`（Codex 則是 `host=codex`） |
-| Skill | Claude Code 打 `/dev-memory:hello`；Codex 說「用 dev-memory 的 hello skill」 | 回 `DEV_MEMORY_SKILL_OK` |
-| MCP | 同上，skill 會呼叫 `hello` tool | 回 `DEV_MEMORY_MCP_OK hello ...` |
+| Hook | 問 AI：「context 裡有 dev-memory 的訊息嗎？」 | `dev-memory: N turns, M records indexed` |
+| MCP | Claude Code 打 `/mcp` | `dev-memory` 是 connected，有 `memory_search`、`memory_get` |
+| Skill | 做完一個決定後說「把這個決定存進記憶」 | 走 mem-save skill，列出草稿讓你確認 |
 
-hook 每次執行都會在 `~/.dev-memory/logs/hello-hook.log` 附加一行證據（host、事件、環境變數），可以用 `tail -1` 確認。
+也可以直接用 CLI：
+
+```bash
+cd plugins/dev-memory
+bun src/cli.ts init                 # 建立 ~/.dev-memory、索引、設定
+bun src/cli.ts sweep                # 掃描兩個工具既有的對話紀錄
+bun src/cli.ts search 例外處理       # 中文、英文、程式識別字都吃
+bun src/cli.ts eval eval/queries.example.yaml   # 量搜尋準不準
+```
+
+## 指令
+
+| 指令 | 用途 |
+|---|---|
+| `init` | 建立 `~/.dev-memory`、索引跟設定，並檢查 SQLite 有沒有 FTS5 |
+| `archive <file>` | 只讀某個 transcript 的新增部分（Stop hook 用的就是這個） |
+| `sweep` | 掃描兩個工具的所有對話紀錄，補上漏掉的 |
+| `search <query>` | 關鍵字搜尋（`--repo`、`--here`、`--kind`、`--limit`、`--json`） |
+| `get <kind> <ref>` | 印出某一筆的完整內容 |
+| `record` | 從 stdin 讀 JSON 存成一筆紀錄 |
+| `eval <file.yaml>` | 用評測集量 Recall@5 跟 MRR |
 
 ## 資料放在哪
 
@@ -67,11 +89,26 @@ plugins/dev-memory/
 ├── plugin.json                  # Codex 讀這份（Agent Plugins 1.0.0）
 ├── .mcp.json                    # Claude Code 讀這份
 ├── mcp.json                     # Codex 只讀這份，不讀 .mcp.json
-├── hooks/hooks.json             # 兩邊共用
-├── skills/hello/SKILL.md
-├── src/core/{tokenize,repo-id}.ts
+├── hooks/hooks.json             # 兩邊共用：SessionStart 補掃、Stop 增量存檔
+├── skills/mem-save/SKILL.md
+├── src/
+│   ├── cli.ts                   # 所有功能的入口
+│   ├── mcp-server.ts            # memory_search / memory_get
+│   ├── hooks/{session-start,stop}.ts
+│   ├── adapters/{claude-code,codex}.ts
+│   └── core/{db,config,archive,search,tokenize,repo-id,record,git-files,eval}.ts
+├── dist/mcp-server.js           # 打包好的 MCP server，改完 src 要 `bun run build`
+├── eval/queries.example.yaml
 └── test/
 ```
+
+改完 `src/mcp-server.ts` 或它相依的檔案後要重新打包：
+
+```bash
+bun run build
+```
+
+打包進 repo 是刻意的：從 git 安裝的 marketplace 不會有 `node_modules`。
 
 兩份 MCP 設定不能刪掉任何一份：Claude Code 只讀 `.mcp.json`，Codex 只讀 `mcp.json`（Phase 0 實測，見 spike 文件）。Skill 的內容不能寫死任何一個工具專屬的 tool 名稱。
 
