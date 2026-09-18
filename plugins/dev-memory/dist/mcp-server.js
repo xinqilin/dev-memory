@@ -34967,7 +34967,7 @@ function get(db, kind, ref) {
 
 // src/mcp-server.ts
 var KINDS = ["page", "record", "turn"];
-var server = new McpServer({ name: "dev-memory", version: "0.0.1" });
+var server = new McpServer({ name: "dev-memory", version: "0.1.0" });
 server.registerTool("memory_search", {
   title: "Search development memory",
   description: "Search the team's development memory: wiki pages, saved records and raw conversation turns. " + "Works with Chinese and with code identifiers. Ask in the words you would use with a teammate, " + "and try a second wording if the first one returns nothing.",
