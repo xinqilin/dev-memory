@@ -58,7 +58,7 @@ Codex CLI  ──┴───────> dev-memory CLI（核心） ──> ~/
 | Claude Code plugin + Codex plugin（同一份原始碼、兩份 manifest） | 蒐集、萃取、ingest、搜尋 | 必要 |
 | Bun + `bun:sqlite` | CLI、MCP server、本機索引。macOS 用**系統** SQLite（Phase 0 實測 3.51.0 有 FTS5），Linux/Windows 用 Bun 自帶的；`dev-memory init` 要檢查 `ENABLE_FTS5` | 必要（`brew install bun`，PATH 裡要有 `bun`） |
 | git + `gh` | 同步 memory repo、開 PR；用 `gh auth login` 或 SSH 認證，**不需要 PAT** | 必要 |
-| GitHub 私有 repo ×3 | ① plugin／marketplace：`xinqilin/dev-memory`（已建，private；未來搬 104corp）<br>② 測試記憶：`xinqilin/dev-memory-test`（假資料，還沒建）<br>③ 正式記憶：沿用既有的 `104corp/104mis-billing-doc` | 必要 |
+| GitHub 私有 repo ×3 | ① plugin／marketplace：`xinqilin/dev-memory`（已建，private；未來搬 104corp）<br>② 測試記憶：`xinqilin/dev-memory-test`（假資料，已建）<br>③ 正式記憶：沿用既有的 `104corp/104mis-billing-doc` | 必要 |
 | GitHub Actions | gitleaks 掃全 repo；結構 lint **只掃 `wiki/` 與 `records/`**（用內建的 `GITHUB_TOKEN`）。既有文件沒有 frontmatter，不納入 lint | 必要 |
 | Ollama + embedding 模型（qwen3-embedding 0.6b/4b/8b 或 bge-m3） | 語意搜尋，向量存在 SQLite | **使用者自己選**，預設不裝；見下方「語意搜尋選配」 |
 | claude-mem | **不使用**，Phase 5 驗收後停用 | 退場 |

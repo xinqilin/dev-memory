@@ -71,7 +71,7 @@
 
 - **三個 repo 的角色（2026-09-18 定案）**：
   - `xinqilin/dev-memory`（private，**已建並 push**）：plugin 原始碼＋marketplace。會隨安裝散佈給每個人，所以**任何記憶或真實資料都不能放**。
-  - `xinqilin/dev-memory-test`（還沒建）：測試期的假資料 memory repo。
+  - `xinqilin/dev-memory-test`（已建，private，骨架已套用）：測試期的假資料 memory repo。
   - `104corp/104mis-billing-doc`（既有）：正式 memory repo，**沿用不另開**，只放 billing。
 - **正本**：放在 memory repo，就地加在既有文件旁邊。
   - `records/<product>/<yyyy-mm>/<author>.jsonl`：只新增不修改，一人一月一檔
