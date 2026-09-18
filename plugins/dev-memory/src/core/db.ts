@@ -93,6 +93,10 @@ const MIGRATIONS: string[][] = [
       primary key (ref, kind)
     )`,
   ],
+  [
+    // Line numbers must survive a resume, otherwise turn ids shift between chunks.
+    `alter table archive_cursor add column line_no integer not null default 0`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
