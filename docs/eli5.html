@@ -289,7 +289,7 @@
 <div class="wrap">
 
   <header>
-    <div class="kicker">dev-memory · 團隊開發記憶 · 2026-09-18</div>
+    <div class="kicker">dev-memory · 團隊開發記憶 · 2026-09-20</div>
     <h1>一段對話，<br>怎麼變成全隊的百科</h1>
     <p class="lead">開發過程中的決定，自動變成全隊查得到的文件。七個步驟現在都跑得起來，已經走完一次真實的 PR。</p>
     <div class="route" aria-label="整條路線">
@@ -608,6 +608,99 @@
   </section>
 
   <section>
+    <h2>跑一次給你看</h2>
+    <p class="lead">這是真的跑過的一次：一個搜尋排序的決定，從對話變成團隊 repo 裡的一頁。</p>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>步驟</th><th>AI 做什麼</th><th>你做什麼</th><th>動到什麼</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>討論中</td>
+            <td>正常工作，順便被記下來</td>
+            <td>討論、做決定</td>
+            <td>對話自動進 <code>turn</code> 表</td>
+          </tr>
+          <tr>
+            <td>存卡片</td>
+            <td>起草卡片：原因、決定、放棄了什麼</td>
+            <td>看草稿，說「可以」</td>
+            <td><code>record</code> 表，狀態 <code>local</code></td>
+          </tr>
+          <tr>
+            <td>開工作區</td>
+            <td><code>ingest-start</code> 開一個獨立的 worktree</td>
+            <td>—</td>
+            <td>你自己的 clone 完全不動</td>
+          </tr>
+          <tr>
+            <td><strong>確認點 ①</strong></td>
+            <td>列出候選卡片</td>
+            <td>刪掉不要的、改錯的</td>
+            <td>還沒有檔案變動</td>
+          </tr>
+          <tr>
+            <td><strong>確認點 ②</strong></td>
+            <td>提整理計畫：新增哪頁、更新哪頁、哪個舊決策被取代</td>
+            <td>點頭</td>
+            <td>還沒有檔案變動</td>
+          </tr>
+          <tr>
+            <td>產生</td>
+            <td>寫頁面、更新 index 跟 log、把卡片匯出成 JSONL</td>
+            <td>—</td>
+            <td>worktree 裡 5 個檔案</td>
+          </tr>
+          <tr>
+            <td><strong>確認點 ③</strong></td>
+            <td>開審核頁，等你</td>
+            <td>讀、改、按「核准並 commit」</td>
+            <td>commit 在 worktree，還沒上 GitHub</td>
+          </tr>
+          <tr>
+            <td>送出</td>
+            <td>不能碰這一步</td>
+            <td>按「送出 PR」</td>
+            <td>push ＋ 開 PR，CI 開始跑</td>
+          </tr>
+          <tr>
+            <td>合併後</td>
+            <td>—</td>
+            <td>merge，然後 <code>sync</code></td>
+            <td>卡片轉 <code>merged</code>、頁面進索引</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ideas">
+      <div class="idea">
+        <h3>那次動到的 5 個檔案</h3>
+        <p class="note">
+          <strong>新增</strong> <code>wiki/dev-memory/decisions/search-query-or-bigram.md</code> ← 主角，要讀的就這頁<br>
+          <strong>新增</strong> <code>records/dev-memory/2026-09/bill.lin.jsonl</code> ← 卡片原文<br>
+          <strong>更新</strong> <code>wiki/index.md</code> ← 沒連過去就沒人找得到<br>
+          <strong>更新</strong> <code>wiki/log.md</code> ← 這次 ingest 做了什麼<br>
+          <strong>更新</strong> <code>repos.yaml</code> ← 多了一個產品分類
+        </p>
+        <p>五個是一組：只留頁面不留卡片，來源就追不回去；只留卡片不更新索引，就沒有人找得到。</p>
+      </div>
+      <div class="idea">
+        <h3>合併之後再搜一次</h3>
+        <p class="note">
+          搜「中文怎麼斷詞」：<br>
+          <strong>1.</strong> wiki 頁（整理過的答案）<br>
+          <strong>2.</strong> 卡片（當初的決定）<br>
+          <strong>3.</strong> 原始對話（完整脈絡）
+        </p>
+        <p>三層都在，而且照整理程度排序。要快就看第一筆，要追細節就往下翻。</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <h2>資料從哪來、存到哪</h2>
     <p class="lead">同一份內容會換三種身分：對話 → 卡片 → 頁面。每次換身分都有人點頭。</p>
 
@@ -750,6 +843,80 @@
   </section>
 
   <section>
+    <h2>憑什麼找得到</h2>
+    <p class="lead">搜尋不是模糊比對，是三條明確的規則。</p>
+
+    <div class="ideas">
+      <div class="idea">
+        <div class="blocks" role="img" aria-label="存進去時怎麼切詞">
+          <div class="brow">
+            <span class="brow-label">① 中文：兩個字一塊，而且重疊</span>
+            <span class="blk">例外</span><span class="blk">外處</span><span class="blk">處理</span>
+          </div>
+          <div class="brow">
+            <span class="brow-label">② 程式名字：整個留著，另外拆開</span>
+            <span class="blk mono">sapStatus</span><span class="to">→</span>
+            <span class="blk mono">sapstatus</span><span class="blk mono">sap</span><span class="blk mono">status</span>
+          </div>
+        </div>
+        <h3>存進去時怎麼切</h3>
+        <p>中文重疊切成兩字一塊，所以「例外處理」裡面搜「外處」也找得到。程式名字保留完整形式（搜 <code>WAIT_FOR_INSERT</code> 不會誤中更長的那個），同時拆成 <code>sap</code>、<code>status</code>，用其中一段也搜得到。</p>
+      </div>
+
+      <div class="idea">
+        <div class="blocks" role="img" aria-label="查詢時怎麼比對">
+          <div class="brow">
+            <span class="brow-label">問「中文的搜尋是怎麼切字的」</span>
+          </div>
+          <div class="brow">
+            <span class="blk hit">整句連在一起</span>
+            <span class="verdict no">✕ 沒有一模一樣的句子</span>
+          </div>
+          <div class="brow">
+            <span class="blk">中文</span><span class="blk">文的</span><span class="blk">搜尋</span><span class="blk">怎麼</span><span class="blk">切字</span>
+            <span class="verdict yes">✓ 命中越多詞排越前面</span>
+          </div>
+        </div>
+        <h3>查詢時怎麼比對</h3>
+        <p>問句不會跟記憶裡的字一模一樣，所以整句跟每個小塊<strong>同時</strong>拿去比，命中越多排越前面。「的」「是」這種單字會被丟掉，只會製造雜訊。</p>
+        <p class="legend">這條規則是評測集逼出來的：一開始要求全部命中，問句式搜尋的命中率是 0%。</p>
+      </div>
+    </div>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>排序規則</th><th>怎麼算</th><th>為什麼</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>相關度</td>
+            <td>標準的全文檢索分數（bm25）</td>
+            <td>命中越多、文件越短、詞越罕見，分數越高</td>
+          </tr>
+          <tr>
+            <td>整理程度</td>
+            <td>wiki 頁 ×3　＞　卡片 ×2　＞　原始對話 ×1</td>
+            <td>整理過的答案優先，原始對話是最後才翻的</td>
+          </tr>
+          <tr>
+            <td>離你多近</td>
+            <td>同一個 repo 的內容 ×2</td>
+            <td>你現在在哪個專案，那個專案的決定更可能是你要找的</td>
+          </tr>
+          <tr>
+            <td>已被取代的</td>
+            <td>完全不列出</td>
+            <td>頁面留著可追溯，但不該再誤導任何人</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note"><strong>搜尋片段是原文，不是切碎的內容。</strong> 資料庫裡存兩份：原文給人看，切過詞的只給比對用。所以你看到的是「因為佔位符而拋<strong>[例外]</strong>，要找出…」，不是「拋例 例外 外要」。</p>
+  </section>
+
+  <section>
     <h2>哪一步在哪裡做</h2>
     <p class="lead">對話裡只挑內容、對計畫。真正的編輯跟審核在瀏覽器，不是在對話視窗裡。</p>
     <div class="checks">
@@ -821,6 +988,100 @@
         <p>每次 ingest 會同時更新總目錄跟相關頁面；被推翻的決定不刪掉，標成「已被取代」，搜尋時不會再跳出來誤導人。</p>
       </div>
     </div>
+  </section>
+
+  <section>
+    <h2>三層各自負責什麼</h2>
+    <p class="lead">借自 LLM Wiki 的結構，但每一層的規則都不一樣——這正是它能長期維持正確的原因。</p>
+
+    <div class="ideas">
+      <div class="idea">
+        <div class="pic">
+          <svg viewBox="0 0 320 250" role="img" aria-label="三層：規則層在上，整理層在中間，原始層在下">
+            <rect class="f-none s-line dash" x="30" y="14" width="260" height="52" rx="8"/>
+            <text class="t" x="160" y="40" text-anchor="middle" font-size="17">規則層</text>
+            <text class="t t-mono t-muted" x="160" y="58" text-anchor="middle" font-size="10">schema.md · repos.yaml</text>
+            <text class="t t-muted" x="160" y="80" text-anchor="middle" font-size="12">人寫，AI 每次整理前先讀</text>
+
+            <rect class="f-card s-edge" x="30" y="92" width="260" height="60" rx="8"/>
+            <text class="t t-card" x="160" y="118" text-anchor="middle" font-size="18" font-weight="700">整理層：wiki</text>
+            <text class="t t-mono t-card" x="160" y="138" text-anchor="middle" font-size="10">index.md · 主題頁 · log.md</text>
+            <text class="t t-muted" x="160" y="168" text-anchor="middle" font-size="12">AI 寫、人核准；可以改寫</text>
+
+            <rect class="f-soft s-ink" x="30" y="180" width="260" height="56" rx="8"/>
+            <text class="t" x="160" y="206" text-anchor="middle" font-size="17">原始層</text>
+            <text class="t t-mono t-muted" x="160" y="224" text-anchor="middle" font-size="10">records/*.jsonl · 本機對話</text>
+          </svg>
+        </div>
+        <h3>為什麼要分三層</h3>
+        <p><strong>原始層不可改</strong>，所以任何一句話都追得回源頭。<strong>整理層可以改寫</strong>，所以文件能一直維持正確而不用擔心弄丟歷史。<strong>規則層獨立</strong>，所以要改 AI 的行為只要改一份 markdown，不用改程式、不用重新發版。</p>
+      </div>
+
+      <div class="idea">
+        <div class="pic">
+          <svg viewBox="0 0 320 250" role="img" aria-label="往下找答案，往上長知識">
+            <text class="t t-accent" x="78" y="22" text-anchor="middle" font-size="15" font-weight="700">往下找</text>
+            <text class="t t-ok" x="242" y="22" text-anchor="middle" font-size="15" font-weight="700">往上長</text>
+
+            <text class="t" x="78" y="54" text-anchor="middle" font-size="14">問題</text>
+            <path class="f-none s-accent" d="M78 62 V78"/><polygon class="f-accent" points="72,76 78,88 84,76"/>
+            <text class="t" x="78" y="106" text-anchor="middle" font-size="14">index.md</text>
+            <path class="f-none s-accent" d="M78 114 V130"/><polygon class="f-accent" points="72,128 78,140 84,128"/>
+            <text class="t" x="78" y="158" text-anchor="middle" font-size="14">主題頁</text>
+            <path class="f-none s-accent" d="M78 166 V182"/><polygon class="f-accent" points="72,180 78,192 84,180"/>
+            <text class="t" x="78" y="210" text-anchor="middle" font-size="14">卡片</text>
+            <path class="f-none s-accent" d="M78 218 V228"/><polygon class="f-accent" points="72,226 78,238 84,226"/>
+            <text class="t t-muted" x="78" y="248" text-anchor="middle" font-size="12">原始對話</text>
+
+            <line class="s-line dash" x1="160" y1="30" x2="160" y2="240"/>
+
+            <text class="t t-muted" x="242" y="248" text-anchor="middle" font-size="12">原始對話</text>
+            <path class="f-none s-ok" d="M242 228 V218"/><polygon class="f-ok" points="236,220 242,208 248,220"/>
+            <text class="t" x="242" y="200" text-anchor="middle" font-size="14">卡片</text>
+            <path class="f-none s-ok" d="M242 190 V174"/><polygon class="f-ok" points="236,176 242,164 248,176"/>
+            <text class="t" x="242" y="156" text-anchor="middle" font-size="14">主題頁</text>
+            <path class="f-none s-ok" d="M242 146 V130"/><polygon class="f-ok" points="236,132 242,120 248,132"/>
+            <text class="t" x="242" y="112" text-anchor="middle" font-size="14">index.md</text>
+          </svg>
+        </div>
+        <h3>兩個方向</h3>
+        <p><strong>往下找</strong>：越往下越細、越沒整理過，但越接近當時真正發生的事。先看整理過的答案，不夠再往下挖。<br>
+        <strong>往上長</strong>：越往上越濃縮、讀的人越多。每上一層都有人確認過，所以錯的東西不會自己爬上去。</p>
+      </div>
+    </div>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>這一層</th><th>裡面有什麼</th><th>誰寫</th><th>誰讀</th><th>能不能改</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>規則層</td>
+            <td><code>schema.md</code>（怎麼寫頁面）、<code>repos.yaml</code>（哪些 repo 屬於哪個產品）</td>
+            <td>人</td>
+            <td>AI 每次整理前必讀</td>
+            <td>隨時改。<strong>改這裡＝改 AI 的行為</strong>，不用碰程式</td>
+          </tr>
+          <tr>
+            <td>整理層</td>
+            <td><code>wiki/index.md</code> 總目錄、各主題頁、<code>log.md</code> 變更紀錄</td>
+            <td>AI 寫，人在審核頁核准</td>
+            <td>人跟 AI 都<strong>先讀這層</strong></td>
+            <td>可以改寫。被推翻的頁面標成「已取代」而不是刪掉，搜尋不再列出</td>
+          </tr>
+          <tr>
+            <td>原始層</td>
+            <td><code>records/*.jsonl</code> 卡片；本機的完整對話</td>
+            <td>自動蒐集，卡片由人確認</td>
+            <td>追溯時才往下翻</td>
+            <td><strong>只增不改</strong>。決策變了寫新的一筆，指向舊的那筆</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note"><strong>規則層是這個設計最容易被低估的部分。</strong> 「頁面要寫原因跟放棄的方案」「不能寫密碼跟個資」「決策被推翻要標記不要刪」——這些都寫在 <code>schema.md</code> 裡，是純文字。團隊想調整 AI 的產出風格，改那份檔案就好，不需要工程師改程式、不需要重新發版、所有人下一次整理就會照新規則做。</p>
   </section>
 
   <section>
@@ -1207,7 +1468,11 @@
       </div>
       <div class="check">
         <span>自動測試<small>每個功能都有測試，包含真的開 git worktree、真的合併兩個 branch</small></span>
-        <b class="chip done">134 個</b>
+        <b class="chip done">140 個</b>
+      </div>
+      <div class="check">
+        <span>文件過時偵測<small>頁面寫完後，它引用的兩個程式檔又各被改了 2、3 次，系統自己標出來</small></span>
+        <b class="chip done">真的抓到</b>
       </div>
       <div class="check">
         <span>審核頁的離線大小<small>編輯器、預覽、比對都打包進去，公司網路擋 CDN 也能用</small></span>
@@ -1269,8 +1534,16 @@
         <b class="chip wait">Codex 待測</b>
       </div>
       <div class="check">
-        <span>語意搜尋（說法不同也找得到）<small>要使用者自己決定裝不裝 Ollama，預設關閉</small></span>
-        <b class="chip wait">下一階段</b>
+        <span>一個指令上手<small>setup：設定、建索引、同步、檢查環境，缺什麼直接告訴你要跑哪一行</small></span>
+        <b class="chip done">可用</b>
+      </div>
+      <div class="check">
+        <span>給隊友的安裝說明<small>README：五分鐘上手、平常怎麼用、卡住怎麼辦</small></span>
+        <b class="chip done">寫好了</b>
+      </div>
+      <div class="check">
+        <span>語意搜尋（說法不同也找得到）<small>關鍵字已經夠用，而且這會要每個人多跑一個模型服務，導入成本壓在推廣那一刻</small></span>
+        <b class="chip wait">第一版不做</b>
       </div>
       <div class="check">
         <span>正式上線<small>切到團隊的文件 repo、找隊友試用、停掉舊工具</small></span>
@@ -1279,7 +1552,7 @@
     </div>
   </section>
 
-  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-18 · Phase 0–3 完成，134 個測試通過，已跑完一次真實的 PR 流程</footer>
+  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-20 · 第一版功能完整：140 個測試通過，已跑完一次真實的 PR 流程，README 與一鍵設定都就緒</footer>
 
 </div>
 </body>
