@@ -358,7 +358,7 @@
 <div class="wrap">
 
   <header>
-    <div class="kicker">dev-memory · 團隊開發記憶 · 2026-09-20</div>
+    <div class="kicker">dev-memory · 團隊開發文件 · 2026-09-21</div>
     <h1>一段對話，<br>怎麼變成全隊的百科</h1>
     <p class="lead">開發過程中的決定，自動變成全隊查得到的文件。七個步驟現在都跑得起來，已經走完一次真實的 PR。</p>
     <div class="route" aria-label="整條路線">
@@ -1470,7 +1470,90 @@
   </section>
 
   <section>
-    <h2>為什麼中間要有一層 wiki</h2>
+    <h2>文件到底從哪裡來</h2>
+    <p class="lead">這是整個設計最容易做錯的一步，而我們真的做錯過一次。</p>
+
+    <div class="ideas">
+      <div class="idea">
+        <h3>錯的做法：只讀對話</h3>
+        <p class="note">
+          對話 → 卡片 → 一張卡片一頁<br><br>
+          產出長這樣：<br>
+          「原因／決定／放棄」×5，<br>
+          五件互不相關的事
+        </p>
+        <p>看起來像文件，其實是<strong>一疊便利貼</strong>。因為對話裡只有「當初為什麼這樣選」，沒有「這東西現在怎麼運作」。</p>
+      </div>
+      <div class="idea">
+        <h3>對的做法：以程式碼為主</h3>
+        <p class="note">
+          <strong>① 程式碼</strong>　端點、欄位、驗證、排程、狀態值<br>
+          <strong>② 既有文件</strong>　同主題有就更新，不另開一頁<br>
+          <strong>③ 卡片</strong>　只補「為什麼」與「Known Issue」
+        </p>
+        <p>一份<strong>沒有 payload 的 API 文件等於沒寫</strong>。而 payload 只存在程式碼裡。</p>
+      </div>
+    </div>
+
+    <p>差別有多大？同一個主題，第一次只讀對話產出五頁碎片；改成讀程式碼之後，產出一頁有完整 request／response JSON、情境對照表、重跑行為的規格。</p>
+
+    <h3>讀程式碼當場抓到三個錯</h3>
+    <p>而且不是理論上的好處——改成讀程式碼的第一天，就抓到既有資料三個錯：</p>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>項目</th><th>舊資料說</th><th>程式碼實際是</th><th>為什麼會錯</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>排程時間</td>
+            <td>排程表寫 <strong>08:35</strong></td>
+            <td><code>deploy/env-production.sh</code>：<code>cron(35 21)</code> UTC ＝ <strong>05:35</strong></td>
+            <td>人工維護的表<strong>沒跟上改動</strong></td>
+          </tr>
+          <tr>
+            <td>中介表欄位</td>
+            <td>卡片寫 <code>freeKey</code></td>
+            <td><code>payload</code></td>
+            <td>卡片記的是<strong>當初的提案</strong></td>
+          </tr>
+          <tr>
+            <td>型別代號</td>
+            <td>卡片寫 <code>5</code> / <code>6</code></td>
+            <td><code>2</code> / <code>3</code></td>
+            <td>同上，實作時改了</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note"><strong>卡片記提案，程式碼記事實。</strong> 兩者衝突時一律以程式碼為準，並在文件的「Known Issue」註明不一致——順便提醒有人去修舊文件。</p>
+
+    <h3>一頁文件該長什麼樣</h3>
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>段落</th><th>內容</th><th>為什麼不能省</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>開頭一句</td><td>這份在講什麼 ＋ 觸發條件（排程、誰呼叫）</td><td>讀的人要先知道自己來對地方沒有</td></tr>
+          <tr><td>整體流程</td><td>mermaid 圖，一眼看完資料從哪到哪</td><td>跨系統時文字講不清楚</td></tr>
+          <tr><td>階段一、二、三…</td><td><strong>照執行順序講成故事</strong></td><td>這是「文件」跟「筆記」的分界</td></tr>
+          <tr><td>真實 payload</td><td>完整 request／response JSON，含條件必填的各版本範例</td><td>讀的人會照著打</td></tr>
+          <tr><td>情境對照表</td><td>情境／處理／DB 更新／<strong>重跑行為</strong></td><td>出事時第一個被問的就是「能重跑嗎」</td></tr>
+          <tr><td>設計考量</td><td>來自卡片：為什麼是這樣</td><td>擋掉半年後有人重走死路</td></tr>
+          <tr><td>Known Issue</td><td>過渡方案、待改善、已知不一致</td><td>不寫的話下一個人會以為是 bug</td></tr>
+          <tr><td>維運</td><td>怎麼確認正常、出錯去哪看、怎麼重跑</td><td>oncall 半夜要看的就是這段</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note"><strong>「一個決定」是文件裡的一個段落，不是一頁文件。</strong> 這是最重要的一句話。</p>
+  </section>
+
+  <section>
+    <h2>為什麼中間要有一層整理</h2>
     <div class="ideas">
       <div class="idea">
         <div class="pic">
@@ -1517,7 +1600,7 @@
 
   <section>
     <h2>三層各自負責什麼</h2>
-    <p class="lead">借自 LLM Wiki 的結構，但每一層的規則都不一樣——這正是它能長期維持正確的原因。</p>
+    <p class="lead">借自 LLM Wiki 的結構，但每一層的規則都不一樣——這正是它能長期維持正確的原因。真正的第一手事實在第四個地方：<strong>程式碼</strong>，那在另一個 repo，不屬於這三層。</p>
 
     <div class="ideas">
       <div class="idea">
@@ -1529,8 +1612,8 @@
             <text class="t t-muted" x="160" y="80" text-anchor="middle" font-size="12">人寫，AI 每次整理前先讀</text>
 
             <rect class="f-card s-edge" x="30" y="92" width="260" height="60" rx="8"/>
-            <text class="t t-card" x="160" y="118" text-anchor="middle" font-size="18" font-weight="700">整理層：wiki</text>
-            <text class="t t-mono t-card" x="160" y="138" text-anchor="middle" font-size="10">index.md · 主題頁 · log.md</text>
+            <text class="t t-card" x="160" y="118" text-anchor="middle" font-size="18" font-weight="700">文件層</text>
+            <text class="t t-mono t-card" x="160" y="138" text-anchor="middle" font-size="10">README.md · spec/ · maintenance/</text>
             <text class="t t-muted" x="160" y="168" text-anchor="middle" font-size="12">AI 寫、人核准；可以改寫</text>
 
             <rect class="f-soft s-ink" x="30" y="180" width="260" height="56" rx="8"/>
@@ -2085,7 +2168,7 @@
     </div>
   </section>
 
-  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-20 · 第一版功能完整：140 個測試通過，已跑完一次真實的 PR 流程，README 與一鍵設定都就緒</footer>
+  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-21 · 第一版功能完整：147 個測試通過，已跑完一次真實的 PR 流程；產出改成從程式碼寫規格文件</footer>
 
 </div>
 </body>
