@@ -359,14 +359,13 @@
 
   <header>
     <div class="kicker">dev-memory · 團隊開發文件 · 2026-09-21</div>
-    <h1>一段對話，<br>怎麼變成全隊的百科</h1>
-    <p class="lead">開發過程中的決定，自動變成全隊查得到的文件。七個步驟現在都跑得起來，已經走完一次真實的 PR。</p>
+    <h1>程式碼跟對話，<br>怎麼變成全隊的文件</h1>
+    <p class="lead">AI 讀程式碼寫出規格文件，用開發紀錄補上「當初為什麼」，你審核後送 PR。已經走完兩次真實的 PR。</p>
     <div class="route" aria-label="整條路線">
       <span class="stop">記日記</span><span class="to">→</span>
       <span class="stop">搜得到</span><span class="to">→</span>
-      <span class="stop gate">① 挑卡片</span><span class="to">→</span>
-      <span class="stop gate">② 排計畫</span><span class="to">→</span>
-      <span class="stop gate">③ 審核頁</span><span class="to">→</span>
+      <span class="stop gate">① 確認骨架</span><span class="to">→</span>
+      <span class="stop gate">② 審核頁</span><span class="to">→</span>
       <span class="stop you">你按送出</span><span class="to">→</span>
       <span class="stop">隊友同步</span>
     </div>
@@ -393,7 +392,7 @@
             <td>頁面</td>
             <td>一篇給人讀的文件，把好幾張卡片整理成一個主題</td>
             <td>AI 寫，你在審核頁核准</td>
-            <td>團隊 repo 的 wiki</td>
+            <td>團隊 repo 的文件</td>
           </tr>
         </tbody>
       </table>
@@ -581,9 +580,9 @@
           </svg>
         </div>
         <div class="say">
-          <div class="num">第 4 步<em>確認點 ②</em></div>
-          <h3>排好整理計畫</h3>
-          <p>AI 列出要新增哪幾頁、更新哪幾頁、哪個舊決定被換掉。你點頭，它才動筆。</p>
+          <div class="num">第 4 步<em>確認點 ①</em></div>
+          <h3>讀程式碼，給你骨架</h3>
+          <p>AI 去讀 controller、DTO、enum、排程設定，然後列出這份文件打算長什麼樣：分幾節、哪節有 payload、哪節有圖。你點頭，它才動筆。</p>
         </div>
       </div>
 
@@ -613,9 +612,9 @@
           </svg>
         </div>
         <div class="say">
-          <div class="num">第 5 步<em>確認點 ③</em></div>
+          <div class="num">第 5 步<em>確認點 ②</em></div>
           <h3>在審核頁改到滿意</h3>
-          <p>瀏覽器自動打開本機審核頁。一次看全部頁面、跟 main 比、看每句話的來源卡片。你改、叫 AI 改、用 IDE 改都行。</p>
+          <p>瀏覽器自動打開本機審核頁。一次看全部檔案、跟 main 比、看每句話的來源紀錄。你改、叫 AI 改、用 IDE 改都行。</p>
         </div>
       </div>
 
@@ -683,10 +682,10 @@
     <div class="route" aria-label="你的動作">
       <span class="stop">照常工作</span><span class="to">→</span>
       <span class="stop you">說「存起來」</span><span class="to">→</span>
-      <span class="stop you">說「整理成 wiki」</span><span class="to">→</span>
-      <span class="stop gate">① 挑卡片</span><span class="to">→</span>
-      <span class="stop gate">② 點頭</span><span class="to">→</span>
-      <span class="stop gate">③ 審核頁按兩個鈕</span>
+      <span class="stop you">說「寫一份文件」</span><span class="to">→</span>
+      <span class="stop">它去讀程式碼</span><span class="to">→</span>
+      <span class="stop gate">① 確認骨架</span><span class="to">→</span>
+      <span class="stop gate">② 審核頁按兩個鈕</span>
     </div>
     <p class="legend"><b>綠色</b>是你主動開口，<b>藍框</b>是它自己停下來等你回話。其他時間你完全不用管它。</p>
 
@@ -706,22 +705,22 @@
         <span class="when">想查以前怎麼決定的</span>
         <div>
           <q>我們之前為什麼改成不中斷？</q>
-          <small>這句不用特別交代，直接問就好。它會先翻記憶（wiki 頁 → 卡片 → 原始對話），翻不到才去讀程式碼。答完如果 wiki 還沒有這一頁，它會問你要不要順手存成一頁。</small>
+          <small>這句不用特別交代，直接問就好。它會先翻記憶（文件 → 紀錄 → 原始對話），翻不到才去讀程式碼。答完如果還沒有對應的文件，它會問你要不要順手寫一份。</small>
         </div>
       </div>
 
       <div class="say-this">
-        <span class="when">一個功能告一段落</span>
+        <span class="when">功能做完，要留下文件</span>
         <div>
-          <q>把這次的決定整理成 wiki</q>
-          <small><code>wiki-ingest</code>：挑卡片 → 排計畫 → 開審核頁。中間會停三次等你回話，全程約 10 分鐘。<strong>這是唯一會產生 PR 的一句話。</strong></small>
+          <q>幫我寫一份測評點數拋轉 ERP 的文件</q>
+          <small><code>wiki-ingest</code>：讀程式碼 → 給你骨架 → 寫文件 → 開審核頁。中間停兩次等你回話，全程約 10 分鐘。<strong>這是唯一會產生 PR 的一句話。</strong>主題要具體：一支批次、一條資料流、一個子系統。</small>
         </div>
       </div>
 
       <div class="say-this">
         <span class="when rare">文件放一陣子了</span>
         <div>
-          <q>幫我檢查 wiki</q>
+          <q>幫我檢查文件</q>
           <small><code>wiki-lint</code>：壞連結、沒人連過去的孤兒頁、沒寫來源的內容、程式碼改了但文件沒跟上。一個月跑一次就夠。</small>
         </div>
       </div>
@@ -747,12 +746,12 @@
           <tr>
             <td>做決定的當下</td>
             <td>講「存起來」</td>
-            <td>卡片很便宜，寧可多存。沒整理成 wiki 也沒關係，它在本機等著</td>
+            <td>卡片很便宜，寧可多存。它是之後文件「設計考量」那一節的來源</td>
           </tr>
           <tr>
             <td>功能做完 / 開 PR 前</td>
-            <td>講「整理成 wiki」</td>
-            <td>這時脈絡最完整，而且正好可以跟程式的 PR 一起被 review</td>
+            <td>講「幫我寫一份 &lt;主題&gt; 的文件」</td>
+            <td>程式碼剛定案，寫出來的規格最準，而且能跟程式的 PR 一起被 review</td>
           </tr>
           <tr>
             <td>一週沒整理</td>
@@ -768,100 +767,101 @@
       </table>
     </div>
 
-    <h3>確認點 ①：卡片怎麼挑</h3>
-    <p>「卡片」就是一張紙條大小的決定紀錄：一個標題，加上<strong>原因 / 決定 / 放棄</strong>三行。它會把候選的列出來，像這樣：</p>
+    <h3>確認點 ①：骨架怎麼看</h3>
+    <p>它讀完程式碼之後，會先給你一份<strong>大綱</strong>——不是檔案、不是卡片清單，就是「這份文件打算長什麼樣」。像這樣：</p>
 
     <div class="picks">
       <div class="pick">
+        <b>主題</b>
+        <div>
+          <strong>測評點數拋轉 ERP</strong>
+          <p>跨 <code>billing-api-aws</code>（<code>dev</code>）與 <code>billing-batch-aws</code>（<code>batch/sap-create-bu-data</code>）兩個 repo</p>
+        </div>
+        <span class="chip done">新增</span>
+      </div>
+      <div class="pick">
         <b>1</b>
         <div>
-          <strong>匯出報表改成單筆失敗不中斷</strong>
-          <p>原因：整批 rollback 會讓已完成的匯出重跑 · 決定：失敗的列寫進 <code>failedRows</code>，整批繼續 · 放棄：維持整批 rollback</p>
+          <strong>整體流程</strong>
+          <p>mermaid sequenceDiagram：BU → API → 中介表 → cron → SAP</p>
         </div>
-        <span class="chip done">留</span>
+        <span class="chip done">有圖</span>
       </div>
       <div class="pick">
         <b>2</b>
         <div>
-          <strong>把 Runner.java 的參數從 3 個改成 4 個</strong>
-          <p>只講了做什麼，沒講為什麼——這種 git log 就查得到，不用占一張卡片</p>
+          <strong>階段一：BU 呼叫 API</strong>
+          <p>兩支端點的<strong>完整 request / response JSON</strong>，2.0 與 3.0 各一份，含必填與值域</p>
         </div>
-        <span class="chip wait">丟</span>
+        <span class="chip done">有 payload</span>
       </div>
       <div class="pick">
         <b>3</b>
         <div>
-          <strong>先試了用 Redis 做 rate limiting</strong>
-          <p>中途被推翻的過程。留最後那張結論就好，除非「為什麼不用 Redis」本身值得記</p>
+          <strong>階段二、三：中介表與批次拋轉</strong>
+          <p>欄位、狀態值、三種型別的去向與去重鍵</p>
         </div>
-        <span class="chip wait">丟</span>
+        <span class="chip done">有表</span>
       </div>
       <div class="pick">
         <b>4</b>
         <div>
-          <strong>客戶 A 的對帳單金額對不起來</strong>
-          <p>裡面有客戶名稱跟金額。真要記就改寫成不指名的版本，原文不要進 repo</p>
+          <strong>情境對照表</strong>
+          <p>六種情境 × 處理方式／狀態／log／<strong>重跑行為</strong></p>
         </div>
-        <span class="chip wait">丟</span>
+        <span class="chip done">有表</span>
+      </div>
+      <div class="pick">
+        <b>5</b>
+        <div>
+          <strong>設計考量 · Known Issue · 維運</strong>
+          <p>「為什麼」從紀錄來；還會列出<strong>程式碼跟既有文件不一致的地方</strong></p>
+        </div>
+        <span class="chip done">留</span>
       </div>
     </div>
 
     <p>你就用講的回它，不用點也不用編輯檔案：</p>
     <div class="says">
       <div class="say-this">
-        <span class="when">刪掉不要的</span>
-        <div><q>2 跟 4 不要</q></div>
+        <span class="when">範圍不對</span>
+        <div><q>不要寫 BU_RECORD_COUNT，這篇只講測評點數</q></div>
       </div>
       <div class="say-this">
-        <span class="when">改錯的</span>
-        <div><q>1 的「放棄」那行寫錯了，其實是因為 SAP 那邊不吃部分成功</q></div>
+        <span class="when">要補東西</span>
+        <div><q>加一節講失敗了怎麼重跑</q></div>
       </div>
       <div class="say-this">
-        <span class="when">合併重複的</span>
-        <div><q>1 跟 5 是同一件事，合成一張</q></div>
+        <span class="when">該併進既有頁</span>
+        <div><q>這個併到 sap-create-bu-data 那頁，不要另開</q></div>
       </div>
       <div class="say-this">
         <span class="when">都對</span>
-        <div><q>都可以，繼續</q></div>
+        <div><q>可以，開始寫</q></div>
       </div>
     </div>
 
-    <p class="note">挑的標準只有一句：<strong>六個月後有人問「當初為什麼這樣做」，這張卡片答得出來嗎？</strong>答得出來就留。答不出來的是流水帳，git log 已經有了。</p>
+    <p class="note">看骨架的標準：<strong>半年後接手的人照這份文件，做得了事、查得到問題嗎？</strong>少了 payload 就打不出 API，少了「重跑行為」出事時就不敢動手。</p>
 
-    <h3>確認點 ②：計畫怎麼看</h3>
-    <p>卡片定案後，它會先讀團隊 repo 的規則（<code>schema.md</code>）跟現有的索引，然後提一份計畫。每一行只會是四種動作之一：</p>
-    <div class="flow-wrap">
-      <table class="flow">
-        <thead>
-          <tr><th>動作</th><th>意思</th><th>你該看什麼</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>新增頁面</td>
-            <td>目前沒有任何一頁講這件事</td>
-            <td>路徑對不對？該放哪個產品底下</td>
-          </tr>
-          <tr>
-            <td>更新頁面</td>
-            <td>已經有一頁，這次是補充</td>
-            <td>補在既有那頁比另開一頁好</td>
-          </tr>
-          <tr>
-            <td>取代決策</td>
-            <td>新決定推翻了舊的</td>
-            <td><strong>最該留意的一種。</strong>舊頁會被標成 <code>superseded</code> 而不是刪掉，確認它指到對的新頁</td>
-          </tr>
-          <tr>
-            <td>不動</td>
-            <td>wiki 已經寫過了</td>
-            <td>看到這個是好事，代表它沒有重複寫一遍</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="ideas">
+      <div class="idea">
+        <h3>它會先去讀程式碼</h3>
+        <p>給骨架之前，它已經讀過 controller、DTO、enum、entity、排程設定。<strong>用 <code>git show</code> 讀，不會切你的分支</strong>——那是你正在工作的 repo。</p>
+        <p class="note">本機 repo 在哪，查 <code>~/.dev-memory/config.toml</code>。跑 <code>dm repos</code> 會自動掃常見目錄並列出找到沒有，缺的直接印出要貼的那一行。</p>
+      </div>
+      <div class="idea">
+        <h3>四種動作</h3>
+        <p class="note">
+          <strong>新增文件</strong>　沒有任何一頁講這件事<br>
+          <strong>更新既有文件</strong>　已經有，這次是補充<br>
+          <strong>補一節</strong>　只動其中一段<br>
+          <strong>不動</strong>　已經寫過了
+        </p>
+        <p>看到「不動」是好事，代表它沒有重複寫一遍。</p>
+      </div>
     </div>
-    <p>覺得哪一行不對就直接講「第 3 行不要新增，併到既有那頁」。點頭之後它才開始寫檔案。</p>
 
-    <h3>確認點 ③：審核頁怎麼用</h3>
+    <h3>確認點 ②：審核頁怎麼用</h3>
     <p>這是唯一一個你會離開對話視窗的地方。它會印一個 <code>http://127.0.0.1:<em>隨機port</em>/?token=…</code> 的網址並自動開瀏覽器——只有你這台連得到，網址帶 token，關掉視窗就結束。</p>
 
     <div class="pic">
@@ -882,13 +882,13 @@
         <text class="t t-paper" x="54" y="74" text-anchor="middle" font-size="11">1</text>
         <text class="t t-muted" x="70" y="74" font-size="11">這次改到的檔案</text>
         <rect class="f-paper" x="50" y="88" width="150" height="18" rx="4"/>
-        <text class="t t-mono t-ink" x="57" y="101" font-size="8.5">wiki/…/export-retry.md</text>
+        <text class="t t-mono t-ink" x="57" y="101" font-size="8.5">spec/testing-point-to-erp.md</text>
         <rect class="f-paper" x="50" y="110" width="150" height="18" rx="4"/>
         <text class="t t-mono t-ink" x="57" y="123" font-size="8.5">records/…/bill.lin.jsonl</text>
         <rect class="f-paper" x="50" y="132" width="150" height="18" rx="4"/>
-        <text class="t t-mono t-ink" x="57" y="145" font-size="8.5">wiki/index.md</text>
+        <text class="t t-mono t-ink" x="57" y="145" font-size="8.5">README.md</text>
         <rect class="f-paper" x="50" y="154" width="150" height="18" rx="4"/>
-        <text class="t t-mono t-ink" x="57" y="167" font-size="8.5">wiki/log.md</text>
+        <text class="t t-mono t-ink" x="57" y="167" font-size="8.5">config/batch-schedule.md</text>
         <rect class="f-paper" x="50" y="176" width="150" height="18" rx="4"/>
         <text class="t t-mono t-ink" x="57" y="189" font-size="8.5">repos.yaml</text>
         <text class="t t-muted" x="50" y="212" font-size="10">這五個是一組，</text>
@@ -933,7 +933,7 @@
     <div class="callouts">
       <div class="callout">
         <b>1</b>
-        <span>左邊那一排是<strong>檔案，不是卡片</strong>。<small>常見誤會：看到五個會以為要挑。不用挑——一頁 wiki、一份卡片原文、索引、log、產品清單，少了任何一個就會斷掉，所以它們一起 commit。真的不想要某一頁，按「捨棄這頁」。</small></span>
+        <span>左邊那一排是<strong>檔案，不是卡片</strong>。<small>常見誤會：看到好幾個會以為要挑。不用挑——文件本體、紀錄原文、README 索引，少了任何一個就會斷掉，所以它們一起 commit。真的不想要某一頁，按「捨棄這頁」。</small></span>
       </div>
       <div class="callout">
         <b>2</b>
@@ -962,7 +962,7 @@
 
   <section>
     <h2>跑一次給你看</h2>
-    <p class="lead">這是真的跑過的一次：一個搜尋排序的決定，從對話變成團隊 repo 裡的一頁。</p>
+    <p class="lead">這是真的跑過的一次：測評點數拋轉 ERP，從程式碼變成團隊 repo 裡的一份規格。</p>
 
     <div class="flow-wrap">
       <table class="flow">
@@ -989,25 +989,25 @@
             <td>你自己的 clone 完全不動</td>
           </tr>
           <tr>
-            <td><strong>確認點 ①</strong></td>
-            <td>列出候選卡片</td>
-            <td>刪掉不要的、改錯的</td>
-            <td>還沒有檔案變動</td>
+            <td>讀程式碼</td>
+            <td>讀 controller、DTO、enum、排程設定，順便比對既有文件</td>
+            <td>—</td>
+            <td>只讀不寫，用 <code>git show</code>，不切你的分支</td>
           </tr>
           <tr>
-            <td><strong>確認點 ②</strong></td>
-            <td>提整理計畫：新增哪頁、更新哪頁、哪個舊決策被取代</td>
-            <td>點頭</td>
+            <td><strong>確認點 ①</strong></td>
+            <td>給出文件骨架：分幾節、哪節有 payload、哪節有圖</td>
+            <td>看大綱，說要加什麼、砍什麼</td>
             <td>還沒有檔案變動</td>
           </tr>
           <tr>
             <td>產生</td>
-            <td>寫頁面、更新 index 跟 log、把卡片匯出成 JSONL</td>
+            <td>寫文件、更新 README 索引、把紀錄匯出成 JSONL</td>
             <td>—</td>
-            <td>worktree 裡 5 個檔案</td>
+            <td>worktree 裡的檔案</td>
           </tr>
           <tr>
-            <td><strong>確認點 ③</strong></td>
+            <td><strong>確認點 ②</strong></td>
             <td>開審核頁，等你</td>
             <td>讀、改、按「核准並 commit」</td>
             <td>commit 在 worktree，還沒上 GitHub</td>
@@ -1030,32 +1030,30 @@
 
     <div class="ideas">
       <div class="idea">
-        <h3>那次動到的 5 個檔案</h3>
+        <h3>那次動到的檔案</h3>
         <p class="note">
-          <strong>新增</strong> <code>wiki/dev-memory/decisions/search-query-or-bigram.md</code> ← 主角，要讀的就這頁<br>
-          <strong>新增</strong> <code>records/dev-memory/2026-09/bill.lin.jsonl</code> ← 卡片原文<br>
-          <strong>更新</strong> <code>wiki/index.md</code> ← 沒連過去就沒人找得到<br>
-          <strong>更新</strong> <code>wiki/log.md</code> ← 這次 ingest 做了什麼<br>
-          <strong>更新</strong> <code>repos.yaml</code> ← 多了一個產品分類
+          <strong>新增</strong> <code>spec/testing-point-to-erp.md</code> ← 主角，要讀的就這頁<br>
+          <strong>新增</strong> <code>config/batch-schedule.md</code> ← 排程表，文件從這裡連過去<br>
+          <strong>更新</strong> <code>README.md</code> ← 唯一索引，沒連過去就沒人找得到<br>
+          <strong>更新</strong> <code>records/billing/2026-09/bill.lin.jsonl</code> ← 紀錄原文
         </p>
-        <p>五個是一組：只留頁面不留卡片，來源就追不回去；只留卡片不更新索引，就沒有人找得到。</p>
+        <p>是一組：只留文件不留紀錄，「設計考量」就追不回去；不更新 README，就沒有人找得到。</p>
       </div>
       <div class="idea">
-        <h3>合併之後再搜一次</h3>
+        <h3>順手抓到的三個錯</h3>
         <p class="note">
-          搜「中文怎麼斷詞」：<br>
-          <strong>1.</strong> wiki 頁（整理過的答案）<br>
-          <strong>2.</strong> 卡片（當初的決定）<br>
-          <strong>3.</strong> 原始對話（完整脈絡）
+          排程表寫 <strong>08:35</strong>，程式碼是 <strong>05:35</strong><br>
+          紀錄寫欄位 <code>freeKey</code>，實際是 <code>payload</code><br>
+          紀錄寫型別 <code>5/6</code>，實際是 <code>2/3</code>
         </p>
-        <p>三層都在，而且照整理程度排序。要快就看第一筆，要追細節就往下翻。</p>
+        <p>人工維護的文件會過期，紀錄記的是<strong>當初的提案</strong>。只有程式碼是事實——這就是為什麼第一來源必須是它。</p>
       </div>
     </div>
   </section>
 
   <section>
     <h2>資料從哪來、存到哪</h2>
-    <p class="lead">同一份內容會換三種身分：對話 → 卡片 → 頁面。每次換身分都有人點頭。</p>
+    <p class="lead">文件的事實來自程式碼；對話只負責補上「當初為什麼」。每次落地都有人點頭。</p>
 
     <div class="ideas">
       <div class="idea">
@@ -1098,7 +1096,7 @@
             <text class="t t-mono" x="89" y="130" text-anchor="middle" font-size="10">records/*.jsonl</text>
             <text class="t t-muted" x="89" y="146" text-anchor="middle" font-size="11">卡片原文</text>
             <rect class="f-paper s-ink" x="170" y="110" width="118" height="44" rx="4"/>
-            <text class="t t-mono" x="229" y="130" text-anchor="middle" font-size="10">wiki/*.md</text>
+            <text class="t t-mono" x="229" y="130" text-anchor="middle" font-size="10">spec/*.md</text>
             <text class="t t-muted" x="229" y="146" text-anchor="middle" font-size="11">AI 寫的頁面</text>
 
             <path class="f-none s-ok" d="M160 168 V186"/><polygon class="f-ok" points="154,184 160,196 166,184"/>
@@ -1162,9 +1160,9 @@
             <td><code>record</code> 表，狀態 <code>local</code></td>
           </tr>
           <tr>
-            <td>整理 wiki</td>
+            <td>寫文件</td>
             <td>搜尋結果（卡片＋對話）＋ repo 裡的 <code>schema.md</code> 規則</td>
-            <td>worktree 裡的 <code>wiki/*.md</code>；卡片匯出成 <code>records/*.jsonl</code>，狀態轉 <code>submitted</code></td>
+            <td>worktree 裡的 <code>spec/*.md</code>；紀錄匯出成 <code>records/*.jsonl</code>，狀態轉 <code>submitted</code></td>
           </tr>
           <tr>
             <td>審核頁</td>
@@ -1249,7 +1247,7 @@
           </tr>
           <tr>
             <td>整理程度</td>
-            <td>wiki 頁 ×3　＞　卡片 ×2　＞　原始對話 ×1</td>
+            <td>文件 ×3　＞　紀錄 ×2　＞　原始對話 ×1</td>
             <td>整理過的答案優先，原始對話是最後才翻的</td>
           </tr>
           <tr>
@@ -1393,7 +1391,7 @@
             <td>花。就是你原本的對話</td>
           </tr>
           <tr>
-            <td>挑卡片（確認點 ①）</td>
+            <td>讀程式碼＋出骨架（確認點 ①）</td>
             <td>AI 從對話萃取原因／決定／放棄</td>
             <td>花。一次約 1.1k token</td>
           </tr>
@@ -1417,7 +1415,7 @@
             <td><strong>不花</strong></td>
           </tr>
           <tr>
-            <td>檢查 wiki 的矛盾</td>
+            <td>檢查文件的矛盾</td>
             <td>壞連結、孤兒頁是程式查；語意上的矛盾要 AI 讀過</td>
             <td>部分。一次約 850 token</td>
           </tr>
@@ -1446,7 +1444,7 @@
     <p class="lead">對話裡只挑內容、對計畫。真正的編輯跟審核在瀏覽器，不是在對話視窗裡。</p>
     <div class="checks">
       <div class="check">
-        <span>存決策、挑卡片、對整理計畫<small>確認點 ① ②，一句話回覆就好</small></span>
+        <span>存決策、看骨架、說要加什麼砍什麼<small>確認點 ①，一句話回覆就好</small></span>
         <b class="chip done">對話裡</b>
       </div>
       <div class="check">
@@ -1454,11 +1452,11 @@
         <b class="chip done">磁碟上</b>
       </div>
       <div class="check">
-        <span>編輯、預覽、跟 main 比對、看來源、核准、送出<small>確認點 ③，本機網頁，只綁 127.0.0.1</small></span>
+        <span>編輯、預覽、跟 main 比對、看來源、核准、送出<small>確認點 ②，本機網頁，只綁 127.0.0.1</small></span>
         <b class="chip done">瀏覽器</b>
       </div>
       <div class="check">
-        <span>CI 檢查與 merge<small>gitleaks 掃全 repo，結構檢查只掃 wiki 跟 records</small></span>
+        <span>CI 檢查與 merge<small>gitleaks 掃全 repo，結構檢查掃文件連結與 records</small></span>
         <b class="chip done">GitHub</b>
       </div>
       <div class="check">
@@ -1557,12 +1555,12 @@
     <div class="ideas">
       <div class="idea">
         <div class="pic">
-          <svg viewBox="0 0 320 190" role="img" aria-label="三層：最下面是不會改的原始紀錄，中間是 LLM 維護的 wiki，最上面是規則">
+          <svg viewBox="0 0 320 190" role="img" aria-label="三層：最下面是不會改的原始紀錄，中間是 LLM 維護的文件，最上面是規則">
             <rect class="f-none s-line dash" x="40" y="18" width="240" height="38" rx="8"/>
             <text class="t t-muted" x="160" y="43" text-anchor="middle" font-size="16">規則：schema.md</text>
             <path class="f-none s-line dash" d="M160 56 V70"/>
             <rect class="f-card s-edge" x="24" y="72" width="272" height="52" rx="8"/>
-            <text class="t t-card" x="160" y="96" text-anchor="middle" font-size="18" font-weight="700">wiki：LLM 維護的文件</text>
+            <text class="t t-card" x="160" y="96" text-anchor="middle" font-size="18" font-weight="700">LLM 維護的文件</text>
             <text class="t t-mono t-card" x="160" y="114" text-anchor="middle" font-size="10">index.md · log.md · 頁面互相連結</text>
             <path class="f-none s-accent" d="M160 140 V128"/>
             <polygon class="f-accent" points="154,132 160,122 166,132"/>
@@ -2114,7 +2112,15 @@
         <b class="chip done">可用</b>
       </div>
       <div class="check">
-        <span>第 4～6 步：整理計畫、審核頁、送出 PR<small>本機審核頁可以編輯、預覽、跟 main 比對、看來源，有問題就擋住核准</small></span>
+        <span>第 4～6 步：讀程式碼出骨架、審核頁、送出 PR<small>本機審核頁可以編輯、預覽、跟 main 比對、看來源，有問題就擋住核准；送出後自動跳到 PR 並收工</small></span>
+        <b class="chip done">可用</b>
+      </div>
+      <div class="check">
+        <span><strong>文件以程式碼為第一來源</strong><small>端點、payload、驗證規則、排程、狀態值都從程式碼讀；紀錄只補「為什麼」與 Known Issue。第一次跑就抓到既有資料三個錯</small></span>
+        <b class="chip done">已驗證</b>
+      </div>
+      <div class="check">
+        <span>隊友各自設定程式碼位置<small><code>repos.yaml</code> 只寫 repo 身分不含路徑；<code>dm repos</code> 自動掃常見目錄，實測 7 個找到 6 個，缺的印出要貼的那一行</small></span>
         <b class="chip done">可用</b>
       </div>
       <div class="check">
@@ -2162,7 +2168,7 @@
         <b class="chip wait">第一版不做</b>
       </div>
       <div class="check">
-        <span>正式上線<small>切到團隊的文件 repo、找隊友試用、停掉舊工具</small></span>
+        <span>正式上線<small>切到正式的 104mis-billing-doc、找隊友試用、停掉舊工具</small></span>
         <b class="chip wait">下一階段</b>
       </div>
     </div>
