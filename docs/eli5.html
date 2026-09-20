@@ -246,6 +246,62 @@
   .blk.long { padding-inline: 18px; }
   .verdict.no { color: var(--warn); }
   .verdict.yes { color: var(--ok); }
+
+  /* the manual: what the user actually says and does */
+  .says { display: grid; gap: 12px; }
+  .say-this {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 18px;
+  }
+  .when {
+    font-size: 13px;
+    color: var(--accent);
+    white-space: nowrap;
+    border: 1.5px solid currentColor;
+    border-radius: 999px;
+    padding: 2px 10px;
+    margin-top: 6px;
+  }
+  .when.rare { color: var(--muted); border-style: dashed; }
+  .say-this q { display: block; font-family: var(--f-hand); font-size: 21px; }
+  .say-this small { display: block; color: var(--muted); font-size: 15px; margin-top: 2px; }
+
+  .picks { display: grid; border-top: 2px dashed var(--line); }
+  .pick {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 4px 14px;
+    align-items: center;
+    padding-block: 12px;
+    border-bottom: 2px dashed var(--line);
+  }
+  .pick > b { font-family: var(--f-hand); font-size: 20px; color: var(--muted); }
+  .pick > div { display: grid; gap: 2px; }
+  .pick strong { font-size: 16px; }
+  .pick p { color: var(--muted); font-size: 14px; }
+
+  .callouts { display: grid; gap: 10px; }
+  .callout { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: baseline; }
+  .callout b {
+    font-family: var(--f-body);
+    font-size: 13px;
+    color: var(--paper);
+    background: var(--accent);
+    border-radius: 999px;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+  }
+  .callout span { font-size: 15px; }
+  .callout small { display: block; color: var(--muted); font-size: 14px; }
+
   /* svg paint classes */
   svg .f-paper { fill: var(--paper); }
   svg .f-bg { fill: var(--bg); }
@@ -281,6 +337,10 @@
     .skip { grid-template-columns: minmax(0, 1fr); }
     .wrap { gap: 48px; padding-block: 28px 48px; }
     .stop { font-size: 17px; padding: 1px 11px; }
+    .say-this { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .when { justify-self: start; margin-top: 0; }
+    .pick { grid-template-columns: auto minmax(0, 1fr); }
+    .pick .chip { grid-column: 2; justify-self: start; }
   }
 </style>
 
@@ -605,6 +665,290 @@
       </div>
 
     </div>
+  </section>
+
+  <section>
+    <h2>那我到底要做什麼</h2>
+    <p class="lead">照平常的方式用 Claude Code 或 Codex 就好，什麼都不用改。你只會在幾個時機開口，每次都只是一句話。</p>
+
+    <div class="route" aria-label="你的動作">
+      <span class="stop">照常工作</span><span class="to">→</span>
+      <span class="stop you">說「存起來」</span><span class="to">→</span>
+      <span class="stop you">說「整理成 wiki」</span><span class="to">→</span>
+      <span class="stop gate">① 挑卡片</span><span class="to">→</span>
+      <span class="stop gate">② 點頭</span><span class="to">→</span>
+      <span class="stop gate">③ 審核頁按兩個鈕</span>
+    </div>
+    <p class="legend"><b>綠色</b>是你主動開口，<b>藍框</b>是它自己停下來等你回話。其他時間你完全不用管它。</p>
+
+    <h3>你會講的五句話</h3>
+    <p>不用背 skill 名字，也不用打斜線指令。用平常講話的方式講出來，對應的 skill 自己會被叫起來——括號裡的名字只是讓你知道是誰在做事。</p>
+
+    <div class="says">
+      <div class="say-this">
+        <span class="when">剛做完一個決定</span>
+        <div>
+          <q>把這個決定存起來</q>
+          <small><code>mem-save</code> 會起草一張卡片：原因、決定、放棄了什麼。印出來給你看，你說「可以」才存進本機。約 30 秒，當下做最準，因為理由還在腦子裡。</small>
+        </div>
+      </div>
+
+      <div class="say-this">
+        <span class="when">想查以前怎麼決定的</span>
+        <div>
+          <q>我們之前為什麼改成不中斷？</q>
+          <small>這句不用特別交代，直接問就好。它會先翻記憶（wiki 頁 → 卡片 → 原始對話），翻不到才去讀程式碼。答完如果 wiki 還沒有這一頁，它會問你要不要順手存成一頁。</small>
+        </div>
+      </div>
+
+      <div class="say-this">
+        <span class="when">一個功能告一段落</span>
+        <div>
+          <q>把這次的決定整理成 wiki</q>
+          <small><code>wiki-ingest</code>：挑卡片 → 排計畫 → 開審核頁。中間會停三次等你回話，全程約 10 分鐘。<strong>這是唯一會產生 PR 的一句話。</strong></small>
+        </div>
+      </div>
+
+      <div class="say-this">
+        <span class="when rare">文件放一陣子了</span>
+        <div>
+          <q>幫我檢查 wiki</q>
+          <small><code>wiki-lint</code>：壞連結、沒人連過去的孤兒頁、沒寫來源的內容、程式碼改了但文件沒跟上。一個月跑一次就夠。</small>
+        </div>
+      </div>
+
+      <div class="say-this">
+        <span class="when rare">裝好了，或壞掉了</span>
+        <div>
+          <q>幫我設定 dev-memory</q>
+          <small><code>mem-setup</code>：檢查 bun／git／gh／索引／團隊 repo，缺什麼直接告訴你要跑哪一行。裝完跑一次，之後只有出問題才用得到。</small>
+        </div>
+      </div>
+    </div>
+
+    <p class="note">第二句以外的四句，你不講它就不會做。<strong>沒有背景程序在偷跑</strong>，也不會自己開 PR。唯一永遠在動的只有「每回合把對話存進本機」，那一步不花 AI 額度。</p>
+
+    <h3>多久整理一次？</h3>
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>你的節奏</th><th>建議</th><th>為什麼</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>做決定的當下</td>
+            <td>講「存起來」</td>
+            <td>卡片很便宜，寧可多存。沒整理成 wiki 也沒關係，它在本機等著</td>
+          </tr>
+          <tr>
+            <td>功能做完 / 開 PR 前</td>
+            <td>講「整理成 wiki」</td>
+            <td>這時脈絡最完整，而且正好可以跟程式的 PR 一起被 review</td>
+          </tr>
+          <tr>
+            <td>一週沒整理</td>
+            <td>週五花 10 分鐘</td>
+            <td>卡片堆太多會變成苦差事；一次三到五張最好挑</td>
+          </tr>
+          <tr>
+            <td>只是查資料</td>
+            <td>什麼都不用做</td>
+            <td>查詢不產生卡片，也不會動到團隊 repo</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>確認點 ①：卡片怎麼挑</h3>
+    <p>「卡片」就是一張紙條大小的決定紀錄：一個標題，加上<strong>原因 / 決定 / 放棄</strong>三行。它會把候選的列出來，像這樣：</p>
+
+    <div class="picks">
+      <div class="pick">
+        <b>1</b>
+        <div>
+          <strong>匯出報表改成單筆失敗不中斷</strong>
+          <p>原因：整批 rollback 會讓已完成的匯出重跑 · 決定：失敗的列寫進 <code>failedRows</code>，整批繼續 · 放棄：維持整批 rollback</p>
+        </div>
+        <span class="chip done">留</span>
+      </div>
+      <div class="pick">
+        <b>2</b>
+        <div>
+          <strong>把 Runner.java 的參數從 3 個改成 4 個</strong>
+          <p>只講了做什麼，沒講為什麼——這種 git log 就查得到，不用占一張卡片</p>
+        </div>
+        <span class="chip wait">丟</span>
+      </div>
+      <div class="pick">
+        <b>3</b>
+        <div>
+          <strong>先試了用 Redis 做 rate limiting</strong>
+          <p>中途被推翻的過程。留最後那張結論就好，除非「為什麼不用 Redis」本身值得記</p>
+        </div>
+        <span class="chip wait">丟</span>
+      </div>
+      <div class="pick">
+        <b>4</b>
+        <div>
+          <strong>客戶 A 的對帳單金額對不起來</strong>
+          <p>裡面有客戶名稱跟金額。真要記就改寫成不指名的版本，原文不要進 repo</p>
+        </div>
+        <span class="chip wait">丟</span>
+      </div>
+    </div>
+
+    <p>你就用講的回它，不用點也不用編輯檔案：</p>
+    <div class="says">
+      <div class="say-this">
+        <span class="when">刪掉不要的</span>
+        <div><q>2 跟 4 不要</q></div>
+      </div>
+      <div class="say-this">
+        <span class="when">改錯的</span>
+        <div><q>1 的「放棄」那行寫錯了，其實是因為 SAP 那邊不吃部分成功</q></div>
+      </div>
+      <div class="say-this">
+        <span class="when">合併重複的</span>
+        <div><q>1 跟 5 是同一件事，合成一張</q></div>
+      </div>
+      <div class="say-this">
+        <span class="when">都對</span>
+        <div><q>都可以，繼續</q></div>
+      </div>
+    </div>
+
+    <p class="note">挑的標準只有一句：<strong>六個月後有人問「當初為什麼這樣做」，這張卡片答得出來嗎？</strong>答得出來就留。答不出來的是流水帳，git log 已經有了。</p>
+
+    <h3>確認點 ②：計畫怎麼看</h3>
+    <p>卡片定案後，它會先讀團隊 repo 的規則（<code>schema.md</code>）跟現有的索引，然後提一份計畫。每一行只會是四種動作之一：</p>
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>動作</th><th>意思</th><th>你該看什麼</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>新增頁面</td>
+            <td>目前沒有任何一頁講這件事</td>
+            <td>路徑對不對？該放哪個產品底下</td>
+          </tr>
+          <tr>
+            <td>更新頁面</td>
+            <td>已經有一頁，這次是補充</td>
+            <td>補在既有那頁比另開一頁好</td>
+          </tr>
+          <tr>
+            <td>取代決策</td>
+            <td>新決定推翻了舊的</td>
+            <td><strong>最該留意的一種。</strong>舊頁會被標成 <code>superseded</code> 而不是刪掉，確認它指到對的新頁</td>
+          </tr>
+          <tr>
+            <td>不動</td>
+            <td>wiki 已經寫過了</td>
+            <td>看到這個是好事，代表它沒有重複寫一遍</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>覺得哪一行不對就直接講「第 3 行不要新增，併到既有那頁」。點頭之後它才開始寫檔案。</p>
+
+    <h3>確認點 ③：審核頁怎麼用</h3>
+    <p>這是唯一一個你會離開對話視窗的地方。它會印一個 <code>http://127.0.0.1:<em>隨機port</em>/?token=…</code> 的網址並自動開瀏覽器——只有你這台連得到，網址帶 token，關掉視窗就結束。</p>
+
+    <div class="pic">
+      <svg viewBox="0 0 660 340" role="img" aria-label="審核頁的畫面：上方兩個按鈕，左邊是這次改到的檔案清單，右邊是編輯與預覽">
+        <rect class="f-paper s-ink" x="40" y="12" width="600" height="34" rx="8"/>
+        <text class="t t-mono t-muted" x="54" y="34" font-size="10">dev-memory 審核 · mem/bill.lin/20260920-export-retry</text>
+        <circle class="f-accent" cx="388" cy="29" r="9"/>
+        <text class="t t-paper" x="388" y="33" text-anchor="middle" font-size="11">5</text>
+        <rect class="f-ok" x="400" y="18" width="100" height="22" rx="6"/>
+        <text class="t t-paper" x="450" y="33" text-anchor="middle" font-size="11">核准並 commit</text>
+        <circle class="f-accent" cx="512" cy="29" r="9"/>
+        <text class="t t-paper" x="512" y="33" text-anchor="middle" font-size="11">6</text>
+        <rect class="f-soft s-line" x="524" y="18" width="100" height="22" rx="6"/>
+        <text class="t t-muted" x="574" y="33" text-anchor="middle" font-size="11">送出 PR</text>
+
+        <rect class="f-soft" x="40" y="56" width="170" height="268" rx="8"/>
+        <circle class="f-accent" cx="54" cy="70" r="9"/>
+        <text class="t t-paper" x="54" y="74" text-anchor="middle" font-size="11">1</text>
+        <text class="t t-muted" x="70" y="74" font-size="11">這次改到的檔案</text>
+        <rect class="f-paper" x="50" y="88" width="150" height="18" rx="4"/>
+        <text class="t t-mono t-ink" x="57" y="101" font-size="8.5">wiki/…/export-retry.md</text>
+        <rect class="f-paper" x="50" y="110" width="150" height="18" rx="4"/>
+        <text class="t t-mono t-ink" x="57" y="123" font-size="8.5">records/…/bill.lin.jsonl</text>
+        <rect class="f-paper" x="50" y="132" width="150" height="18" rx="4"/>
+        <text class="t t-mono t-ink" x="57" y="145" font-size="8.5">wiki/index.md</text>
+        <rect class="f-paper" x="50" y="154" width="150" height="18" rx="4"/>
+        <text class="t t-mono t-ink" x="57" y="167" font-size="8.5">wiki/log.md</text>
+        <rect class="f-paper" x="50" y="176" width="150" height="18" rx="4"/>
+        <text class="t t-mono t-ink" x="57" y="189" font-size="8.5">repos.yaml</text>
+        <text class="t t-muted" x="50" y="212" font-size="10">這五個是一組，</text>
+        <text class="t t-muted" x="50" y="228" font-size="10">一起 commit</text>
+
+        <rect class="f-paper s-ink" x="220" y="56" width="420" height="268" rx="8"/>
+        <circle class="f-accent" cx="232" cy="78" r="9"/>
+        <text class="t t-paper" x="232" y="82" text-anchor="middle" font-size="11">2</text>
+        <rect class="f-accent" x="250" y="68" width="92" height="20" rx="6"/>
+        <text class="t t-paper" x="296" y="82" text-anchor="middle" font-size="10">編輯 / 預覽</text>
+        <rect class="f-soft" x="348" y="68" width="86" height="20" rx="6"/>
+        <text class="t t-muted" x="391" y="82" text-anchor="middle" font-size="10">跟 main 比較</text>
+        <rect class="f-soft" x="440" y="68" width="76" height="20" rx="6"/>
+        <text class="t t-muted" x="478" y="82" text-anchor="middle" font-size="10">來源紀錄</text>
+        <rect class="f-soft" x="522" y="68" width="76" height="20" rx="6"/>
+        <text class="t t-muted" x="560" y="82" text-anchor="middle" font-size="10">檢查結果</text>
+
+        <rect class="f-bg s-line" x="232" y="98" width="196" height="214" rx="6"/>
+        <circle class="f-accent" cx="246" cy="112" r="9"/>
+        <text class="t t-paper" x="246" y="116" text-anchor="middle" font-size="11">3</text>
+        <rect class="f-line" x="242" y="132" width="120" height="7" rx="3.5"/>
+        <rect class="f-line" x="242" y="146" width="160" height="7" rx="3.5"/>
+        <rect class="f-line" x="242" y="160" width="96" height="7" rx="3.5"/>
+        <rect class="f-line" x="242" y="182" width="140" height="7" rx="3.5"/>
+        <rect class="f-line" x="242" y="196" width="152" height="7" rx="3.5"/>
+        <rect class="f-line" x="242" y="210" width="110" height="7" rx="3.5"/>
+        <text class="t t-muted" x="242" y="240" font-size="10">左邊直接打字就能改</text>
+
+        <rect class="f-bg s-line" x="436" y="98" width="196" height="214" rx="6"/>
+        <circle class="f-accent" cx="450" cy="112" r="9"/>
+        <text class="t t-paper" x="450" y="116" text-anchor="middle" font-size="11">4</text>
+        <rect class="f-soft" x="446" y="128" width="176" height="26" rx="5"/>
+        <text class="t t-mono t-muted" x="453" y="145" font-size="8.5">status: active · billing</text>
+        <rect class="f-ink" x="446" y="164" width="104" height="9" rx="4.5"/>
+        <rect class="f-line" x="446" y="184" width="176" height="7" rx="3.5"/>
+        <rect class="f-line" x="446" y="198" width="150" height="7" rx="3.5"/>
+        <rect class="f-line" x="446" y="212" width="168" height="7" rx="3.5"/>
+        <text class="t t-muted" x="446" y="242" font-size="10">右邊是隊友會看到的樣子</text>
+      </svg>
+    </div>
+
+    <div class="callouts">
+      <div class="callout">
+        <b>1</b>
+        <span>左邊那一排是<strong>檔案，不是卡片</strong>。<small>常見誤會：看到五個會以為要挑。不用挑——一頁 wiki、一份卡片原文、索引、log、產品清單，少了任何一個就會斷掉，所以它們一起 commit。真的不想要某一頁，按「捨棄這頁」。</small></span>
+      </div>
+      <div class="callout">
+        <b>2</b>
+        <span>四個分頁，<strong>至少看前兩個</strong>。<small>「編輯 / 預覽」讀內容；「跟 main 比較」看到底動了什麼，更新既有頁面時最有用；「來源紀錄」是這頁每句話的出處，想確認不是它自己編的就翻這裡；「檢查結果」平常是空的。</small></span>
+      </div>
+      <div class="callout">
+        <b>3</b>
+        <span>左半邊<strong>直接打字就能改</strong>。<small>不用開 IDE。你改、AI 改、你在編輯器裡改，三邊都可以同時進行——外面被改到時頁面會問你要留哪一版。</small></span>
+      </div>
+      <div class="callout">
+        <b>4</b>
+        <span>右半邊是<strong>隊友會看到的樣子</strong>。<small>即時跟著左邊變。上面那塊灰的是 frontmatter：狀態、產品、來源，決定這頁之後會被搜到還是被當成過期。</small></span>
+      </div>
+      <div class="callout">
+        <b>5</b>
+        <span><strong>核准並 commit</strong>——commit 在本機，還沒上 GitHub。<small>按不下去代表有檢查沒過，去「檢查結果」分頁，點檔名就跳過去修。金鑰、個資、缺來源都會在這裡被擋下來。</small></span>
+      </div>
+      <div class="callout">
+        <b>6</b>
+        <span><strong>送出 PR</strong>——這一顆才會 push。<small>會再跳一次確認。按之前是灰的，因為還沒有東西可以送。<strong>只有你按得下去，AI 碰不到這顆。</strong></small></span>
+      </div>
+    </div>
+
+    <p class="note">PR 合併之後還有最後一步：跑 <code>dev-memory sync</code>（或跟 AI 說「PR 合併了，幫我跑 dev-memory sync」），合併的內容才會進你的本機索引。<strong>這一步不會自己發生</strong>——開 session 時自動做的是「補收漏掉的對話」，不是「拉團隊的新文件」。隊友也一樣，各自 sync 各自的。</p>
   </section>
 
   <section>
