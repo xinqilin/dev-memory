@@ -5,6 +5,7 @@
 // a search hit. The local index is disposable, so sync is always safe to re-run.
 import type { Database } from "bun:sqlite";
 import { spawnSync } from "node:child_process";
+import { DOC_DIRS } from "./lint";
 import { tokenizeForIndex } from "./tokenize";
 
 export interface SyncResult {
@@ -16,6 +17,11 @@ function git(cwd: string, args: string[]): string {
   const result = spawnSync("git", ["-C", cwd, ...args], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   if (result.status !== 0) throw new Error(`git ${args.join(" ")} failed: ${result.stderr.trim()}`);
   return result.stdout;
+}
+
+/** A document's title is its first level-one heading; there is no frontmatter to read it from. */
+export function headingTitle(text: string): string | null {
+  return text.match(/^#\s+(.+)$/m)?.[1].trim() ?? null;
 }
 
 export function parseFrontmatter(text: string): { frontmatter: Record<string, any>; body: string } {
@@ -96,8 +102,11 @@ export function sync(db: Database, repoPath: string, options: SyncOptions = {}):
       }
     }
 
-    // Pages are replaced wholesale: main is the truth, the local copy is just an index.
-    const wanted = new Set(files.filter((file) => file.startsWith("wiki/") && file.endsWith(".md")));
+    // Documents are replaced wholesale: main is the truth, the local copy is just an index.
+    // README.md is navigation, not content, so it stays out of search.
+    const wanted = new Set(
+      files.filter((file) => file.endsWith(".md") && DOC_DIRS.some((dir) => file.startsWith(`${dir}/`))),
+    );
     const existing = (db.query("select path from page").all() as { path: string }[]).map((row) => row.path);
 
     for (const path of existing) {
@@ -108,7 +117,9 @@ export function sync(db: Database, repoPath: string, options: SyncOptions = {}):
     }
 
     for (const path of wanted) {
+      // Documents carry no frontmatter; parseFrontmatter still handles the older pages that do.
       const { frontmatter, body } = parseFrontmatter(read(path));
+      const title = frontmatter.title ?? headingTitle(body) ?? path.split("/").at(-1)!.replace(/\.md$/, "");
       db.run(
         `insert into page (path, product, type, title, status, sources, code_refs, updated, body)
          values (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -119,7 +130,7 @@ export function sync(db: Database, repoPath: string, options: SyncOptions = {}):
           path,
           frontmatter.product ?? null,
           frontmatter.type ?? null,
-          frontmatter.title ?? path.split("/").at(-1)!.replace(/\.md$/, ""),
+          title,
           frontmatter.status ?? "active",
           JSON.stringify(frontmatter.sources ?? []),
           JSON.stringify(frontmatter.code_refs ?? []),
@@ -130,7 +141,7 @@ export function sync(db: Database, repoPath: string, options: SyncOptions = {}):
       deleteFts.run("page", path);
       // Superseded pages stay in the table for history but must not surface in search.
       if (frontmatter.status !== "superseded") {
-        insertFts.run(tokenizeForIndex(`${frontmatter.title ?? ""}\n${body}`), "page", path);
+        insertFts.run(tokenizeForIndex(`${title}\n${body}`), "page", path);
       }
       result.pages.imported++;
     }

@@ -27,15 +27,23 @@ const RECORD = {
   repos: ["example-org/example-repo"],
 };
 
-const PAGE = `---
+// A document: no frontmatter, title taken from the first heading.
+const PAGE = `# 改用 bigram 斷詞
+
+中文的關鍵字搜尋要先切成 bigram，否則 unicode61 會把整句話當成一個詞。
+`;
+
+// The older frontmatter form still has to load, because merged repos may still contain it.
+const LEGACY_PAGE = `---
 type: decision
-title: 改用 bigram 斷詞
+title: 舊格式的頁
 product: billing
-status: active
+status: superseded
+superseded_by: bigram
 sources: ["01JBSYNC0000000000000000001"]
 updated: 2026-09-18
 ---
-中文的關鍵字搜尋要先切成 bigram，否則 unicode61 會把整句話當成一個詞。
+中文的關鍵字搜尋要先切成 bigram。
 `;
 
 /** A remote memory repo plus a local clone, which is what a teammate actually has. */
@@ -67,7 +75,7 @@ afterEach(() => {
 test("imports records and pages from origin/main and makes them searchable", async () => {
   const { clone, db } = await repoPair({
     "records/billing/2026-09/teammate.jsonl": JSON.stringify(RECORD) + "\n",
-    "wiki/billing/decisions/bigram.md": PAGE,
+    "spec/bigram.md": PAGE,
   });
 
   const result = sync(db, clone, { fetch: false });
@@ -78,7 +86,7 @@ test("imports records and pages from origin/main and makes them searchable", asy
   expect(row).toEqual({ status: "merged", author: "teammate" });
 
   const hits = search(db, "bigram 斷詞");
-  expect(hits.some((hit) => hit.kind === "page" && hit.ref === "wiki/billing/decisions/bigram.md")).toBe(true);
+  expect(hits.some((hit) => hit.kind === "page" && hit.ref === "spec/bigram.md")).toBe(true);
   expect(hits.some((hit) => hit.kind === "record" && hit.ref === RECORD.id)).toBe(true);
   db.close();
 });
@@ -108,11 +116,11 @@ test("a record submitted from this machine flips to merged", async () => {
 });
 
 test("a page deleted on main disappears from the index", async () => {
-  const { remote, clone, db } = await repoPair({ "wiki/billing/decisions/bigram.md": PAGE });
+  const { remote, clone, db } = await repoPair({ "spec/bigram.md": PAGE });
   sync(db, clone, { fetch: false });
   expect((db.query("select count(*) as n from page").get() as { n: number }).n).toBe(1);
 
-  rmSync(join(remote, "wiki", "billing", "decisions", "bigram.md"));
+  rmSync(join(remote, "spec", "bigram.md"));
   git(remote, "add", "-A");
   git(remote, "commit", "-q", "-m", "drop page");
   spawnSync("git", ["-C", clone, "fetch", "-q", "origin"], { encoding: "utf8" });
@@ -126,7 +134,7 @@ test("a page deleted on main disappears from the index", async () => {
 
 test("a superseded page is kept but never returned by search", async () => {
   const { clone, db } = await repoPair({
-    "wiki/billing/decisions/old.md": PAGE.replace("status: active", "status: superseded\nsuperseded_by: bigram"),
+    "spec/old.md": LEGACY_PAGE,
   });
 
   sync(db, clone, { fetch: false });
