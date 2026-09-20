@@ -436,7 +436,7 @@
         <div class="say">
           <div class="num">第 1 步</div>
           <h3>自動記日記</h3>
-          <p>每講完一回合，對話就存進你電腦裡的 <code>memory.db</code>。原始對話只留在你這台。</p>
+          <p>每講完一回合，對話就存進你電腦裡的 <code>memory.db</code>。原始對話只留在你這台。<strong>這一步純粹是程式在搬資料，沒有用到 AI。</strong></p>
         </div>
       </div>
 
@@ -462,7 +462,7 @@
         <div class="say">
           <div class="num">第 2 步</div>
           <h3>中文也搜得到</h3>
-          <p>問 AI 以前做過什麼，它會先翻這本日記。中文、英文、程式名字混在一起也找得到。</p>
+          <p>問 AI 以前做過什麼，它會先翻這本日記。中文、英文、程式名字混在一起也找得到。<strong>翻找本身是資料庫在做</strong>，AI 只負責把找到的東西講給你聽。</p>
         </div>
       </div>
 
@@ -914,6 +914,80 @@
     </div>
 
     <p class="note"><strong>搜尋片段是原文，不是切碎的內容。</strong> 資料庫裡存兩份：原文給人看，切過詞的只給比對用。所以你看到的是「因為佔位符而拋<strong>[例外]</strong>，要找出…」，不是「拋例 例外 外要」。</p>
+  </section>
+
+  <section>
+    <h2>哪些步驟會用到 AI</h2>
+    <p class="lead">大部分步驟是純程式，一個 token 都不花。真正用到 AI 的只有「要動腦」的那幾步，而且用的就是你手上的 Claude Code 或 Codex，不需要另外申請 API key。</p>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>步驟</th><th>誰在做</th><th>花不花 AI 額度</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>自動記日記</td>
+            <td>程式：讀檔、寫資料庫、切詞</td>
+            <td><strong>不花</strong>。完全沒有呼叫任何模型</td>
+          </tr>
+          <tr>
+            <td>搜尋本身</td>
+            <td>程式：全文檢索加排序</td>
+            <td><strong>不花</strong>。SQLite 自己算完</td>
+          </tr>
+          <tr>
+            <td>回答你的問題</td>
+            <td>AI 讀搜尋結果，組織成答案</td>
+            <td>花。就是你原本的對話</td>
+          </tr>
+          <tr>
+            <td>挑卡片（確認點 ①）</td>
+            <td>AI 從對話萃取原因／決定／放棄</td>
+            <td>花。一次約 1.1k token</td>
+          </tr>
+          <tr>
+            <td>整理計畫（確認點 ②）</td>
+            <td>AI 比對現有頁面，決定新增或更新</td>
+            <td rowspan="2">花。整個 ingest 約 1.3k token 加上寫頁面的內容</td>
+          </tr>
+          <tr>
+            <td>寫頁面</td>
+            <td>AI 依照 <code>schema.md</code> 的規則寫</td>
+          </tr>
+          <tr>
+            <td>審核頁、比對 main、檢查機密</td>
+            <td>程式：本機網頁、git、正規表達式</td>
+            <td><strong>不花</strong></td>
+          </tr>
+          <tr>
+            <td>送 PR、CI 檢查、隊友同步</td>
+            <td>程式：git、GitHub Actions</td>
+            <td><strong>不花</strong></td>
+          </tr>
+          <tr>
+            <td>檢查 wiki 的矛盾</td>
+            <td>壞連結、孤兒頁是程式查；語意上的矛盾要 AI 讀過</td>
+            <td>部分。一次約 850 token</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ideas">
+      <div class="idea">
+        <h3>常駐成本：每個 session 約 295 token</h3>
+        <p>裝了這個 plugin 之後，每次開 session 會多出一段簡短的說明（記憶裡有多少筆、目前在哪個 repo、要先查記憶再回答）。四個 skill 的說明書<strong>只有被叫到才載入</strong>，平常不佔位置。</p>
+        <p class="legend">這是 <code>claude plugin details dev-memory</code> 報的實際數字，不是估的。</p>
+      </div>
+      <div class="idea">
+        <h3>沒有背景程序在燒 token</h3>
+        <p>沒有常駐的觀察者、沒有定時任務、沒有「幫你自動整理」的背景 AI。<strong>只有你開口要求時才會用到 AI</strong>，其餘時間這個 plugin 在做的事都是檔案跟資料庫操作。</p>
+        <p>原本那套工具的問題之一就是背景一直在耗 token，這次刻意不那樣設計。</p>
+      </div>
+    </div>
+
+    <p class="note"><strong>用的是你自己的訂閱。</strong> 所有 AI 的工作都發生在你已經開著的 Claude Code 或 Codex 裡，不需要另外的 API key、不需要另外付費、公司也不用額外開帳號。換句話說：這個 plugin 不會自己去用 AI，它只是讓你手上的 AI 記得事情。</p>
   </section>
 
   <section>
