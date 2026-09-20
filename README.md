@@ -51,8 +51,8 @@ codex                                     # 啟動時要手動信任 hook，信�
 # clone 團隊的記憶 repo
 git clone <團隊 memory repo> ~/project-other/<名稱>
 
-# 設定並檢查（之後這個 alias 會一直用到）
-alias dm='bun ~/.claude/plugins/cache/104mis-plugins/dev-memory/*/src/cli.ts'
+# 設定並檢查（把這個函式加進 ~/.zshrc，之後會一直用到）
+dm() { bun "$(ls -d ~/.claude/plugins/cache/104mis-plugins/dev-memory/*/src/cli.ts | sort -V | tail -1)" "$@"; }
 dm setup --repo ~/project-other/<名稱>
 ```
 
@@ -130,6 +130,7 @@ dm setup --repo ~/project-other/<名稱>
 | `plugin update` 說已經是最新版 | 兩個工具都是**看版本號**決定要不要更新 | 確認 remote 的 `plugin.json` version 有變；沒變就是還沒發版 |
 | 搜不到明明討論過的東西 | 說法差太多，或那段對話還沒被收進來 | 換個說法再問一次；`dm sweep` 補收；`dm search <詞> --json` 看實際命中 |
 | `setup` 說找不到 memory repo | 還沒 clone 或路徑沒設 | `dm setup --repo <clone 的路徑>` |
+| `dm` 跑出來的行為跟文件不符 | cache 裡留著好幾個版本，`*` 會展開成多個路徑，`bun a b` 只會跑第一個（最舊的） | 用上面那個 `dm()` 函式，不要用 `alias dm='bun .../*/src/cli.ts'`；`dm --help` 的第一行會印版本 |
 | 審核頁沒有樣式、清單空白 | 用到舊版的 plugin | 更新 plugin 後重開；網址要含 `?token=` |
 | 審核頁「核准」按不下去 | 有檢查沒過 | 看「檢查結果」分頁，點檔名跳過去修 |
 | 「送出 PR」是灰的 | 還沒 commit | 先按「核准並 commit」 |

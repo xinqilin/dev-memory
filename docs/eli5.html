@@ -302,6 +302,15 @@
   .callout span { font-size: 15px; }
   .callout small { display: block; color: var(--muted); font-size: 14px; }
 
+  code.cmd {
+    display: block;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--ink);
+    padding: 8px 12px;
+    line-height: 1.6;
+  }
+
   /* svg paint classes */
   svg .f-paper { fill: var(--paper); }
   svg .f-bg { fill: var(--bg); }
@@ -1736,6 +1745,14 @@
         </div>
       </div>
     </div>
+
+    <h3>再加一行 <code>dm</code></h3>
+    <p>平常用不到——這些事講一句話就會發生。但除錯、想自己下指令的時候會需要它。加進 <code>~/.zshrc</code>：</p>
+    <div class="note">
+      <code class="cmd">dm() { bun "$(ls -d ~/.claude/plugins/cache/104mis-plugins/dev-memory/*/src/cli.ts | sort -V | tail -1)" "$@"; }</code>
+    </div>
+    <p class="note">寫成函式不是為了好看。cache 裡會同時留著好幾個版本，寫成 <code>alias dm='bun …/*/src/cli.ts'</code> 的話 <code>*</code> 會展開成多個路徑，<code>bun a b</code> 只跑第一個——也就是<strong>最舊的那版</strong>，而且不會有任何錯誤訊息。上面那行用 <code>sort -V | tail -1</code> 明確挑最新版。</p>
+    <p>裝好之後跑 <code>dm setup</code>，它會逐項檢查缺什麼，缺的直接告訴你要跑哪一行。</p>
   </section>
 
   <section>
