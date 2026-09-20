@@ -1692,82 +1692,158 @@
 
   <section>
     <h2>這個設計借了什麼</h2>
-    <p class="lead">核心想法來自 Karpathy 的 LLM Wiki 跟 nashsu/llm_wiki：不要每次問問題都從頭翻原始資料，而是讓 LLM 維護一層整理過的 wiki。我們把它從「讀文件」改造成「記開發」。</p>
+    <p class="lead">核心想法來自 Karpathy 的 LLM Wiki 跟 nashsu/llm_wiki：不要每次問問題都從頭翻原始資料，而是讓 LLM 維護一層整理過的內容，人只負責 curate。我們把它從「讀文件」改造成「寫開發文件」——而這個改造，讓其中好幾條規則必須換掉。</p>
 
+    <h3>最大的差別：原始層會自己動</h3>
+    <div class="ideas">
+      <div class="idea">
+        <h3>llm_wiki 的原始層</h3>
+        <p class="note">
+          PDF、網頁、筆記<br>
+          <strong>不可變</strong>——你不餵新的，它永遠是那樣<br>
+          而且它<strong>就是事實本身</strong>
+        </p>
+        <p>所以「wiki 不准寫原始素材裡沒有的東西」這條規則是對的：素材是唯一的事實來源。</p>
+      </div>
+      <div class="idea">
+        <h3>我們的原始層</h3>
+        <p class="note">
+          開發對話、決策紀錄<br>
+          只增不改，但<strong>它不是事實</strong><br>
+          <strong>真正的事實在程式碼，而程式碼天天在變</strong>
+        </p>
+        <p>所以同一條規則照搬過來就會出事——我們真的出過事：照紀錄寫，寫出 <code>freeKey</code>、型別 <code>5/6</code>，實際是 <code>payload</code>、<code>2/3</code>。<strong>紀錄記的是當初的提案。</strong></p>
+      </div>
+    </div>
+
+    <p class="note">結論：我們多了一層 llm_wiki 沒有的東西——<strong>程式碼，是第一來源，而且是活的</strong>。紀錄從「唯一事實」降級成「解釋為什麼的旁證」。這一條決定了後面所有的取捨。</p>
+
+    <h3>原封不動借來的</h3>
     <div class="flow-wrap">
       <table class="flow">
         <thead>
-          <tr><th>借來的概念</th><th>原本的用法</th><th>我們的用法</th></tr>
+          <tr><th>概念</th><th>原本</th><th>我們</th></tr>
         </thead>
         <tbody>
           <tr>
-            <td>三層結構</td>
-            <td>原始素材（不可變）→ LLM 維護的 wiki → 規則檔</td>
-            <td>一樣：卡片只增不改 → wiki 頁面 → <code>schema.md</code></td>
+            <td>分層</td>
+            <td>原始素材（不可變）→ LLM 維護層 → 規則檔</td>
+            <td>一樣的三層，只是上面多掛了程式碼當第一來源</td>
+          </tr>
+          <tr>
+            <td>規則寫在 markdown</td>
+            <td>改規則檔就改 LLM 行為，不用改程式</td>
+            <td>一樣：<code>schema.md</code>。改來源優先序、改文件骨架都不用發版</td>
+          </tr>
+          <tr>
+            <td>唯一索引</td>
+            <td><code>index.md</code>，LLM 查東西的入口，每次 ingest 都更新</td>
+            <td><code>README.md</code>，而且 CI <strong>強制</strong>：沒被索引到的文件直接 lint 失敗</td>
           </tr>
           <tr>
             <td>兩步 ingest</td>
             <td>先分析要動哪些頁，再產生內容</td>
-            <td>一樣，而且兩步中間都要作者點頭（確認點 ①②）</td>
-          </tr>
-          <tr>
-            <td>index.md 導航</td>
-            <td>LLM 查東西的入口，每次 ingest 都更新</td>
-            <td>一樣；另外拿它連到 repo 裡既有的人工文件</td>
-          </tr>
-          <tr>
-            <td>log.md 變更紀錄</td>
-            <td>只增不改，格式固定方便 grep</td>
-            <td>一樣</td>
-          </tr>
-          <tr>
-            <td>frontmatter 與 <code>[[連結]]</code></td>
-            <td><code>type</code>、<code>title</code>、<code>sources[]</code>、頁面互連</td>
-            <td>一樣，另外加 <code>product</code>、<code>status</code>、<code>code_refs</code></td>
-          </tr>
-          <tr>
-            <td>entity 頁</td>
-            <td>人物、概念各自一頁</td>
-            <td>改成資料表、API、queue、外部系統——跨 repo 最需要的就是這個</td>
-          </tr>
-          <tr>
-            <td>Lint</td>
-            <td>矛盾、孤兒頁、壞掉的連結</td>
-            <td>一樣，另外檢查來源存不存在</td>
-          </tr>
-          <tr>
-            <td>新資料推翻舊主張</td>
-            <td>標記而不是刪掉，保留可追溯</td>
-            <td>一樣：舊頁標成「已被取代」，搜尋不再列出，但歷史留著</td>
+            <td>一樣，而且分析結果一定要作者點頭才動筆</td>
           </tr>
           <tr>
             <td>人 curate、LLM maintain</td>
             <td>人決定方向，LLM 做整理跟記帳</td>
-            <td>一樣，再加上本機審核頁跟 PR，改什麼都看得到</td>
+            <td>一樣，再加上本機審核頁跟 PR，改了什麼都看得到</td>
+          </tr>
+          <tr>
+            <td>Lint</td>
+            <td>壞掉的連結、孤兒頁、矛盾</td>
+            <td>一樣。壞連結跟孤兒頁是程式查，語意矛盾要 AI 讀</td>
           </tr>
           <tr>
             <td>問答回填</td>
-            <td>有價值的答案存回 wiki 變成一頁</td>
-            <td>一樣。這條原本沒做，補進來了</td>
+            <td>有價值的答案存回去變成一頁</td>
+            <td>一樣：答完如果還沒有對應文件，會問你要不要順手寫一份</td>
           </tr>
         </tbody>
       </table>
     </div>
 
+    <h3>借了但改掉的</h3>
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>概念</th><th>原本</th><th>改成</th><th>為什麼</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>sources[]</code> 溯源</td>
+            <td>每頁列出支撐它的原始素材，不准寫素材裡沒有的</td>
+            <td><strong>來源優先序</strong>：程式碼 &gt; 既有文件 &gt; 紀錄。紀錄只支撐「設計考量」與 Known Issue 兩節</td>
+            <td>照原規則走，永遠寫不出 payload、排程、狀態值——那些不在對話裡</td>
+          </tr>
+          <tr>
+            <td>frontmatter</td>
+            <td>每頁開頭一段 YAML：<code>type</code>、<code>status</code>、<code>sources[]</code></td>
+            <td><strong>文件不放</strong>。紀錄 JSONL 保留結構化欄位</td>
+            <td>GitHub 會把它渲染成一大張表格佔滿第一屏。給人讀的東西不該長那樣</td>
+          </tr>
+          <tr>
+            <td><code>[[雙括號連結]]</code></td>
+            <td>頁面互連，給 LLM 跟 Obsidian 用</td>
+            <td><strong>改用一般相對連結</strong> <code>./spec/x.md</code></td>
+            <td>GitHub 不會把雙括號變成連結。讀的人點不動，等於沒連</td>
+          </tr>
+          <tr>
+            <td>一個主張一頁</td>
+            <td>概念、人物各自一頁，細碎但好連</td>
+            <td><strong>一個主題一頁</strong>，決定變成頁面裡的一節</td>
+            <td>照原規則做出來是一疊便利貼。文件要有故事線才讀得下去</td>
+          </tr>
+          <tr>
+            <td>entity 頁</td>
+            <td>人物、概念各自一頁</td>
+            <td>改成資料表、API、queue、外部系統——<strong>還沒做</strong></td>
+            <td>跨 repo 最需要這個，但素材不足時會寫出兩行的空頁</td>
+          </tr>
+          <tr>
+            <td><code>log.md</code> 變更紀錄</td>
+            <td>只增不改，固定格式方便 grep</td>
+            <td><strong>拿掉</strong>，改看 git log 與 PR</td>
+            <td>git 本來就在做這件事，多一份會過期的副本沒有意義</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>刻意不採用的</h3>
     <div class="ideas">
       <div class="idea">
-        <h3>我們加的</h3>
-        <p><strong>素材自動來</strong>：原作要人工餵文件、PDF；我們從開發對話跟 git 自動收，人只負責確認。<br>
-        <strong>團隊共享</strong>：原作是單人本機知識庫；我們加了 PR、CI、機密掃描、跨 repo 的產品對照表。<br>
-        <strong>文件會說自己過期</strong>：頁面記著它描述哪些程式檔，那些檔案被改過就標出來。原作的素材不是程式碼，沒有這個問題。<br>
-        <strong>中文搜得到</strong>：中文切成兩字一塊，還有評測集量準確度。</p>
+        <h3>連帶刪除</h3>
+        <p>原作刪掉來源會連帶清掉衍生頁。我們的紀錄<strong>只增不改</strong>，這個語意對不上——決策被推翻是「標記取代」，不是刪除。刪掉的話後面的人只會看到結論，不知道曾經試過別的路。</p>
       </div>
       <div class="idea">
-        <h3>沒有採用的</h3>
-        <p><strong>連帶刪除</strong>：原作刪掉來源會連帶清掉衍生頁。我們的卡片只增不改，這個語意對不上——決策被推翻是標記取代，不是刪除。</p>
-        <p class="legend">來源：Karpathy 的 LLM Wiki gist、nashsu/llm_wiki</p>
+        <h3>向量檢索</h3>
+        <p>原作預設用 embedding 找相關頁。我們<strong>第一版只用關鍵字</strong>：內容裡大量是程式識別字，那正好是向量的弱項；而且要每個隊友多跑一個模型服務。</p>
       </div>
     </div>
+
+    <h3>我們加上去的</h3>
+    <div class="ideas">
+      <div class="idea">
+        <h3>素材自動來</h3>
+        <p>原作要人工餵文件、PDF。我們從開發對話跟 git 自動收，人只負責確認。<strong>不用「記得去寫文件」是整件事成立的前提</strong>——靠自律的流程都會死。</p>
+      </div>
+      <div class="idea">
+        <h3>團隊共享與把關</h3>
+        <p>原作是單人本機知識庫。我們加了 PR review、CI、gitleaks 機密掃描、跨 repo 的產品對照表。<strong>而且 AI 不能 push</strong>，送出永遠是人按的按鈕。</p>
+      </div>
+      <div class="idea">
+        <h3>文件會說自己過期</h3>
+        <p>頁面記著它描述哪些程式檔與分支，那些檔案被改過就標出來。<strong>原作的素材不是程式碼，沒有這個問題</strong>；我們的素材天天在變，沒有這層就等著文件說謊。</p>
+      </div>
+      <div class="idea">
+        <h3>中文搜得到</h3>
+        <p>原作是英文語境。中文沒有空白，整句會被當成一個 token，所以自己切成兩字一塊；還有評測集量 Recall，不靠感覺。</p>
+      </div>
+    </div>
+
+    <p class="legend">來源：Karpathy 的 LLM Wiki gist、nashsu/llm_wiki</p>
   </section>
 
   <section>
@@ -2051,9 +2127,44 @@
           </svg>
         </div>
         <h3>加上語意搜尋</h3>
-        <p>想讓「說法不同、意思一樣」也找得到，用 <code>/mem-setup</code> 自己決定要不要裝 Ollama、用哪個模型。沒開也不會壞，自動退回關鍵字。</p>
+        <p>想讓「說法不同、意思一樣」也找得到，要在本機跑一個 embedding 模型（Ollama）。<strong>目前沒有啟用，而且是刻意的。</strong></p>
       </div>
     </div>
+
+    <h3>現在的決定：不裝 Ollama</h3>
+    <p><code>~/.dev-memory/config.toml</code> 裡 <code>provider = "none"</code>，<code>vector</code> 資料表是空的。這不是「還沒做」，是<strong>評估過之後決定現在不需要</strong>。</p>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>理由</th><th>說明</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>關鍵字已經夠用</td>
+            <td>文件是照主題寫的，查「測評點數」「sap-create-bu-data」這種詞本來就對得上。真正靠同義詞才找得到的情況，目前沒遇到幾次</td>
+          </tr>
+          <tr>
+            <td>內容特性不利向量</td>
+            <td>記憶裡到處是 <code>sapStatus</code>、<code>@Transactional</code>、<code>WAIT_FOR_INSERT_MIDDLE_DB</code>。<strong>這種字串 embedding 模型常常認不得</strong>，反而是關鍵字的強項</td>
+          </tr>
+          <tr>
+            <td>導入成本壓在最痛的那一刻</td>
+            <td>要隊友裝 plugin 已經要說服一次，再加上「還要裝一個本機模型服務、吃幾 GB 磁碟、常駐記憶體」，推廣會卡住</td>
+          </tr>
+          <tr>
+            <td>沒有評測集就不知道有沒有變好</td>
+            <td>加上去可能更準，也可能被無關的相似內容洗掉排序。<strong>沒量測就不該加</strong></td>
+          </tr>
+          <tr>
+            <td>不是不可逆</td>
+            <td>原始文字都在本機資料庫，要開的時候重跑一次索引就有，不用重新收資料</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note"><strong>什麼時候會改變主意：</strong>累積到 50 題以上的評測集，而且實測關鍵字的 Recall 卡住上不去；或是開始出現大量「我知道討論過但想不起來當初用什麼詞」的情況。到那時做法也不是二選一，而是 <strong>hybrid search</strong>——關鍵字一份排名、向量一份排名，兩份融合。</p>
   </section>
 
   <section>
@@ -2062,6 +2173,8 @@
       <div><b>claude-mem</b><span>退休：中文搜不到，還會把決定漏掉</span></div>
       <div><b>n8n + Apps Script</b><span>改成直接開 PR，步驟更少</span></div>
       <div><b>PostgreSQL</b><span>先不用，SQLite 就夠</span></div>
+      <div><b>Ollama / 語意搜尋</b><span>評估後決定現在不需要：關鍵字夠用，而且會讓每個隊友多裝一個常駐模型服務</span></div>
+      <div><b>GitHub Wiki 鏡像</b><span>它是另一個 repo，沒有 PR review 也沒有 CI，等於繞過所有把關</span></div>
     </div>
   </section>
 
