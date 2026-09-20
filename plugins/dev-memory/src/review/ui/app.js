@@ -11,8 +11,23 @@ const preview = el("preview");
 const statusLine = el("status");
 
 let current = null; // { path, content, hash, base, checks }
+let conflict = null; // { path, theirs, hash } — tied to a path, so it cannot leak onto another file
 let dirty = false;
 let saveTimer = null;
+
+const showConflict = (path, theirs, hash) => {
+  if (typeof theirs !== "string" || typeof hash !== "string") return; // nothing usable to offer
+  conflict = { path, theirs, hash };
+  el("conflict").hidden = false;
+};
+
+const clearConflict = () => {
+  conflict = null;
+  el("conflict").hidden = true;
+};
+
+/** The dialog only ever acts on the file it was raised for. */
+const pendingConflict = () => (conflict && current && conflict.path === current.path ? conflict : null);
 
 const api = async (path, init = {}) => {
   const response = await fetch(path, {
@@ -32,12 +47,85 @@ const splitFrontmatter = (text) => {
   return match ? { meta: match[1], body: match[2] } : { meta: "", body: text ?? "" };
 };
 
-const render = (markdown) => {
-  const { meta, body } = splitFrontmatter(markdown);
-  preview.innerHTML = DOMPurify.sanitize(marked.parse(body));
+/** Top-level `key: value` only. Nested blocks (code_refs) are summarised, never flattened. */
+const parseMeta = (meta) => {
+  const fields = {};
+  for (const line of meta.split("\n")) {
+    const match = line.match(/^([a-z_]+):[ \t]*(.*)$/);
+    if (match) fields[match[1]] = match[2].trim();
+  }
+  return fields;
+};
+
+const chip = (strip, text, kind = "plain") => {
+  const span = document.createElement("span");
+  span.className = `mchip ${kind}`;
+  span.textContent = text;
+  strip.append(span);
+};
+
+/** The four things worth knowing without scrolling. The rest stays in the editor. */
+const renderMetaStrip = (meta) => {
   const strip = el("meta");
-  strip.textContent = meta.replace(/\s*\n\s*/g, " · ").trim();
-  strip.hidden = meta === "";
+  strip.innerHTML = "";
+  if (meta === "") {
+    strip.hidden = true;
+    return;
+  }
+  const fields = parseMeta(meta);
+  if (fields.status) chip(strip, fields.status === "superseded" ? "已被取代" : "生效中", fields.status === "superseded" ? "warn" : "ok");
+  if (fields.type) chip(strip, fields.type);
+  if (fields.product) chip(strip, fields.product);
+
+  const sources = (meta.match(/[0-9A-HJKMNP-TV-Z]{26}/g) ?? []).length;
+  chip(strip, sources > 0 ? `${sources} 筆來源` : "沒有來源", sources > 0 ? "plain" : "warn");
+
+  if (fields.updated) chip(strip, `更新 ${fields.updated}`);
+  strip.hidden = false;
+};
+
+/** A records file is raw material, not prose: show it as the cards it holds. */
+const renderRecords = (text) => {
+  const strip = el("meta");
+  strip.innerHTML = "";
+  preview.innerHTML = "";
+
+  const lines = text.split("\n").filter((line) => line.trim());
+  chip(strip, `${lines.length} 筆卡片原文`);
+  chip(strip, "唯讀 · 只增不改", "warn");
+  strip.hidden = false;
+
+  lines.forEach((line, index) => {
+    const card = document.createElement("article");
+    card.className = "rec";
+    let record;
+    try {
+      record = JSON.parse(line);
+    } catch {
+      card.innerHTML = "<h3></h3>";
+      card.querySelector("h3").textContent = `第 ${index + 1} 行不是合法 JSON`;
+      preview.append(card);
+      return;
+    }
+    const tags = [record.type, record.product, ...(record.repos ?? []), (record.created_at ?? "").slice(0, 10)];
+    card.innerHTML = "<h3></h3><p class='rec-tags'></p><pre class='rec-body'></pre>";
+    card.querySelector("h3").textContent = record.title ?? "(沒有標題)";
+    card.querySelector(".rec-tags").textContent = tags.filter(Boolean).join(" · ");
+    card.querySelector(".rec-body").textContent = record.body ?? "";
+    preview.append(card);
+  });
+};
+
+const isRecordsFile = (path) => (path ?? "").endsWith(".jsonl");
+
+const render = (text) => {
+  if (isRecordsFile(current?.path)) {
+    renderRecords(text);
+    return;
+  }
+  const { meta, body } = splitFrontmatter(text);
+  preview.innerHTML = DOMPurify.sanitize(marked.parse(body));
+  renderMetaStrip(meta);
 };
 
 // ---------- page list ----------
@@ -88,9 +176,11 @@ async function loadPages() {
 // ---------- one page ----------
 async function openPage(path) {
   const { body } = await api(`/api/page?path=${encodeURIComponent(path)}`);
+  clearConflict(); // a dialog raised for the previous file must not act on this one
   current = body;
   dirty = false;
   editor.value = body.content;
+  editor.readOnly = isRecordsFile(path); // records are append-only; editing one here would break traceability
   render(body.content);
   renderChecks(body.checks);
   renderDiff();
@@ -104,15 +194,18 @@ async function openPage(path) {
 async function save() {
   if (!current || !dirty) return;
   const content = editor.value;
+  // Never write a page from a state we cannot account for: that is how a file becomes "undefined".
+  if (typeof content !== "string" || typeof current.hash !== "string") {
+    say("頁面狀態不完整，沒有存檔。請重新整理這一頁", "bad");
+    return;
+  }
   const { status, body } = await api(`/api/page?path=${encodeURIComponent(current.path)}`, {
     method: "PUT",
     body: JSON.stringify({ content, base_hash: current.hash }),
   });
 
   if (status === 409) {
-    el("conflict").hidden = false;
-    current.theirs = body.current;
-    current.theirHash = body.hash;
+    showConflict(current.path, body.current, body.hash);
     say("檔案在外面被改過", "bad");
     return;
   }
@@ -265,19 +358,23 @@ el("publish").addEventListener("click", async () => {
 
 // ---------- outside edits ----------
 el("take-theirs").addEventListener("click", () => {
-  editor.value = current.theirs;
-  current.hash = current.theirHash;
-  current.content = current.theirs;
+  const pending = pendingConflict();
+  if (!pending) return clearConflict();
+  editor.value = pending.theirs;
+  current.hash = pending.hash;
+  current.content = pending.theirs;
   dirty = false;
   render(editor.value);
   renderDiff();
-  el("conflict").hidden = true;
+  clearConflict();
   say("已載入外部的版本");
 });
 
 el("keep-mine").addEventListener("click", async () => {
-  current.hash = current.theirHash; // overwrite deliberately, with the author's consent
-  el("conflict").hidden = true;
+  const pending = pendingConflict();
+  if (!pending) return clearConflict();
+  current.hash = pending.hash; // overwrite deliberately, with the author's consent
+  clearConflict();
   dirty = true;
   await save();
 });
@@ -290,11 +387,7 @@ events.addEventListener("message", async (event) => {
 
   if (dirty) {
     const { body } = await api(`/api/page?path=${encodeURIComponent(current.path)}`);
-    if (body.hash !== current.hash) {
-      current.theirs = body.content;
-      current.theirHash = body.hash;
-      el("conflict").hidden = false;
-    }
+    if (body.hash !== current.hash) showConflict(current.path, body.content, body.hash);
     return;
   }
   await openPage(current.path); // no unsaved edits: just take the new version

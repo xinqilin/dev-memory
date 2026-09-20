@@ -125,7 +125,10 @@ textarea {
 }
 .preview-pane { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 8px; min-height: 0; }
 .meta {
-  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font: 12px/1.5 system-ui, sans-serif;
   color: var(--muted);
   background: var(--bg);
   border: 1px dashed var(--line);
@@ -163,6 +166,32 @@ textarea {
 .check.error { color: var(--warn); }
 .check.warning { color: var(--muted); }
 .check.ok { color: var(--ok); }
+
+.mchip {
+  padding: 1px 9px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.mchip.ok { color: var(--ok); }
+.mchip.warn { color: var(--warn); }
+
+/* a records file rendered as the cards it holds, not as JSON */
+.rec { padding: 12px 0; border-bottom: 1px dashed var(--line); }
+.rec:first-child { padding-top: 0; }
+.rec h3 { margin: 0 0 4px; font-size: 15px; line-height: 1.4; }
+.rec-tags { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+.rec-body {
+  margin: 0;
+  background: var(--bg);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font: 13px/1.7 system-ui, sans-serif;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+#editor[readonly] { background: var(--bg); color: var(--muted); }
 
 .source { padding: 8px 0; border-bottom: 1px dashed var(--line); }
 .source code { font-size: 12px; color: var(--muted); }

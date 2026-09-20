@@ -135,10 +135,13 @@ export function startReviewServer(options: ReviewOptions): ReviewServer {
         if (request.method === "PUT") {
           const body = (await request.json()) as { content?: string; base_hash?: string };
           if (typeof body.content !== "string") return json({ error: "content is required" }, 400);
+          // A missing base_hash used to skip the check entirely, which let a confused client
+          // overwrite a page with anything. No hash, no write.
+          if (typeof body.base_hash !== "string") return json({ error: "base_hash is required" }, 400);
 
           const file = Bun.file(path);
           const current = (await file.exists()) ? await file.text() : "";
-          if (body.base_hash && body.base_hash !== contentHash(current)) {
+          if (body.base_hash !== contentHash(current)) {
             // Someone else — the agent, an editor — changed the file since this tab loaded it.
             return json({ error: "conflict", current, hash: contentHash(current) }, 409);
           }

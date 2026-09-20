@@ -109,6 +109,20 @@ test("saves with base_hash and refuses to clobber an outside edit", async () => 
   expect(((await conflict.json()) as any).current).toContain("AI 改的");
 });
 
+// A page once lost its whole content this way: a stale conflict dialog sent base_hash: undefined,
+// the check was skipped because undefined is falsy, and the file was overwritten with "undefined".
+test("a write with no base_hash is refused, not silently accepted", async () => {
+  const { api, worktree } = await scenario();
+  const before = await Bun.file(join(worktree, "wiki", "new.md")).text();
+
+  for (const payload of [{ content: "undefined" }, { content: "undefined", base_hash: null }]) {
+    const refused = await api("/api/page?path=wiki/new.md", { method: "PUT", body: JSON.stringify(payload) });
+    expect(refused.status).toBe(400);
+  }
+
+  expect(await Bun.file(join(worktree, "wiki", "new.md")).text()).toBe(before);
+});
+
 test("refuses to touch anything outside the worktree", async () => {
   const { api } = await scenario();
   const escaped = await api("/api/page?path=../../../etc/hosts");
