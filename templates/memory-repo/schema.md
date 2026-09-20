@@ -1,156 +1,140 @@
-# Memory repo 規則
+# 文件規則
 
-這份檔案是 LLM 維護這個 repo 時的規則書。改這裡就等於改 AI 的行為，不需要改 plugin 的程式碼。
+這份檔案是 LLM 寫這個 repo 時的規則書。改這裡就等於改 AI 的行為，不需要改 plugin 的程式碼。
 
 ## 這個 repo 有什麼
 
 | 路徑 | 是什麼 | 誰寫 |
 |---|---|---|
-| `records/<product>/<yyyy-mm>/<author>.jsonl` | 開發紀錄，一行一筆，**只新增不修改** | 每個人用 plugin 提交 |
-| `wiki/index.md` | 總目錄，人跟 AI 都從這裡進去 | LLM 維護 |
-| `wiki/log.md` | 變更紀錄，一次 ingest 一段 | LLM 維護 |
-| `wiki/<product>/` | 整理過的頁面 | LLM 維護 |
-| `repos.yaml` | 產品跟 code repo 的對應 | 人維護 |
-| 其他既有目錄 | 原本就有的文件，**不要動** | 人維護 |
-
-## 紀錄（records）
-
-一行一個 JSON，欄位如下：
-
-| 欄位 | 必填 | 說明 |
-|---|---|---|
-| `id` | ✔ | ULID，由 plugin 產生 |
-| `author` | ✔ | git 的 user.name |
-| `host` | ✔ | `claude-code` 或 `codex` |
-| `type` | ✔ | `decision` / `feature` / `runbook` / `note` |
-| `title` | ✔ | 一句話，可搜尋 |
-| `body` | ✔ | 原因、決定、放棄的方案 |
-| `content_hash` | ✔ | `sha256:...`，同樣內容不重複提交 |
-| `created_at` | ✔ | ISO 8601 |
-| `product` | | 對應 `repos.yaml` 裡的產品 |
-| `repos` | | `["owner/repo"]` |
-| `branch` `entities` `files` `commits` `supersedes` | | 有就填 |
-
-**不可以**修改或刪除既有的行。決策變了就寫一筆新的，並在新紀錄的 `supersedes` 填舊的 `id`。
-
-## 頁面（wiki）
-
-每頁開頭是 YAML frontmatter：
-
-```yaml
----
-type: decision            # feature / decision / entity / repo / runbook / overview
-title: ErpDataRecordType 未知 type 改為不中斷
-product: billing
-status: active            # active / superseded
-superseded_by: null
-sources: [01JB...]        # 這頁的內容來自哪幾筆紀錄
-code_refs:
-  - repo: 104corp/104mis-billing-batch-aws
-    paths: [src/main/java/.../ErpDataRecordType.java]
-related: ["[[sap-create-bu-data]]"]
-updated: 2026-09-04
----
-```
-
-### 頁面種類
-
-| 種類 | 路徑 | 一頁講什麼 |
-|---|---|---|
-| `overview` | `wiki/<product>/overview.md` | 這個產品在做什麼 |
-| `feature` | `wiki/<product>/features/<slug>.md` | 一個功能橫跨哪些 repo、怎麼運作 |
-| `decision` | `wiki/<product>/decisions/<slug>.md` | 一個決定：原因、決定、放棄的方案 |
-| `entity` | `wiki/<product>/entities/{tables,apis,queues,external}/<name>.md` | 誰寫、誰讀這張表／這個 API |
-| `repo` | `wiki/<product>/repos/<repo>.md` | 這個 repo 負責什麼 |
-| `runbook` | `wiki/<product>/runbooks/<slug>.md` | 怎麼操作、怎麼救 |
-
-### 命名
-
-- slug 用小寫英數字加連字號，對應 branch 或功能名稱，例如 `sap-create-bu-data`。
-- 檔名就是 slug。
-
-### 連結
-
-- **正文裡用一般 markdown 相對連結**：`[匯出報表](../features/export-report.md)`。GitHub 上點得動。
-- **`related:` 欄位用 `[[slug]]`**：給 AI 跟 Obsidian 用。GitHub 不會把它變成連結，所以不要只靠它。
-- 每頁至少要被 `wiki/index.md` 連到一次，否則沒有人找得到。
+| `README.md` | **唯一索引**。新增文件一定要在這裡加一行，否則沒有人找得到 | LLM 維護，人審核 |
+| `spec/` | 系統規格：子系統、跨系統資料流 | LLM 維護，人審核 |
+| `spec/batch/` | 一支批次一頁 | 同上 |
+| `spec/table/` | 資料表關聯 | 同上 |
+| `maintenance/` | 維運與 oncall SOP | 同上 |
+| `guidelines/` | 約束程式碼 repo 的撰寫規範（不是約束本 repo） | 人維護 |
+| `config/` | 排程表等設定一覽 | 人維護 |
+| `records/<product>/<yyyy-mm>/<author>.jsonl` | 開發紀錄原料，一行一筆，**只增不改**。給搜尋用，不是拿來讀的 | plugin 自動寫入 |
+| `repos.yaml` | 產品對應哪些 code repo | 人維護 |
+| 各目錄的 `img/` | 該目錄文件用的圖 | 人放 |
 
 ---
 
-# 寫頁面的規則
-
-下面是 ingest 時 LLM 要遵守的規則。這裡取代了原本放在自動化流程裡的 prompt。
+# 寫文件的規則
 
 ## 寫給誰看
 
-**半年後的隊友，他不記得這件事，也沒參與當時的討論。** 他會問的是「為什麼當初這樣決定」「我改這裡會影響誰」，不是「這段程式做了什麼」——後者看程式碼就好。
+**半年後接手的人。** 他要能照著這份文件**操作與排查**，而不是讀歷史。
 
-所以：**程式碼講得清楚的事不要寫進來**，會過期又沒人更新。要寫的是程式碼看不出來的東西：為什麼、試過什麼失敗了、哪個選項被否決、有什麼限制。
+他會問的是：
 
-## 一頁只講一件事
+- 這條流程從哪裡開始、經過哪些系統、到哪裡結束？
+- 我要呼叫這支 API，欄位怎麼帶？哪些必填？有什麼限制？
+- 出錯了會怎樣？我怎麼知道？可以重跑嗎？
 
-一個決定、一個功能、一張表、一個 runbook。混在一起的頁面，搜尋會找不到、更新時不知道該改哪段。
+他**不會**問「三個月前誰決定把某個 enum 改成不丟例外」。
 
-## decision 頁的骨架
+## 來源優先序（最重要的一條）
+
+| 順序 | 來源 | 用來寫什麼 |
+|---|---|---|
+| **① 程式碼** | `repos.yaml` 列的 code repo | **第一手事實**：端點、欄位、驗證規則、排程、狀態值、資料表欄位、流程分支 |
+| ② 既有文件 | 這個 repo 既有的 `.md` | 同主題已經有頁就**更新它**，不要另開一頁 |
+| ③ records 卡片 | `records/*.jsonl` | **只供「設計考量」與「Known Issue」兩節**，回答「為什麼當初這樣做」 |
+
+**程式碼與卡片衝突時，一律以程式碼為準**，並在「Known Issue」註明兩者不一致。
+
+> 卡片記的往往是**當初的提案**，不是最後的實作。實際發生過：卡片寫欄位叫 `freeKey`、型別值是 `5/6`，程式碼實際是 `payload`、`2/3`。**沒讀程式碼就會把提案寫成規格。**
+
+**既有文件也可能過期。** 實際發生過：排程表寫 08:35，`deploy/env-production.sh` 實際是 `cron(35 21 * * ? *)`（UTC，台灣 05:35）。發現不一致時**以程式碼為準，並在文件裡明確標出**，同時提醒作者去修舊文件。
+
+## 怎麼讀程式碼
+
+`repos.yaml` 說有哪些 repo，本機位置查 `~/.dev-memory/config.toml` 的 `[repos]`。
+
+**一律用 `git show <ref>:<path>` 與 `git ls-tree` 讀，絕對不要 `git checkout`**——那是使用者正在工作的 repo，切分支會毀掉他的進度。
+
+有些 repo 是**一支批次一個分支**（`repos.yaml` 標 `branch_per_job: true`），預設分支上找不到模組，要指定分支讀。
+
+## 文件骨架
+
+照這個順序寫。不適用的段落就省略，**不要留空標題**。
 
 ```markdown
-## 原因
-是什麼逼出這個決定：壞掉的行為、太慢的數字、擋住的限制。寫具體的。
+# <主題名稱>
 
-## 決定
-現在起會怎麼做。點出檔案、資料表、欄位、旗標的名字。
+一句話說明這份文件在講什麼。
+觸發條件寫在這裡（排程時間、誰呼叫、什麼事件觸發）。
 
-## 放棄的方案
-考慮過但沒採用的，以及為什麼。**這一段最容易被省略，卻最值錢**——它擋掉半年後有人重走同一條死路。
+## 目錄            ← 超過 150 行才需要
+
+## 整體流程
+mermaid sequenceDiagram 或 flowchart，一眼看完資料從哪到哪
+
+## 階段一：<名字>
+## 階段二：<名字>
+   ...照實際執行順序分段，每段講：誰呼叫、帶什麼、發生什麼、結果寫到哪
+
+## 情境對照表
+| 情境 | 處理方式 | API 呼叫 | 資料庫更新 | 重跑行為 |
+
+## 設計考量        ← 來自 records，回答「為什麼是這樣」
+## Known Issue    ← 已知限制、過渡方案、待改善
+## 維運           ← 怎麼確認正常、出錯去哪看、怎麼重跑
+## 相關文件 / 程式碼位置
 ```
 
-`feature` 頁改成：這個功能橫跨哪些 repo、資料怎麼流動、邊界條件。
-`entity` 頁改成：誰寫、誰讀、欄位的意義、改動要注意什麼。
-`runbook` 頁改成：什麼情況會用到、步驟、怎麼確認成功、失敗了怎麼辦。
+`payment-3DS.md` 的「階段一進入頁面 → 階段二送出付款 → 階段三交棒 ACS → 階段四 callback」就是標準示範：**照執行順序講成一個故事**。
 
-## 每一句都要有來源
+## 必須有真實資料
 
-- `sources[]` 列出支撐這頁的紀錄 id。
-- **紀錄裡沒有的東西不要寫**。寧可一頁短，也不要摻進推測。真的需要補背景才看得懂，就標明「推測」或「待確認」。
-- 引用程式碼位置時填 `code_refs`，不要貼大段程式碼進來——那會馬上過期。
+**一份沒有 payload 的 API 文件等於沒寫。**
 
-## 語言與用字
+- **request / response JSON 要完整**，從實際的 DTO 產生，不要只列欄位表
+- 欄位的必填、格式、值域、上限，**照程式碼的 validation annotation 寫**
+- 有條件必填（某欄位依另一欄位的值而定）要**分情境各給一個範例**
+- JSON 裡用註解標明情境：`// version=3.0 時 erpCustNo 傳空字串`
+- 狀態值要寫實際的數字與名稱（`1: WAIT_FOR_INSERT_MIDDLE_DB`），不要只寫名稱
+- 排程寫實際的 cron 運算式**與換算後的當地時間**，並註明出自哪個檔案
 
-- **用當初討論的語言寫**（中文討論就寫中文），程式碼識別字、錯誤訊息、指令保留原文。
-- 直接講結論，不要「本文件旨在說明」這種開場白。
-- 數字要具體：「2,596 筆」「Recall@5 從 0% 變 40%」，不要「大幅改善」。
+**編造欄位是最嚴重的錯誤**：讀的人會照著打，然後失敗。查不到就寫「待確認」，不要猜。
 
-## 決策被推翻的時候
+## 情境對照表
 
-1. 舊頁的 `status` 改成 `superseded`，`superseded_by` 填新頁的 slug。
-2. 新頁的 `related` 指回舊頁，並在「原因」裡一句話說明為什麼推翻。
-3. **不要刪舊頁**。刪掉的話，後面的人只會看到結論，不知道曾經試過別的路。
+只要流程有分支就要有這張表。至少四欄：**情境 / 處理方式 / 資料庫更新 / 重跑行為**。
+
+「重跑行為」那一欄最常被漏掉，也最常被問——出事的時候第一個問題就是「可以重跑嗎」。
+
+## 語言與格式
+
+- **全文繁體中文（臺灣用語）**，程式識別字、錯誤訊息、指令保留原文
+- 直接講結論，不要「本文件旨在說明」這種開場白
+- 數字要具體，不要「大幅改善」
+- 跨檔連結用**相對路徑**（`./spec/database.md`），跨系統用完整 URL
+- 圖片放**該目錄自己的 `img/`**
+- **不要貼大段程式碼**。指出檔案路徑與類別名，貼程式碼會馬上過期
+- 不要 frontmatter。這是給人讀的文件，不是資料
 
 ## 絕對不要寫進去
 
 - 密碼、token、金鑰、連線字串（CI 會擋，但第一道關是寫的人）
 - 客戶資料、個資、身分證字號、電話
-- 大段貼上的公司程式碼
+- **未修補的漏洞細節**（位置與手法）
 - 對同事的評價
+- 「我重構了 X」「我開了兩支 API」這種流水帳——那是 git log 的工作
 
-## ingest 的兩個步驟
+## ingest 的步驟
 
-1. **分析**：讀新的紀錄，列出要新增哪些頁、更新哪些頁、哪個舊決策被取代、有沒有互相矛盾。只能從這幾種動作裡選，並且要作者確認。
-2. **產生**：照分析結果寫頁面，更新 `wiki/index.md` 跟 `wiki/log.md`，然後交給作者在本機審核頁確認。
+1. **選主題**：一支批次、一條資料流、一個子系統。不是「最近的幾個決定」。
+2. **讀程式碼**：找出這個主題涉及哪些 repo、哪些分支、哪些檔案。
+3. **提骨架給作者確認**：主題是什麼、分成哪幾節、哪些節會有 payload／圖／對照表。**作者確認的是大綱，不是卡片清單。**
+4. **寫文件**，並更新 `README.md` 索引。
+5. 交給作者在本機審核頁確認。
 
-`wiki/log.md` 的格式固定成一行標題加重點，方便用 grep 找：
-
-```markdown
-## [2026-09-18] ingest | 匯出報表改成單筆失敗不中斷
-- 新增 wiki/billing/decisions/export-partial-failure.md
-- 更新 wiki/billing/features/export-report.md
-- 取代 wiki/billing/decisions/export-rollback.md（status: superseded）
-```
+動作只能從這四種選：**新增文件 / 更新既有文件 / 補一節 / 不動**。
 
 ## CI 會檢查什麼
 
-- `records/` 的每一行是合法 JSON、必填欄位齊全、路徑符合規則、`id` 不重複。
-- `wiki/` 的 frontmatter 欄位齊全、`type`／`status` 是合法值、`sources[]` 指得到真實紀錄、`[[連結]]` 指得到真實頁面。
-- 整個 repo 掃一次 gitleaks。
-
-lint 只掃 `wiki/` 跟 `records/`，既有的人工文件不受影響。
+- `records/` 的每一行是合法 JSON、必填欄位齊全、`id` 不重複
+- `.md` 的相對連結指得到真實檔案
+- 新增的 `.md` 有沒有被 `README.md` 索引到
+- 整個 repo 掃一次 gitleaks

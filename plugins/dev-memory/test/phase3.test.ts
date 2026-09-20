@@ -87,62 +87,56 @@ describe("lint", () => {
 
   test("a healthy repo is clean", async () => {
     const { repo: dir, db } = await repo({
-      "wiki/index.md": "# 目錄\n- [決策](billing/decisions/a.md)\n",
-      "wiki/billing/decisions/a.md": page({ type: "decision", title: "匯出報表改成單筆失敗不中斷", status: "active", sources: ["01JBSOURCE0000000000000001"], updated: "2026-09-18" }),
-      "records/billing/2026-09/bill.lin.jsonl": JSON.stringify({ id: "01JBSOURCE0000000000000001", title: "匯出報表改成單筆失敗不中斷" }) + "\n",
+      "README.md": "# 目錄\n1. [匯出報表](./spec/export.md)\n",
+      "spec/export.md": "# 匯出報表\n\n完整資料流。來源紀錄 01JBSOURCE0000000000000001。\n",
+      "records/billing/2026-09/bill.lin.jsonl":
+        JSON.stringify({ id: "01JBSOURCE0000000000000001", author: "a", host: "claude-code", type: "decision", title: "t", body: "b", content_hash: "sha256:x", created_at: "2026-09-18T00:00:00.000Z" }) + "\n",
     });
 
     const report = await lintRepo(db, dir);
-    expect(report).toMatchObject({ pages: 1, records: 1 });
+    expect(report).toMatchObject({ docs: 1, records: 1 });
     expect(report.findings).toEqual([]);
     expect(formatLint(report)).toContain("0 errors, 0 warnings");
     db.close();
   });
 
-  test("catches broken links, orphans, bad superseding and missing sources", async () => {
+  test("catches broken links and documents README does not index", async () => {
     const { repo: dir, db } = await repo({
-      "wiki/index.md": "# 目錄\n- [a](billing/decisions/a.md)\n",
-      "wiki/billing/decisions/a.md": page(
-        { type: "decision", title: "a", status: "active", sources: ["01JBMISSING000000000000001"], updated: "2026-09-18" },
-        "看 [[nowhere]] 還有 [壞掉的相對連結](./gone.md)\n",
-      ),
-      "wiki/billing/decisions/orphan.md": page({ type: "decision", title: "orphan", status: "superseded", superseded_by: "nothing", updated: "2026-09-18" }),
+      "README.md": "# 目錄\n1. [匯出報表](./spec/export.md)\n",
+      "spec/export.md": "# 匯出報表\n\n見 [排程](./gone.md)。\n",
+      "spec/orphan.md": "# 沒人連到我\n\n內容。\n",
     });
 
-    const messages = (await lintRepo(db, dir)).findings.map((finding) => finding.message);
-    expect(messages).toContain("連到不存在的頁面 [[nowhere]]");
-    expect(messages.some((message) => message.includes("連到不存在的檔案 ./gone.md"))).toBe(true);
-    expect(messages.some((message) => message.includes("sources[] 指向不存在的紀錄"))).toBe(true);
-    expect(messages.some((message) => message.includes("沒有被 wiki/index.md 連到"))).toBe(true);
-    expect(messages.some((message) => message.includes("superseded_by 指向不存在的頁面"))).toBe(true);
+    const report = await lintRepo(db, dir);
+    const messages = report.findings.map((finding) => finding.message);
+    expect(messages.some((message) => message.includes("連結指向不存在的檔案：./gone.md"))).toBe(true);
+    expect(messages.some((message) => message.includes("README.md 沒有連到這一頁"))).toBe(true);
     db.close();
   });
 
-  test("warns when a page's sources share no wording with it", async () => {
+  test("a document with leftover frontmatter or no title is reported", async () => {
     const { repo: dir, db } = await repo({
-      "wiki/index.md": "# 目錄\n- [a](billing/decisions/a.md)\n",
-      "wiki/billing/decisions/a.md": page({ type: "decision", title: "排程改成每天兩點跑", status: "active", sources: ["01JBSOURCE0000000000000002"], updated: "2026-09-18" }),
+      "README.md": "# 目錄\n1. [舊頁](./spec/old.md)\n",
+      "spec/old.md": "---\ntype: decision\n---\n沒有標題的內容。\n",
     });
-    db.run(
-      `insert into record (id, author, host, type, title, body, content_hash, created_at, status) values (?, 'x', 'claude-code', 'decision', ?, ?, 'sha256:x', '2026-09-18', 'merged')`,
-      ["01JBSOURCE0000000000000002", "完全不相干的標題", "講的是別件事"],
-    );
 
-    const messages = (await lintRepo(db, dir)).findings.map((finding) => finding.message);
-    expect(messages.some((message) => message.includes("可能引錯來源"))).toBe(true);
+    const report = await lintRepo(db, dir);
+    const messages = report.findings.map((finding) => finding.message);
+    expect(messages.some((message) => message.includes("frontmatter"))).toBe(true);
+    expect(messages.some((message) => message.includes("沒有第一層標題"))).toBe(true);
     db.close();
   });
 
-  test("two active pages with the same title are flagged as a possible contradiction", async () => {
+  test("a record id nobody has is a warning, not an error", async () => {
     const { repo: dir, db } = await repo({
-      "wiki/index.md": "# 目錄\n- [a](billing/decisions/a.md)\n- [b](billing/decisions/b.md)\n",
-      "wiki/billing/decisions/a.md": page({ type: "decision", title: "重試策略", status: "active", sources: ["x"], updated: "2026-09-18" }),
-      "wiki/billing/decisions/b.md": page({ type: "decision", title: "重試策略", status: "active", sources: ["x"], updated: "2026-09-18" }),
-      "records/billing/2026-09/bill.lin.jsonl": JSON.stringify({ id: "x" }) + "\n",
+      "README.md": "# 目錄\n1. [匯出報表](./spec/export.md)\n",
+      "spec/export.md": "# 匯出報表\n\n來源 01JBZZZZZZ0000000000000001。\n",
     });
 
-    const messages = (await lintRepo(db, dir)).findings.map((finding) => finding.message);
-    expect(messages.filter((message) => message.includes("跟其他頁同名而且都還是 active"))).toHaveLength(2);
+    const report = await lintRepo(db, dir);
+    const missing = report.findings.filter((finding) => finding.message.includes("不在這個 repo 也不在本機索引"));
+    expect(missing).toHaveLength(1);
+    expect(missing[0].level).toBe("warning");
     db.close();
   });
 });

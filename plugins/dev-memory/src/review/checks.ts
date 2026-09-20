@@ -26,13 +26,13 @@ const PII_PATTERNS: [RegExp, string][] = [
   [/\b09\d{2}-?\d{3}-?\d{3}\b/, "看起來像手機號碼"],
 ];
 
-const PAGE_TYPES = new Set(["overview", "feature", "decision", "entity", "repo", "runbook"]);
-const PAGE_STATUS = new Set(["active", "superseded"]);
+// Directories that hold documents. Everything else is config or tooling.
+const DOC_DIRS = ["spec/", "maintenance/", "guidelines/", "config/", "dr/", "bank/", "poc/"];
 const REQUIRED_RECORD_FIELDS = ["id", "author", "host", "type", "title", "body", "content_hash", "created_at"];
 
-/** A wiki page the author wrote; index.md and log.md are navigation and have no frontmatter. */
-function isWikiPage(path: string): boolean {
-  return path.startsWith("wiki/") && path.endsWith(".md") && !/\/(index|log)\.md$/.test(path);
+/** A document someone will read. Docs carry no frontmatter — they are prose, not data. */
+function isDoc(path: string): boolean {
+  return path.endsWith(".md") && DOC_DIRS.some((dir) => path.startsWith(dir));
 }
 
 function isRecordsFile(path: string): boolean {
@@ -67,39 +67,23 @@ function checkRecords(content: string): Check[] {
   return checks;
 }
 
-function checkWikiPage(content: string): Check[] {
+/**
+ * A document is prose, so there is no schema to validate. What can still be checked is whether
+ * it would be useful: a title, some body, and no leftover frontmatter block from the old layout.
+ */
+function checkDoc(content: string): Check[] {
   const checks: Check[] = [];
-  const match = content.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-  if (!match) {
-    checks.push({ level: "error", message: "缺少 YAML frontmatter" });
-    return checks;
+  if (content.startsWith("---\n")) {
+    checks.push({ level: "warning", message: "文件開頭有 frontmatter，GitHub 會把它渲染成一大張表格" });
   }
-
-  let frontmatter: Record<string, any>;
-  try {
-    frontmatter = (Bun.YAML.parse(match[1]) ?? {}) as Record<string, any>;
-  } catch (error) {
-    checks.push({ level: "error", message: `frontmatter 不是合法 YAML：${error}` });
-    return checks;
+  if (!/^#\s+\S/m.test(content)) {
+    checks.push({ level: "error", message: "沒有標題（第一層 # 標題）" });
   }
-
-  for (const field of ["type", "title", "status", "updated"]) {
-    if (!frontmatter[field]) checks.push({ level: "error", message: `frontmatter 缺少 ${field}` });
+  if (content.replace(/^---\n[\s\S]*?\n---\n/, "").trim().length < 40) {
+    checks.push({ level: "error", message: "文件沒有內容" });
   }
-  if (frontmatter.type && !PAGE_TYPES.has(frontmatter.type)) {
-    checks.push({ level: "error", message: `type "${frontmatter.type}" 不是合法的種類` });
-  }
-  if (frontmatter.status && !PAGE_STATUS.has(frontmatter.status)) {
-    checks.push({ level: "error", message: `status "${frontmatter.status}" 不是合法的狀態` });
-  }
-  if (frontmatter.status === "superseded" && !frontmatter.superseded_by) {
-    checks.push({ level: "error", message: "標成 superseded 就要填 superseded_by" });
-  }
-  if (!Array.isArray(frontmatter.sources) || frontmatter.sources.length === 0) {
-    checks.push({ level: "warning", message: "沒有 sources[]，之後沒辦法追這頁的內容從哪來" });
-  }
-  if (!match[2].trim()) {
-    checks.push({ level: "error", message: "頁面沒有內容" });
+  if (/```[a-z]*\n(?:.*\n){60,}?```/.test(content)) {
+    checks.push({ level: "warning", message: "有超過 60 行的程式碼區塊，貼大段程式碼會馬上過期" });
   }
   return checks;
 }
@@ -107,8 +91,8 @@ function checkWikiPage(content: string): Check[] {
 export function checkFile(path: string, content: string): Check[] {
   const checks = scanSecrets(content);
   if (isRecordsFile(path)) return [...checks, ...checkRecords(content)];
-  if (isWikiPage(path)) return [...checks, ...checkWikiPage(content)];
-  return checks; // repos.yaml, .gitattributes, index.md, log.md: the secret scan is the whole rule
+  if (isDoc(path)) return [...checks, ...checkDoc(content)];
+  return checks; // README.md, repos.yaml, schema.md: the secret scan is the whole rule
 }
 
 export function hasErrors(checks: Check[]): boolean {

@@ -1,101 +1,131 @@
 ---
 name: wiki-ingest
-description: Turn recent development memory into wiki pages in the team memory repo. Use when the user wants to write up what was decided, update the wiki, or prepare a memory PR. Never pushes.
+description: Write a technical document about one subject — a batch job, a data flow, a subsystem — by reading the actual code, and open it for review in the team doc repo. Use when the user wants documentation written, updated, or prepared as a PR. Never pushes.
 ---
 
-# Wiki ingest
+# 寫一份技術文件
 
-Records are raw material; the wiki is what people read. This skill turns one into the other.
+**產出是給人讀的規格文件**，不是決策摘要。一支批次、一條資料流、一個子系統各一頁，
+照執行順序講成一個故事，附真實 payload 與情境對照表。
 
-**You never push and you never open a PR.** Publishing is a button the author presses on the review page. Do not call `/api/publish`, do not run `dev-memory publish`, do not run `git push`.
+**第一來源是程式碼。** 對話紀錄只用來補「為什麼這樣設計」與「Known Issue」。
+
+**你不 push，也不開 PR。** 送出是作者在審核頁按的按鈕。不要呼叫 `/api/publish`、不要跑
+`dev-memory publish`、不要跑 `git push`。
 
 Let `CLI` mean `bun "${CLAUDE_PLUGIN_ROOT}/src/cli.ts"`.
 
-## 0. Decide the scope
+## 0. 確定主題
 
-Ask what this ingest covers if it is not obvious: a feature, a branch, a date range. Then find the material:
+主題是**一個東西**，不是「最近的幾個決定」。例如：
 
-```bash
-CLI search <words about the topic> --limit 20
-CLI search <words> --kind record --json
-```
+- 一支批次：`sap-create-bu-data`
+- 一條資料流：測評點數從 BU 到 ERP
+- 一個子系統：3DS 交易
 
-## 1. Candidate records — **confirmation point ①**
+主題不明確就問。範圍太大（「整個 billing」）就切小。
 
-List what you found as cards, each with: 原因 / 決定 / 放棄, and the record id or turn id it came from.
+## 1. 讀程式碼 — 這一步不能跳過
 
-Show the list and ask the author to delete, merge or correct. Nothing proceeds until they answer.
-
-If a decision from this conversation is not in the memory yet, save it first with the mem-save skill.
-
-## 2. The plan — **confirmation point ②**
-
-Open the worktree (this never touches the author's own clone):
+`repos.yaml` 說這個產品有哪些 repo；本機位置在 `~/.dev-memory/config.toml` 的 `[repos]`。
+找不到路徑就請作者補設定，**不要猜路徑，也不要憑記憶寫規格**。
 
 ```bash
-CLI ingest-start <slug>     # prints the branch and the worktree path
+CLI repos            # 列出 repo 與本機路徑，缺的會告訴你要補哪一行
 ```
 
-Read `schema.md` and `wiki/index.md` in that worktree first — the rules live there, not here.
+**一律用 `git show <ref>:<path>` 與 `git ls-tree` 讀，絕對不要 `git checkout`。**
+那是作者正在工作的 repo，切分支會毀掉他的進度。
 
-Then propose a plan, picking only from these actions:
+```bash
+git -C <repo> ls-tree -r --name-only <ref> <dir>
+git -C <repo> show "<ref>:<path>"
+```
 
-| action | when |
+有些 repo 是**一支批次一個分支**（`repos.yaml` 標 `branch_per_job: true`），
+預設分支上找不到模組，要讀 `batch/<job-name>`。
+
+至少要查清楚：
+
+| 要查的 | 去哪找 |
 |---|---|
-| 新增頁面 | nothing covers this yet |
-| 更新頁面 | a page exists and the new material extends it |
-| 取代決策 | a new decision overrides an old one: old page gets `status: superseded` + `superseded_by`, new page links back with `related` |
-| 不動 | already covered; say so rather than writing a duplicate |
+| 端點、HTTP method、路徑前綴 | Controller 的 `@RequestMapping` / `@PostMapping` |
+| **完整 request / response 欄位** | request / response DTO 類別 |
+| 必填、格式、值域、上限 | DTO 上的 validation annotation |
+| 狀態值與意義 | enum，連同實際的數字 |
+| 排程 | `deploy/env-*.sh`、CDK、terraform 裡的 cron，**並換算成當地時間** |
+| 資料表欄位 | entity 的 `@Column` |
+| 流程分支與錯誤處理 | service / 批次主程式 |
 
-Show the plan as a list of `action · path · one line why`. Wait for the author to agree.
+同時搜記憶，補「為什麼」：
 
-## 3. Write the pages
+```bash
+CLI search <主題相關的詞> --limit 20
+```
 
-Write in the worktree, following `schema.md`:
+**程式碼與紀錄衝突時以程式碼為準。** 紀錄常常記的是當初的提案而不是最後的實作。
 
-- frontmatter: `type`, `title`, `product`, `status`, `sources` (the record ids from step 1), `code_refs`, `related`, `updated`
-- body: 原因 / 決定 / 放棄, in the language the discussion used
-- every claim traces back to a record in `sources`; if you cannot trace it, leave it out
-- update `wiki/index.md` so the new pages are reachable, and append one block to `wiki/log.md`
+## 2. 骨架 — **確認點 ①**
 
-Never write secrets, credentials or personal data.
+給作者看的是**大綱**，不是卡片清單。列出：
 
-Then write the records themselves into the repo:
+- 主題與一句話說明
+- 讀了哪些 repo / 分支 / 檔案
+- 分成哪幾節（照執行順序）
+- 哪幾節會有 payload、mermaid 圖、情境對照表
+- 發現的不一致（程式碼 vs 既有文件 vs 紀錄）
+
+先查這個主題**是不是已經有頁**：
+
+```bash
+CLI search <主題> --kind page
+```
+
+動作只能從這四種選：**新增文件 / 更新既有文件 / 補一節 / 不動**。
+
+等作者同意才往下。
+
+## 3. 開工作區並寫
+
+```bash
+CLI ingest-start <slug>     # 印出分支與 worktree 路徑，作者的 clone 完全不動
+```
+
+先讀 worktree 裡的 `schema.md` —— **規則在那裡，不在這份 skill 裡**。
+也看一眼既有文件的寫法，照它的慣例寫。
+
+寫完把紀錄原料一起匯出：
 
 ```bash
 CLI export --branch <branch>
 ```
 
-That appends the local records to `records/<product>/<yyyy-mm>/<author>.jsonl` and marks them
-submitted. One file per author per month, append-only, so two people submitting in the same month
-never touch the same file.
+**一定要更新 `README.md` 索引**，沒有被索引到的文件等於不存在。
 
-If the repo is an existing documentation repo and its own docs are not listed yet:
-
-```bash
-CLI index-docs
-```
-
-## 4. Review page — **confirmation point ③**
+## 4. 審核頁 — **確認點 ②**
 
 ```bash
 CLI review --branch <branch>
 ```
 
-This prints a URL and opens the browser. Tell the author it is now theirs: edit on the left, preview on the right, compare with main, check the source records, then **核准並 commit**, and **送出 PR** when they are ready.
+印出網址並開瀏覽器。告訴作者接下來是他的事：左邊改、右邊看、跟 main 比對，
+然後按「核准並 commit」，準備好再按「送出 PR」。送出後頁面會自己跳到 PR。
 
-While they review you may still edit the files if they ask — the page reloads by itself. If they have unsaved edits it will ask them which version to keep.
+他要求改的時候你可以直接改檔案，頁面會自己重載。
 
-## 5. After the PR is merged
+## 5. PR 合併之後
 
 ```bash
 CLI sync
 ```
 
-That imports the merged records and pages into the local index, so search finds them.
+把合併的內容匯進本機索引，搜尋才找得到。
 
-## If something goes wrong
+## 常見錯誤
 
-- **The worktree already exists**: `ingest-start` resumes it, which is what you want after an interruption.
-- **Checks fail on the review page**: fix the page and save; 核准 stays disabled until every error is gone.
-- **The author wants to abandon the ingest**: they can discard each page in the review page. Removing the worktree entirely is a git command they run themselves.
+- **寫成流水帳**：「重構了 X」「開了兩支 API」——那是 git log 的工作，不是文件。
+- **沒有 payload**：一份沒有完整 request/response 的 API 文件等於沒寫。
+- **編造欄位**：讀的人會照著打然後失敗。查不到就寫「待確認」。
+- **照紀錄寫規格**：紀錄是提案，程式碼是事實。
+- **一個決定一頁**：決定是文件裡的一節（「設計考量」），不是一頁文件。
+- **漏掉「重跑行為」**：出事時第一個被問的就是這個。

@@ -18,11 +18,18 @@ export interface Config {
     repo: string | null;
     branch: string;
   };
+  /**
+   * Where this machine keeps its clone of each code repo, keyed by "owner/repo".
+   * Per-machine on purpose: repos.yaml is shared with the whole team, and everyone
+   * clones somewhere different. Filled by `dev-memory setup`, editable by hand.
+   */
+  repos: Record<string, string>;
 }
 
 export const DEFAULT_CONFIG: Config = {
   embedding: { provider: "none", model: null, endpoint: "http://127.0.0.1:11434" },
   memory: { repo: null, branch: "main" },
+  repos: {},
 };
 
 // Bun parses TOML but cannot serialize it (1.3.4), so the default file is a template.
@@ -37,6 +44,11 @@ endpoint = "http://127.0.0.1:11434"
 [memory]
 repo = ""                             # path to your clone of the memory repo
 branch = "main"
+
+# Where your clones of the code repos live, so documents can be written from the source.
+# \`dev-memory setup\` fills this in by scanning the usual places; add anything it missed.
+[repos]
+# "104corp/example-service" = "~/project-backend/example-service"
 `;
 
 export function homeDir(): string {
@@ -73,9 +85,14 @@ export async function loadConfig(): Promise<Config> {
   const parsed = Bun.TOML.parse(await file.text()) as Partial<{
     embedding: Partial<Config["embedding"]>;
     memory: Partial<Config["memory"]>;
+    repos: Record<string, unknown>;
   }>;
   const embedding = parsed.embedding ?? {};
   const memory = parsed.memory ?? {};
+  const repos: Record<string, string> = {};
+  for (const [id, path] of Object.entries(parsed.repos ?? {})) {
+    if (typeof path === "string" && path.trim()) repos[id] = expandHome(path.trim());
+  }
   return {
     embedding: {
       provider: embedding.provider === "ollama" ? "ollama" : "none",
@@ -86,5 +103,11 @@ export async function loadConfig(): Promise<Config> {
       repo: memory.repo ? String(memory.repo) : null,
       branch: memory.branch ? String(memory.branch) : DEFAULT_CONFIG.memory.branch,
     },
+    repos,
   };
+}
+
+/** "~/x" is what people type in a config file; nothing downstream understands it. */
+export function expandHome(path: string): string {
+  return path.startsWith("~/") ? join(homedir(), path.slice(2)) : path;
 }

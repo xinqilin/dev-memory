@@ -2,17 +2,17 @@
 // Structural lint for a memory repo. Self-contained on purpose: it runs in CI where the
 // plugin is not installed, so it must work with nothing but bun.
 //
-//   bun tools/lint.ts            # lint wiki/ and records/ in the current directory
+//   bun tools/lint.ts            # lint the docs and records/ in the current directory
 //   bun tools/lint.ts --root .   # same, explicit
 //
-// Exits 1 when anything is wrong. Existing hand-written docs outside wiki/ are never touched.
+// Exits 1 when anything is wrong.
 import { Glob } from "bun";
 import { join, relative } from "node:path";
 
 const RECORD_PATH = /^records\/[a-z0-9-]+\/\d{4}-\d{2}\/[^/]+\.jsonl$/;
 const REQUIRED_RECORD_FIELDS = ["id", "author", "host", "type", "title", "body", "content_hash", "created_at"];
-const PAGE_TYPES = new Set(["overview", "feature", "decision", "entity", "repo", "runbook"]);
-const PAGE_STATUS = new Set(["active", "superseded"]);
+// Directories that hold documents. Everything else (records/, tools/, .github/) is not a doc.
+const DOC_DIRS = ["spec", "maintenance", "guidelines", "config", "dr", "bank", "poc"];
 
 const problems: string[] = [];
 const warnings: string[] = [];
@@ -58,86 +58,49 @@ for await (const path of new Glob("records/**/*.jsonl").scan({ cwd: root, absolu
   });
 }
 
-// ---------- wiki ----------
-interface Page {
-  file: string;
-  slug: string;
-  frontmatter: Record<string, any>;
-  body: string;
+
+// ---------- documents ----------
+// A doc is a .md under one of DOC_DIRS. Two things must hold: every relative link resolves,
+// and README.md links to it — an unindexed page is a page nobody finds.
+const docs: string[] = [];
+for (const dir of DOC_DIRS) {
+  for await (const path of new Glob(`${dir}/**/*.md`).scan({ cwd: root, absolute: true })) {
+    docs.push(rel(path));
+  }
 }
 
-const pages: Page[] = [];
+for (const file of docs) {
+  const text = await Bun.file(join(root, file)).text();
+  const dir = file.split("/").slice(0, -1).join("/");
 
-for await (const path of new Glob("wiki/**/*.md").scan({ cwd: root, absolute: true })) {
-  const file = rel(path);
-  const text = await Bun.file(path).text();
-  const slug = file.split("/").at(-1)!.replace(/\.md$/, "");
-
-  if (slug === "index" || slug === "log") continue; // navigation files have no frontmatter
-
-  const match = text.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-  if (!match) {
-    fail(file, "missing YAML frontmatter");
-    continue;
-  }
-
-  let frontmatter: Record<string, any>;
-  try {
-    frontmatter = (Bun.YAML.parse(match[1]) ?? {}) as Record<string, any>;
-  } catch (error) {
-    fail(file, `frontmatter is not valid YAML (${error})`);
-    continue;
-  }
-
-  pages.push({ file, slug, frontmatter, body: match[2] });
-}
-
-const pageSlugs = new Set(pages.map((page) => page.slug));
-
-for (const page of pages) {
-  const { file, frontmatter } = page;
-  for (const field of ["type", "title", "status", "updated"]) {
-    if (!frontmatter[field]) fail(file, `frontmatter missing "${field}"`);
-  }
-  if (frontmatter.type && !PAGE_TYPES.has(frontmatter.type)) fail(file, `unknown type "${frontmatter.type}"`);
-  if (frontmatter.status && !PAGE_STATUS.has(frontmatter.status)) fail(file, `unknown status "${frontmatter.status}"`);
-  if (frontmatter.status === "superseded" && !frontmatter.superseded_by) {
-    fail(file, "superseded pages need superseded_by");
-  }
-
-  const sources = frontmatter.sources ?? [];
-  if (!Array.isArray(sources) || sources.length === 0) {
-    warn(file, "no sources[]: a page nobody can trace back is hard to trust");
-  } else if (recordIds.size > 0) {
-    for (const source of sources) {
-      if (!recordIds.has(String(source))) fail(file, `sources[] points at a record that does not exist: ${source}`);
+  // [text](./target.md#anchor) — only local targets; http(s) and bare anchors are someone else's problem.
+  for (const [, target] of text.matchAll(/\]\(([^)\s]+)\)/g)) {
+    if (/^(https?:|mailto:|#)/.test(target)) continue;
+    const clean = target.split("#")[0];
+    if (!clean) continue;
+    const resolved = join(root, dir, clean);
+    if (!(await Bun.file(resolved).exists())) {
+      const asDir = await Bun.file(join(resolved, "README.md")).exists();
+      if (!asDir) fail(file, `broken link: ${target}`);
     }
-  }
-
-  // [[wikilinks]] in frontmatter and body must resolve to a page in this repo.
-  const links = `${JSON.stringify(frontmatter.related ?? [])}\n${page.body}`.matchAll(/\[\[([^\]]+)\]\]/g);
-  for (const [, target] of links) {
-    if (!pageSlugs.has(target)) fail(file, `broken link [[${target}]]`);
   }
 }
 
 // ---------- index ----------
-const indexPath = join(root, "wiki", "index.md");
-if (await Bun.file(indexPath).exists()) {
-  const index = await Bun.file(indexPath).text();
-  for (const page of pages) {
-    const linked = index.includes(page.file.replace(/^wiki\//, "")) || index.includes(`[[${page.slug}]]`);
-    if (!linked) warn(page.file, "not linked from wiki/index.md (orphan page)");
+const readmePath = join(root, "README.md");
+if (await Bun.file(readmePath).exists()) {
+  const readme = await Bun.file(readmePath).text();
+  for (const file of docs) {
+    if (file.endsWith("/README.md")) continue; // a directory's own index
+    if (!readme.includes(file)) fail(file, "not linked from README.md — nobody will find it");
   }
-} else if (pages.length > 0) {
-  fail("wiki/index.md", "missing, but there are wiki pages");
+} else if (docs.length > 0) {
+  fail("README.md", "missing, but there are documents");
 }
 
 // ---------- report ----------
 for (const warning of warnings) console.warn(`warning  ${warning}`);
 for (const problem of problems) console.error(`error    ${problem}`);
 
-console.log(
-  `\nlint: ${pages.length} pages, ${recordIds.size} records, ${problems.length} errors, ${warnings.length} warnings`,
-);
+console.log(`\nlint: ${docs.length} docs, ${recordIds.size} records, ${problems.length} errors, ${warnings.length} warnings`);
 process.exit(problems.length > 0 ? 1 : 0);

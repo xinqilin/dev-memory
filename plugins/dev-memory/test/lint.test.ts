@@ -17,12 +17,14 @@ const RECORD = {
   created_at: "2026-09-18T01:00:00.000Z",
 };
 
-function page(front: Record<string, unknown>, body = "內容\n") {
-  const yaml = Object.entries(front)
-    .map(([key, value]) => `${key}: ${Array.isArray(value) ? JSON.stringify(value) : value}`)
-    .join("\n");
-  return `---\n${yaml}\n---\n${body}`;
-}
+const DOC = `# 匯出報表
+
+匯出報表的完整資料流，排程每日 05:35。
+
+## 整體流程
+
+BU 呼叫 API，寫入中介表，批次拋轉。
+`;
 
 async function repo(files: Record<string, string>) {
   const dir = mkdtempSync(join(tmpdir(), "dev-memory-lint-"));
@@ -48,88 +50,72 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-const GOOD_PAGE = page({
-  type: "decision",
-  title: "匯出報表改成單筆失敗不中斷",
-  status: "active",
-  updated: "2026-09-18",
-  sources: [RECORD.id],
-});
-
 test("a well-formed repo passes", async () => {
   const dir = await repo({
     "records/billing/2026-09/bill.lin.jsonl": JSON.stringify(RECORD) + "\n",
-    "wiki/index.md": "# 目錄\n- [匯出報表](billing/decisions/export.md)\n",
-    "wiki/billing/decisions/export.md": GOOD_PAGE,
+    "README.md": "# 目錄\n1. [匯出報表](./spec/export.md)\n",
+    "spec/export.md": DOC,
   });
 
   const { out, code } = await lint(dir);
   expect(code).toBe(0);
-  expect(out).toContain("1 pages, 1 records, 0 errors, 0 warnings");
+  expect(out).toContain("1 docs, 1 records, 0 errors, 0 warnings");
 });
 
 test("catches broken records", async () => {
   const dir = await repo({
-    "records/billing/2026-09/bill.lin.jsonl": [
-      JSON.stringify(RECORD),
-      JSON.stringify(RECORD), // duplicate id
-      JSON.stringify({ ...RECORD, id: "01JBFIXTURE0000000000000002", title: undefined }),
-      JSON.stringify({ ...RECORD, id: "01JBFIXTURE0000000000000003", content_hash: "abc" }),
-      "{ not json",
-    ].join("\n"),
-    "records/loose.jsonl": JSON.stringify({ ...RECORD, id: "01JBFIXTURE0000000000000004" }) + "\n",
+    "records/billing/2026-09/bill.lin.jsonl": `${JSON.stringify(RECORD)}\n{ not json\n`,
+    "README.md": "# 目錄\n",
   });
 
   const { out, code } = await lint(dir);
   expect(code).toBe(1);
-  expect(out).toContain("duplicate id");
-  expect(out).toContain('missing "title"');
-  expect(out).toContain("content_hash must start with sha256:");
   expect(out).toContain("not valid JSON");
-  expect(out).toContain("path must be records/<product>/<yyyy-mm>/<author>.jsonl");
 });
 
-test("catches broken pages", async () => {
+test("a link that points nowhere is an error", async () => {
   const dir = await repo({
-    "records/billing/2026-09/bill.lin.jsonl": JSON.stringify(RECORD) + "\n",
-    "wiki/index.md": "# 目錄\n- [a](billing/decisions/a.md)\n- [b](billing/decisions/b.md)\n- [c](billing/decisions/c.md)\n- [d](billing/decisions/d.md)\n",
-    "wiki/billing/decisions/a.md": "沒有 frontmatter\n",
-    "wiki/billing/decisions/b.md": page({ type: "guess", title: "t", status: "draft", updated: "2026-09-18", sources: [RECORD.id] }),
-    "wiki/billing/decisions/c.md": page({ type: "decision", title: "t", status: "superseded", updated: "2026-09-18", sources: ["01JBMISSING000000000000000"] }),
-    "wiki/billing/decisions/d.md": page({ type: "decision", title: "t", status: "active", updated: "2026-09-18", sources: [RECORD.id] }, "看 [[nowhere]]\n"),
+    "README.md": "# 目錄\n1. [匯出報表](./spec/export.md)\n",
+    "spec/export.md": `${DOC}\n見 [排程表](../config/batch-schedule.md)。\n`,
   });
 
   const { out, code } = await lint(dir);
   expect(code).toBe(1);
-  expect(out).toContain("missing YAML frontmatter");
-  expect(out).toContain('unknown type "guess"');
-  expect(out).toContain('unknown status "draft"');
-  expect(out).toContain("superseded pages need superseded_by");
-  expect(out).toContain("sources[] points at a record that does not exist");
-  expect(out).toContain("broken link [[nowhere]]");
+  expect(out).toContain("broken link: ../config/batch-schedule.md");
 });
 
-test("an orphan page and a page without sources are warnings, not errors", async () => {
+test("a link that resolves is fine, including one to a directory README", async () => {
   const dir = await repo({
+    "README.md": "# 目錄\n1. [匯出報表](./spec/export.md)\n2. [排程](./config/batch-schedule.md)\n",
+    "spec/export.md": `${DOC}\n見 [排程表](../config/batch-schedule.md) 與 [外部](https://example.com)。\n`,
+    "config/batch-schedule.md": "# 排程\n",
+  });
+
+  const { out, code } = await lint(dir);
+  expect(code).toBe(0);
+  expect(out).toContain("2 docs");
+});
+
+test("a document README never links to is an error, because nobody finds it", async () => {
+  const dir = await repo({
+    "README.md": "# 目錄\n",
+    "spec/export.md": DOC,
+  });
+
+  const { out, code } = await lint(dir);
+  expect(code).toBe(1);
+  expect(out).toContain("not linked from README.md");
+});
+
+test("tooling and raw material are not documents", async () => {
+  const dir = await repo({
+    "README.md": "# 目錄\n",
+    "records/README.md": "# 紀錄\n",
+    "schema.md": "# 規則\n",
     "records/billing/2026-09/bill.lin.jsonl": JSON.stringify(RECORD) + "\n",
-    "wiki/index.md": "# 目錄\n",
-    "wiki/billing/decisions/orphan.md": page({ type: "decision", title: "t", status: "active", updated: "2026-09-18" }),
   });
 
   const { out, code } = await lint(dir);
   expect(code).toBe(0);
-  expect(out).toContain("not linked from wiki/index.md");
-  expect(out).toContain("no sources[]");
-  expect(out).toContain("0 errors, 2 warnings");
-});
-
-test("hand-written docs outside wiki/ and records/ are ignored", async () => {
-  const dir = await repo({
-    "maintenance/aws.md": "# 沒有 frontmatter 的既有文件\n",
-    "README.md": "# repo\n",
-  });
-
-  const { out, code } = await lint(dir);
-  expect(code).toBe(0);
-  expect(out).toContain("0 pages, 0 records, 0 errors");
+  expect(out).toContain("0 docs, 1 records");
 });

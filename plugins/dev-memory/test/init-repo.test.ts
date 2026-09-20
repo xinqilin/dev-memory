@@ -22,27 +22,25 @@ test("adds the scaffolding to an empty repository", async () => {
   expect(created).toEqual([
     ".gitattributes",
     ".github/workflows/lint.yml",
+    "README.md",
     "records/README.md",
     "repos.yaml",
     "schema.md",
     "tools/lint.ts",
-    "wiki/index.md",
-    "wiki/log.md",
   ]);
-  expect(await Bun.file(join(dir, "schema.md")).text()).toContain("Memory repo 規則");
+  expect(await Bun.file(join(dir, "schema.md")).text()).toContain("文件規則");
 });
 
 test("never overwrites what is already there", async () => {
   const dir = target();
-  mkdirSync(join(dir, "wiki"), { recursive: true });
-  await Bun.write(join(dir, "wiki", "index.md"), "# 我們自己的目錄\n");
+  await Bun.write(join(dir, "README.md"), "# 我們自己的目錄\n");
   await Bun.write(join(dir, "repos.yaml"), "products: {}\n");
 
   const { created, kept } = await initRepo(dir);
 
-  expect(kept).toEqual(["repos.yaml", "wiki/index.md"]);
+  expect(kept).toEqual(["README.md", "repos.yaml"]);
   expect(created).toContain("schema.md");
-  expect(await Bun.file(join(dir, "wiki", "index.md")).text()).toBe("# 我們自己的目錄\n");
+  expect(await Bun.file(join(dir, "README.md")).text()).toBe("# 我們自己的目錄\n");
 });
 
 test("existing hand-written docs are left alone", async () => {

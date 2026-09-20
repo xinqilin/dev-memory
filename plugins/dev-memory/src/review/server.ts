@@ -21,6 +21,8 @@ export interface ReviewOptions {
   /** Where the built UI lives; overridden in tests. */
   uiDir?: string;
   onPublish?: (worktree: string, branch: string) => Promise<{ url?: string; message: string }>;
+  /** Called once the PR is open: the review is over, so the CLI can stop serving. */
+  onFinished?: () => void;
 }
 
 export interface ReviewServer {
@@ -191,6 +193,9 @@ export function startReviewServer(options: ReviewOptions): ReviewServer {
         if (!options.onPublish) return json({ error: "publishing is not configured" }, 501);
         try {
           const result = await options.onPublish(worktree, branch);
+          // The PR is open, so this page has nothing left to do. Give the response time to
+          // reach the browser, then let the CLI shut down instead of lingering on a port.
+          if (result.url) setTimeout(() => options.onFinished?.(), 800);
           return json(result);
         } catch (error) {
           return json({ error: String(error) }, 500);

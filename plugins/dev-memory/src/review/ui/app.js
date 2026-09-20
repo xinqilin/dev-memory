@@ -352,8 +352,14 @@ el("publish").addEventListener("click", async () => {
     say(`送出失敗：${body.error}`, "bad");
     return;
   }
-  say(body.url ? `已送出：${body.url}` : body.message, "good");
-  if (body.url) window.open(body.url, "_blank", "noopener");
+  if (!body.url) {
+    say(body.message, "good");
+    return;
+  }
+  // The review is over. Leave the page for the PR rather than leaving a dead tab behind.
+  say(`已送出，正在前往 ${body.url}`, "good");
+  events.close();
+  location.replace(body.url);
 });
 
 // ---------- outside edits ----------

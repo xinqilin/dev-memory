@@ -2,6 +2,7 @@
 // dev-memory CLI. Everything the hooks and skills do goes through here, so both tools behave alike.
 import { spawnSync } from "node:child_process";
 import { parseArgs } from "node:util";
+import { join } from "node:path";
 import type { Host } from "./adapters/types";
 import { archiveFile, sweep, totals } from "./core/archive";
 import { configPath, dbPath, ensureConfig, homeDir, loadConfig } from "./core/config";
@@ -10,6 +11,7 @@ import { formatReport, parseCases, runEval, suggestCases } from "./core/eval";
 import { entityIndex, missingEntityPages } from "./core/entities";
 import { exportRecords } from "./core/export";
 import { formatLint, lintRepo } from "./core/lint";
+import { configSuggestion, readReposYaml, resolveRepos } from "./core/repos";
 import { findStalePages, formatStale } from "./core/staleness";
 import { indexExistingDocs } from "./core/index-docs";
 import { initRepo } from "./core/init-repo";
@@ -39,6 +41,7 @@ Usage:
   dev-memory ingest-start <slug>      Open a worktree for a new ingest and print where it is
   dev-memory export --branch <b>      Write local records into the worktree as JSONL
   dev-memory index-docs               List the repo's existing docs in wiki/index.md
+  dev-memory repos                    Where each code repo is on this machine (--product)
   dev-memory entities                 Which tables, APIs and queues the records mention (--product, --json)
   dev-memory lint                     Check the memory repo: links, orphans, sources, duplicates (--repo)
   dev-memory stale                    Ask GitHub whether the code behind a page has moved on (--repo)
@@ -126,6 +129,41 @@ async function runExport(args: string[]): Promise<number> {
   }
 }
 
+async function runRepos(args: string[]): Promise<number> {
+  const { values } = parseArgs({ args, options: { repo: { type: "string" }, product: { type: "string" } } });
+  const memory = await memoryRepo(values.repo);
+  if (!memory) return 2;
+
+  const byProduct = await readReposYaml(memory);
+  if (byProduct.size === 0) {
+    console.error(`repos.yaml 裡沒有任何 repo：${join(memory, "repos.yaml")}`);
+    return 1;
+  }
+
+  let missing = 0;
+  for (const [product, entries] of byProduct) {
+    if (values.product && values.product !== product) continue;
+    console.log(`\n${product}`);
+    const resolved = await resolveRepos(entries);
+    for (const repo of resolved) {
+      const note = repo.branchPerJob ? `  （一支批次一個分支，前綴 ${repo.jobBranchPrefix}）` : "";
+      if (repo.path) {
+        console.log(`  ✓ ${repo.id}`);
+        console.log(`    ${repo.path}  [${repo.via === "config" ? "設定檔" : "自動找到"}]${note}`);
+      } else {
+        missing++;
+        console.log(`  ✗ ${repo.id}  找不到本機 clone${note}`);
+      }
+    }
+    const suggestion = configSuggestion(resolved);
+    if (suggestion) {
+      console.log(`\n  把下面幾行加進 ${configPath()}：\n`);
+      for (const line of suggestion.split("\n")) console.log(`    ${line}`);
+    }
+  }
+  return missing > 0 ? 1 : 0;
+}
+
 async function runEntities(args: string[]): Promise<number> {
   const { values } = parseArgs({ args, options: { product: { type: "string" }, json: { type: "boolean" } } });
   const db = openDb();
@@ -201,19 +239,26 @@ async function runReview(args: string[]): Promise<number> {
 
   const worktree = ensureWorktree(repo, values.branch, { fetch: false });
   const config = await loadConfig();
+  let finished: () => void;
+  const untilDone = new Promise<void>((resolve) => {
+    finished = resolve;
+  });
   const server = startReviewServer({
     worktree: worktree.path,
     branch: values.branch,
     base: `origin/${config.memory.branch}`,
     // The button in the page is the only way to publish; the agent is told never to call it.
     onPublish: async (path, branch) => publish(path, branch, { base: config.memory.branch }),
+    onFinished: () => finished(),
   });
 
   console.log(`review page: ${server.url}`);
   console.log(`pages in this ingest: ${changedPages(worktree.path, `origin/${config.memory.branch}`).length}`);
   if (values.open) spawnSync(process.platform === "darwin" ? "open" : "xdg-open", [server.url]);
-  console.log("Press Ctrl-C to stop.");
-  await new Promise(() => {}); // serve until interrupted
+  console.log("Press Ctrl-C to stop, or send the PR and this closes by itself.");
+  await untilDone; // the publish button ends the review
+  server.stop();
+  console.log("PR 已送出，審核頁關閉。合併後記得跑 `dev-memory sync`。");
   return 0;
 }
 
@@ -478,6 +523,8 @@ switch (command) {
     process.exit(await runExport(rest));
   case "index-docs":
     process.exit(await runIndexDocs(rest));
+  case "repos":
+    process.exit(await runRepos(rest));
   case "entities":
     process.exit(await runEntities(rest));
   case "lint":
