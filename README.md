@@ -2,7 +2,7 @@
 
 AI 讀程式碼寫出技術文件，用你存下來的開發紀錄補上「當初為什麼」，你審核後送 PR。
 
-Claude Code 與 Codex CLI 共用同一個 plugin、同一份記憶。這個 repo 本身也是 plugin 的 marketplace。
+Claude Code 與 Codex CLI 共用同一個 plugin、同一份記憶（Codex 那半尚未實測）。這個 repo 本身也是 plugin 的 marketplace，名稱 `104mis-plugins`。
 
 ```
 你說「寫一份 X 的文件」→ AI 讀程式碼 → 給你大綱確認 → 寫成文件
@@ -27,22 +27,47 @@ Claude Code 與 Codex CLI 共用同一個 plugin、同一份記憶。這個 repo
 | git | 通常已經有 | — |
 | [gh](https://cli.github.com) 並登入 | `brew install gh && gh auth login` | 提交記憶、開 PR、偵測文件過時 |
 
-### 2. 安裝 plugin
+### 2. 安裝 plugin（Claude Code）
 
-**Claude Code**
+**兩步：先加 marketplace，再裝 plugin。**
 
 ```bash
+# 1. 把這個 repo 註冊成 marketplace（名稱是 104mis-plugins）
 claude plugin marketplace add git@github.com:xinqilin/dev-memory.git
+
+# 2. 安裝
 claude plugin install dev-memory@104mis-plugins
 ```
 
-**Codex CLI**
+裝完**重開 Claude Code**才會生效。
+
+驗證：
 
 ```bash
-codex plugin marketplace add git@github.com:xinqilin/dev-memory.git
-codex plugin add dev-memory@104mis-plugins
-codex                                     # 啟動時要手動信任 hook，信任完重開一次
+claude plugin list                    # 應該看到 dev-memory 跟版本號
+claude plugin details dev-memory      # 列出 skill、hook、MCP，以及常駐 token 成本
 ```
+
+#### 常用指令
+
+| 指令 | 用途 |
+|---|---|
+| `claude plugin list` | 看裝了什麼、什麼版本 |
+| `claude plugin update dev-memory` | 更新到最新版（**要重開才生效**） |
+| `claude plugin marketplace update 104mis-plugins` | 只更新 marketplace 清單，不動已裝的 plugin |
+| `claude plugin uninstall dev-memory` | 移除 |
+| `claude plugin disable dev-memory` / `enable` | 暫時停用／啟用，不用移除 |
+| `claude plugin marketplace list` | 看註冊了哪些 marketplace |
+
+`marketplace add` 的來源可以是 **git URL、本機路徑、或 GitHub repo**。開發時指到本機最方便：
+
+```bash
+claude plugin marketplace add ~/project-plugin
+```
+
+> **更新拉不到新版？** 兩個工具都是**看版本號**決定要不要更新。`plugin.json` 的 version 沒變，`update` 就會回「已經是最新版」——即使程式碼改了。發版一定要 bump（見下方〈給維護者〉）。
+
+**Codex CLI**：plugin 那一半（`plugin.json`、`mcp.json`、hook）已經做好了，但**安裝語法還沒實測過**，等驗證後再補。
 
 ### 3. clone 團隊的文件庫
 
