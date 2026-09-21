@@ -291,7 +291,7 @@ updated: 2026-09-04
 - `archive_cursor(path, byte_offset)`：記錄每個 transcript 讀到哪裡，Stop 時只處理新增的行。
 - `record`：狀態是 `local`、`submitted` 或 `merged`。
 - `page`：從 `origin/main` 建出來的 wiki 索引。
-- `fts`（FTS5，`tokenize = "unicode61 tokenchars '_'"`，由 `core/tokenize.ts` 預先斷詞）：中文切成重疊 bigram，查詢時組成 bigram phrase（等於子字串比對）；識別字保留完整形式，另外依 camelCase、snake_case 拆開。已知限制：只查一個中文字時用 prefix，找不到出現在連續段最後一個字的單字。
+- `fts`（FTS5，`tokenize = "unicode61 tokenchars '_'"`，由 `core/tokenize.ts` 預先斷詞）：中文切成重疊 bigram，**後面另接一塊 unigram**，查詢時組成 bigram phrase（等於子字串比對）；識別字保留完整形式，另外依 camelCase、snake_case 拆開。unigram 必須放在 bigram 之後自成一塊、不可交錯，否則 phrase 的相鄰性會被破壞。原本「只查一個中文字時找不到連續段最後一個字」的限制已由 unigram 修掉（schema v3 會自動重建舊索引）。
 - `vector(ref, kind, model, model_digest, dim, content_hash, embedding BLOB)`：只有 provider 是 `ollama` 才寫入；模型、digest 或內容變了就重算。
 - `embed_queue(ref, kind, enqueued_at)`：待算向量的項目，在背景處理。
 

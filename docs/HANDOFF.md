@@ -38,7 +38,7 @@
 2. **初版建議**：不自建 PG + pgvector，改用 transcript + git，拿掉 n8n 跟 Apps Script。
 3. **Bill 反駁**：transcript 14 天後會被刪；只存檔案的話，一年 365 份沒人整理。→ 同意長期記憶要放 DB。
 4. **同事問「中文怎麼切字詞」**：釐清兩件不同的事：
-   - 斷詞是給關鍵字搜尋用的，中文採 bigram（兩字一塊）。
+   - 斷詞是給關鍵字搜尋用的，中文採 bigram（兩字一塊）＋ unigram（單字），兩塊分開不交錯。
    - 切塊是給向量搜尋用的，一筆紀錄就是一塊。
    - 搜尋採混合搜尋，準不準用評測集來量。
 5. **Bill：DB 不用共用**，每個人在本機跑，只要把記憶提交上來。→ 決定提交 JSONL 紀錄，不提交 DB 檔；repo 是正本，本機 DB 只是索引。
@@ -87,7 +87,7 @@
 - **本機**：`~/.dev-memory/memory.db`（SQLite），只是索引，隨時可以重建；原始對話只留在本機，不提交。
 - **不用**：claude-mem、n8n、Apps Script；本機不用 PostgreSQL。
 - **搜尋**：
-  - FTS5，中文轉 bigram，識別字依 camelCase/snake_case 拆開
+  - FTS5，中文轉 bigram ＋ unigram，識別字依 camelCase/snake_case 拆開
   - AI 會自己改寫查詢多試幾次
   - 先讀 wiki 的 `index.md` 導航
 - **v1 不做語意搜尋（2026-09-18 決定）**：第一版只有關鍵字搜尋，隊友不用裝 Ollama。關鍵字已經夠用（中文逐字全中、問句 Recall@5 40%），而多跑一個本機模型服務會直接墊高導入門檻。schema 的 `vector`、`embed_queue` 表先留著，要加的時候不用動其他部分。
@@ -110,7 +110,7 @@
 - **push 跟開 PR 由使用者自己執行**：Bill 的 CLAUDE.md 禁止 agent 執行 git push。
 - **認證**：`gh auth login` 或 SSH，不需要 PAT；CI 用內建的 `GITHUB_TOKEN`。
 - **Runtime**：Bun + `bun:sqlite`。macOS 上 Bun 用的是**系統** SQLite，不是 Bun 自帶的；Phase 0 實測 macOS arm64 是 3.51.0，有開 FTS5。「Bun build flag 有開 FTS5」只適用 Linux/Windows。
-- **FTS5 斷詞（Phase 0 實測通過）**：`unicode61 tokenchars '_'`，由 `core/tokenize.ts` 預先斷詞（中文 bigram、識別字完整形式加上拆開的部分），查詢時組成 bigram phrase。
+- **FTS5 斷詞（Phase 0 實測通過）**：`unicode61 tokenchars '_'`，由 `core/tokenize.ts` 預先斷詞（中文 bigram 後接 unigram、識別字完整形式加上拆開的部分），查詢時組成 bigram phrase。
 - **repo ID（已確認）**：`owner/repo`，統一小寫並去掉 host。
 - **MCP server（已確認）**：Phase 1 改用 `@modelcontextprotocol/sdk`，`bun build` 打包成單檔 commit 進 repo。Phase 0 的零依賴版本只是 spike。
 - **plugin 檔案配置（Phase 0 實測）**：
@@ -211,3 +211,11 @@
 ## Active Skill
 
 無。Phase 0 已完成，等 Bill 跑完工具內驗證、確認決策後才進 Phase 1。
+
+## 2026-09-21：中文單字查詢改成 unigram ＋ bigram
+
+- **原因**：只存 bigram 時，一段中文的最後一個字永遠不是任何 token 的開頭，單字查詢用前綴比對抓不到。真實索引上查「表」漏了 82 筆（中介表、排程表、資料表）。
+- **決定**：`tokenizeForIndex` 在 bigram 之後**另接一塊** unigram。schema v3 的 migration 從 `turn`／`record`／`page` 的原文重建 `fts`，本機 0.9 秒。
+- **放棄**：(1) 交錯吐 unigram 與 bigram——會破壞 phrase 的相鄰性，最準的那一項查詢失效。(2) 直接採用外部範例程式——會失去 camelCase／snake_case 拆分。
+- **量測**：評測集 Recall@5 維持 100%，MRR 0.590 → 0.750（只有 5 題，只能說沒變差）。索引 19.6 → 27.4 MB。
+

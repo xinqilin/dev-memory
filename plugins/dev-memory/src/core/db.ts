@@ -4,9 +4,40 @@ import { Database } from "bun:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { dbPath } from "./config";
+import { tokenizeForIndex } from "./tokenize";
+
+/** A migration step is either SQL, or code for what SQL cannot do (re-tokenizing, for one). */
+type Step = string | ((db: Database) => void);
+
+/**
+ * Rebuild the keyword index from the original text, which every table keeps. Needed whenever
+ * the tokenizer changes: the index holds pre-tokenized text, so old rows would stay tokenized
+ * the old way and never match queries built the new way. Purely local and takes seconds.
+ */
+function rebuildFts(db: Database): void {
+  db.run("delete from fts");
+  const insert = db.prepare("insert into fts (body, kind, ref) values (?, ?, ?)");
+
+  for (const row of db.query("select id, text from turn").all() as { id: string; text: string }[]) {
+    insert.run(tokenizeForIndex(row.text), "turn", row.id);
+  }
+  for (const row of db.query("select id, title, body from record").all() as { id: string; title: string; body: string }[]) {
+    insert.run(tokenizeForIndex(`${row.title}\n${row.body}`), "record", row.id);
+  }
+  const pages = db.query("select path, title, body, status from page").all() as {
+    path: string;
+    title: string | null;
+    body: string;
+    status: string | null;
+  }[];
+  for (const row of pages) {
+    if (row.status === "superseded") continue; // kept for history, never a search hit
+    insert.run(tokenizeForIndex(`${row.title ?? ""}\n${row.body}`), "page", row.path);
+  }
+}
 
 // One array per schema version; each entry is applied in a transaction.
-const MIGRATIONS: string[][] = [
+const MIGRATIONS: Step[][] = [
   [
     // Raw conversation turns. Local only, never committed.
     `create table turn (
@@ -97,6 +128,11 @@ const MIGRATIONS: string[][] = [
     // Line numbers must survive a resume, otherwise turn ids shift between chunks.
     `alter table archive_cursor add column line_no integer not null default 0`,
   ],
+  [
+    // v3: CJK runs now index unigrams as well as bigrams, so a one-character query finds
+    // a character at the end of a run. Everything already indexed has to be re-tokenized.
+    rebuildFts,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
@@ -108,7 +144,10 @@ export function schemaVersion(db: Database): number {
 export function migrate(db: Database): number {
   for (let version = schemaVersion(db); version < MIGRATIONS.length; version++) {
     db.transaction(() => {
-      for (const statement of MIGRATIONS[version]) db.run(statement);
+      for (const step of MIGRATIONS[version]) {
+        if (typeof step === "string") db.run(step);
+        else step(db);
+      }
       db.run(`pragma user_version = ${version + 1}`); // pragmas cannot be parameterized
     })();
   }

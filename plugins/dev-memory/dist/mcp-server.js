@@ -34716,7 +34716,88 @@ function dbPath() {
   return join(homeDir(), "memory.db");
 }
 
+// src/core/tokenize.ts
+var CJK = String.raw`\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}`;
+var SEGMENT = new RegExp(String.raw`([${CJK}]+)|((?:(?![${CJK}])[\p{L}\p{M}\p{N}_])+)`, "gu");
+function* segments(text) {
+  for (const m of text.matchAll(SEGMENT)) {
+    if (m[1])
+      yield { kind: "cjk", text: m[1] };
+    else if (m[2])
+      yield { kind: "word", text: m[2] };
+  }
+}
+function bigrams(run) {
+  const chars = Array.from(run);
+  if (chars.length === 1)
+    return chars;
+  return chars.slice(0, -1).map((c, i) => c + chars[i + 1]);
+}
+function identifierParts(word) {
+  return word.split("_").flatMap((piece) => piece.split(/(?<=[\p{Ll}\p{N}])(?=\p{Lu})|(?<=\p{Lu})(?=\p{Lu}\p{Ll})/u)).filter(Boolean).map((p) => p.toLowerCase());
+}
+function queryTerms(query) {
+  return [...segments(query)].map((segment) => segment.text);
+}
+function tokenizeForIndex(text) {
+  const tokens = [];
+  for (const seg of segments(text)) {
+    if (seg.kind === "cjk") {
+      tokens.push(...bigrams(seg.text));
+      const chars = Array.from(seg.text);
+      if (chars.length > 1)
+        tokens.push(...chars);
+      continue;
+    }
+    const full = seg.text.toLowerCase();
+    tokens.push(full);
+    const parts = identifierParts(seg.text);
+    if (parts.length > 1)
+      tokens.push(...parts);
+  }
+  return tokens.join(" ");
+}
+function buildSearchQuery(query) {
+  const parts = [...segments(query)];
+  const kept = parts.length > 1 ? parts.filter((seg) => seg.kind === "word" || Array.from(seg.text).length > 1) : parts;
+  const terms = [];
+  for (const seg of kept) {
+    if (seg.kind === "word") {
+      terms.push(`"${seg.text.toLowerCase()}"`);
+      continue;
+    }
+    const chars = Array.from(seg.text);
+    if (chars.length === 1) {
+      terms.push(`"${seg.text}"*`);
+      continue;
+    }
+    const grams = bigrams(seg.text);
+    if (grams.length > 1)
+      terms.push(`"${grams.join(" ")}"`);
+    terms.push(...grams.map((gram) => `"${gram}"`));
+  }
+  return terms.length ? [...new Set(terms)].join(" OR ") : null;
+}
+
 // src/core/db.ts
+function rebuildFts(db) {
+  db.run("delete from fts");
+  const insert = db.prepare("insert into fts (body, kind, ref) values (?, ?, ?)");
+  for (const row of db.query("select id, text from turn").all()) {
+    insert.run(tokenizeForIndex(row.text), "turn", row.id);
+  }
+  for (const row of db.query("select id, title, body from record").all()) {
+    insert.run(tokenizeForIndex(`${row.title}
+${row.body}`), "record", row.id);
+  }
+  const pages = db.query("select path, title, body, status from page").all();
+  for (const row of pages) {
+    if (row.status === "superseded")
+      continue;
+    insert.run(tokenizeForIndex(`${row.title ?? ""}
+${row.body}`), "page", row.path);
+  }
+}
 var MIGRATIONS = [
   [
     `create table turn (
@@ -34795,6 +34876,9 @@ var MIGRATIONS = [
   ],
   [
     `alter table archive_cursor add column line_no integer not null default 0`
+  ],
+  [
+    rebuildFts
   ]
 ];
 var SCHEMA_VERSION = MIGRATIONS.length;
@@ -34804,8 +34888,12 @@ function schemaVersion(db) {
 function migrate(db) {
   for (let version2 = schemaVersion(db);version2 < MIGRATIONS.length; version2++) {
     db.transaction(() => {
-      for (const statement of MIGRATIONS[version2])
-        db.run(statement);
+      for (const step of MIGRATIONS[version2]) {
+        if (typeof step === "string")
+          db.run(step);
+        else
+          step(db);
+      }
       db.run(`pragma user_version = ${version2 + 1}`);
     })();
   }
@@ -34844,48 +34932,6 @@ function repoIdFromDir(dir) {
   if (result.status !== 0)
     return null;
   return normalizeRemote(result.stdout);
-}
-
-// src/core/tokenize.ts
-var CJK = String.raw`\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}`;
-var SEGMENT = new RegExp(String.raw`([${CJK}]+)|((?:(?![${CJK}])[\p{L}\p{M}\p{N}_])+)`, "gu");
-function* segments(text) {
-  for (const m of text.matchAll(SEGMENT)) {
-    if (m[1])
-      yield { kind: "cjk", text: m[1] };
-    else if (m[2])
-      yield { kind: "word", text: m[2] };
-  }
-}
-function bigrams(run) {
-  const chars = Array.from(run);
-  if (chars.length === 1)
-    return chars;
-  return chars.slice(0, -1).map((c, i) => c + chars[i + 1]);
-}
-function queryTerms(query) {
-  return [...segments(query)].map((segment) => segment.text);
-}
-function buildSearchQuery(query) {
-  const parts = [...segments(query)];
-  const kept = parts.length > 1 ? parts.filter((seg) => seg.kind === "word" || Array.from(seg.text).length > 1) : parts;
-  const terms = [];
-  for (const seg of kept) {
-    if (seg.kind === "word") {
-      terms.push(`"${seg.text.toLowerCase()}"`);
-      continue;
-    }
-    const chars = Array.from(seg.text);
-    if (chars.length === 1) {
-      terms.push(`"${seg.text}"*`);
-      continue;
-    }
-    const grams = bigrams(seg.text);
-    if (grams.length > 1)
-      terms.push(`"${grams.join(" ")}"`);
-    terms.push(...grams.map((gram) => `"${gram}"`));
-  }
-  return terms.length ? [...new Set(terms)].join(" OR ") : null;
 }
 
 // src/core/search.ts

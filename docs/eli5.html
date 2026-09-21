@@ -514,7 +514,7 @@
         <div class="pic">
           <div class="blocks">
             <div class="brow">
-              <span class="brow-label">存進去時，中文兩個字一塊</span>
+              <span class="brow-label">存進去時，中文兩字一塊＋單字</span>
               <span class="blk">例外</span><span class="blk">外處</span><span class="blk">處理</span>
             </div>
             <div class="brow">
@@ -1437,8 +1437,10 @@
       <div class="idea">
         <div class="blocks" role="img" aria-label="存進去時怎麼切詞">
           <div class="brow">
-            <span class="brow-label">① 中文：兩個字一塊，而且重疊</span>
+            <span class="brow-label">① 中文：兩字一塊（重疊），再加上每一個單字</span>
             <span class="blk">例外</span><span class="blk">外處</span><span class="blk">處理</span>
+            <span class="to">＋</span>
+            <span class="blk">例</span><span class="blk">外</span><span class="blk">處</span><span class="blk">理</span>
           </div>
           <div class="brow">
             <span class="brow-label">② 程式名字：整個留著，另外拆開</span>
@@ -1447,7 +1449,7 @@
           </div>
         </div>
         <h3>存進去時怎麼切</h3>
-        <p>中文重疊切成兩字一塊，所以「例外處理」裡面搜「外處」也找得到。程式名字保留完整形式（搜 <code>WAIT_FOR_INSERT</code> 不會誤中更長的那個），同時拆成 <code>sap</code>、<code>status</code>，用其中一段也搜得到。</p>
+        <p>中文重疊切成兩字一塊，所以「例外處理」裡面搜「外處」也找得到；每個單字也另外存一份，所以只查一個字也找得到。程式名字保留完整形式（搜 <code>WAIT_FOR_INSERT</code> 不會誤中更長的那個），同時拆成 <code>sap</code>、<code>status</code>，用其中一段也搜得到。</p>
       </div>
 
       <div class="idea">
@@ -1502,10 +1504,53 @@
 
     <p class="note"><strong>搜尋片段是原文，不是切碎的內容。</strong> 資料庫裡存兩份：原文給人看，切過詞的只給比對用。所以你看到的是「因為佔位符而拋<strong>[例外]</strong>，要找出…」，不是「拋例 例外 外要」。</p>
 
-    <h3>為什麼是兩個字一塊，不是真的斷詞</h3>
+    <h3>為什麼是兩字一塊＋單字，不是真的斷詞</h3>
     <p>真正的斷詞器（jieba 這類）靠<strong>詞庫</strong>認得「測評點數」是一個詞。詞庫要維護，遇到新詞、專有名詞、打錯字就認不出來，而且要另外編譯安裝。</p>
     <p>兩字一塊不需要任何詞庫——<strong>重疊切法保證任何相鄰兩字都會變成一個 token</strong>，所以不必知道詞的邊界在哪。代價是索引大約變 1.8 倍，而且會有誤中（查「中斷」可能撈到「途中斷了」），靠排序壓下去。</p>
-    <p class="legend">這叫 <b>bigram</b>。用空間換掉詞庫，是中文全文檢索最常見的無依賴解法。</p>
+    <p class="legend">兩字一塊叫 <b>bigram</b>，單字叫 <b>unigram</b>。用空間換掉詞庫，是中文全文檢索最常見的無依賴解法。</p>
+
+    <h3>為什麼後來加上單字（unigram）</h3>
+    <p>只存兩字一塊的時候有一個漏洞：<strong>一段中文的最後一個字，永遠不會是任何一塊的開頭</strong>。</p>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>原文</th><th>只存 bigram</th><th>查「表」</th><th>加上 unigram 之後</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>資料表欄位</td><td>資料 料表 表欄 欄位</td><td>✅（「表欄」以表開頭）</td><td>✅</td></tr>
+          <tr><td>更新中介表</td><td>更新 新中 中介 介表</td><td><strong>❌ 表在最後</strong></td><td>✅</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>只有一個字的查詢用的是前綴比對（「表」開頭的 token），所以<strong>字在中間找得到、在結尾就漏了</strong>。實測在真實索引上：</p>
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead><tr><th>查詢</th><th>只存 bigram</th><th>加上 unigram</th><th>差別</th></tr></thead>
+        <tbody>
+          <tr><td>「表」</td><td>341 筆</td><td><strong>423 筆</strong></td><td>+82 筆，「中介表」「排程表」「資料表」以前全部漏掉</td></tr>
+          <tr><td>「批」</td><td>109 筆</td><td><strong>124 筆</strong></td><td>+15 筆</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>加單字的時候有一個坑</h3>
+    <p>最高分的那一項查詢是<strong>片語</strong>——查「例外處理」會要求 <code>例外</code> 後面緊接 <code>外處</code>、再接 <code>處理</code>。片語靠的是 <strong>token 相鄰</strong>。</p>
+    <div class="ideas">
+      <div class="idea">
+        <h3>❌ 交錯吐</h3>
+        <p class="note"><code>例 例外 外 外處 處 處理 理</code></p>
+        <p>「例外」後面變成「外」而不是「外處」——<strong>片語比對直接失效</strong>，排序最準的那一項會消失。網路上常見的範例程式就是這樣寫的。</p>
+      </div>
+      <div class="idea">
+        <h3>✅ 分成兩塊</h3>
+        <p class="note"><code>例外 外處 處理</code>　<code>例 外 處 理</code><br>└── bigram ──┘　└─ unigram ─┘</p>
+        <p>片語在 bigram 那一塊裡照樣相鄰。這是實際採用的做法，並且有測試守住。</p>
+      </div>
+    </div>
+
+    <p class="note"><strong>代價</strong>：索引從 19.6 MB 變 27.4 MB（約 +40%）。升級時舊索引會<strong>自動重建</strong>——原文都存在表裡，是純本機操作，實測 0.9 秒。隊友更新 plugin 後不用做任何事。</p>
 
     <h3>bm25 到底在算什麼</h3>
     <p>上面表格裡那個「相關度」就是 <strong>bm25</strong>，全文檢索的標準排序公式，SQLite 內建。它同時算三件事：</p>
@@ -1587,12 +1632,12 @@
     <div class="ideas">
       <div class="idea">
         <h3>一句話帶走</h3>
-        <p><strong>切詞用 bigram</strong>，因為不想依賴詞庫；<strong>排序用 bm25</strong>，因為不用裝東西又講得出道理；<strong>向量這次沒用</strong>，因為要先裝模型，而且對程式碼識別字不見得比較準。</p>
+        <p><strong>切詞用 bigram ＋ unigram</strong>，因為不想依賴詞庫、又要單字也搜得到；<strong>排序用 bm25</strong>，因為不用裝東西又講得出道理；<strong>向量這次沒用</strong>，因為要先裝模型，而且對程式碼識別字不見得比較準。</p>
       </div>
       <div class="idea">
         <h3>所以這個 plugin 用了什麼</h3>
         <p class="note">
-          存進去 → <strong>bigram 切詞</strong>（自己寫的，不靠詞庫）<br>
+          存進去 → <strong>bigram ＋ unigram 切詞</strong>（自己寫的，不靠詞庫）<br>
           查詢時 → <strong>bigram OR 組合</strong><br>
           排序 → <strong>bm25</strong> × 種類權重 × 同 repo 權重
         </p>
@@ -1700,7 +1745,7 @@
           <tr>
             <td>中文切詞</td>
             <td><strong>自動</strong>　寫入時</td>
-            <td>重疊 bigram（兩字一塊），程式自己切</td>
+            <td>重疊 bigram（兩字一塊）＋ unigram（單字），程式自己切</td>
             <td>不用詞庫、不用編譯擴充；新詞跟打錯字也有效</td>
           </tr>
           <tr>
@@ -2274,7 +2319,7 @@
       </div>
       <div class="idea">
         <h3>中文搜得到</h3>
-        <p>原作是英文語境。中文沒有空白，整句會被當成一個 token，所以自己切成兩字一塊；還有評測集量 Recall，不靠感覺。</p>
+        <p>原作是英文語境。中文沒有空白，整句會被當成一個 token，所以自己切成兩字一塊再加單字；還有評測集量 Recall，不靠感覺。</p>
       </div>
     </div>
 
@@ -2310,7 +2355,7 @@
       </div>
 
       <div class="idea">
-        <div class="blocks" role="img" aria-label="中文要切成兩個字一塊才搜得到">
+        <div class="blocks" role="img" aria-label="中文要切成兩字一塊加單字才搜得到">
           <div class="brow">
             <span class="brow-label">整串當成一塊</span>
             <span class="blk long">發票作廢流程</span>

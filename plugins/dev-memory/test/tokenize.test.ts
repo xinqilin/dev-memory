@@ -3,13 +3,13 @@ import { describe, expect, test } from "bun:test";
 import { buildMatchQuery, buildSearchQuery, identifierParts, tokenizeForIndex } from "../src/core/tokenize";
 
 describe("tokenizeForIndex", () => {
-  test("CJK runs become overlapping bigrams", () => {
-    expect(tokenizeForIndex("例外處理")).toBe("例外 外處 處理");
-    expect(tokenizeForIndex("錯")).toBe("錯");
+  test("CJK runs become overlapping bigrams, then their unigrams as a separate block", () => {
+    expect(tokenizeForIndex("例外處理")).toBe("例外 外處 處理 例 外 處 理");
+    expect(tokenizeForIndex("錯")).toBe("錯"); // a one-character run is already a unigram
   });
 
   test("punctuation splits CJK runs", () => {
-    expect(tokenizeForIndex("例外，處理")).toBe("例外 處理");
+    expect(tokenizeForIndex("例外，處理")).toBe("例外 例 外 處理 處 理");
   });
 
   test("identifiers keep full form plus parts", () => {
@@ -19,7 +19,39 @@ describe("tokenizeForIndex", () => {
   });
 
   test("mixed Chinese and identifiers", () => {
-    expect(tokenizeForIndex("sapStatus維持WAIT_FOR_DB")).toBe("sapstatus sap status 維持 wait_for_db wait for db");
+    expect(tokenizeForIndex("sapStatus維持WAIT_FOR_DB")).toBe("sapstatus sap status 維持 維 持 wait_for_db wait for db");
+  });
+});
+
+// With bigrams alone, a character that ends a run is never the start of any token, so a
+// one-character prefix query cannot reach it: "車" missed "搭公車" and "稅" missed "要繳稅".
+describe("one-character queries", () => {
+  function index(docs: string[]) {
+    const db = new Database(":memory:");
+    db.run(`create virtual table f using fts5(body, tokenize = "unicode61 tokenchars '_'")`);
+    for (const doc of docs) db.run("insert into f values (?)", [tokenizeForIndex(doc)]);
+    return (query: string) =>
+      (db.query("select rowid from f where f match ? order by rowid").all(buildSearchQuery(query)!) as { rowid: number }[]).map(
+        (row) => row.rowid,
+      );
+  }
+
+  test("find a character wherever it sits in the run, including the end", () => {
+    const find = index(["搭公車", "公車很慢", "要繳稅", "稅率調整", "火車站"]);
+    expect(find("車")).toEqual([1, 2, 5]);
+    expect(find("稅")).toEqual([3, 4]);
+  });
+
+  test("phrases still match: the unigrams sit after the bigrams, not between them", () => {
+    const find = index(["例外處理完成", "處理例外"]);
+    // "例外處理" as a phrase is "例外 外處 處理"; only the first document has it in that order.
+    const db = new Database(":memory:");
+    db.run(`create virtual table f using fts5(body, tokenize = "unicode61 tokenchars '_'")`);
+    for (const doc of ["例外處理完成", "處理例外"]) db.run("insert into f values (?)", [tokenizeForIndex(doc)]);
+    const hits = db.query("select rowid from f where f match ?").all(buildMatchQuery("例外處理")!) as { rowid: number }[];
+    expect(hits.map((row) => row.rowid)).toEqual([1]);
+    // The loose search is deliberately broader: it also finds the reordered one.
+    expect(find("例外處理")).toEqual([1, 2]);
   });
 });
 

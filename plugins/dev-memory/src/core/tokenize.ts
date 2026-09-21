@@ -40,6 +40,12 @@ export function tokenizeForIndex(text: string): string {
   for (const seg of segments(text)) {
     if (seg.kind === "cjk") {
       tokens.push(...bigrams(seg.text));
+      // Unigrams too, so a one-character query finds a character that ends a run ("搭公車" for
+      // "車"): with bigrams alone it is never the start of any token, and a prefix query misses it.
+      // They go in their own block after the bigrams, never interleaved — a phrase query is a run
+      // of bigrams and only matches when those bigrams are adjacent in the token stream.
+      const chars = Array.from(seg.text);
+      if (chars.length > 1) tokens.push(...chars);
       continue;
     }
     const full = seg.text.toLowerCase();
