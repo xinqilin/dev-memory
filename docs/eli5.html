@@ -679,18 +679,55 @@
 
   <section>
     <h2>那我到底要做什麼</h2>
-    <p class="lead">照平常的方式用 Claude Code 或 Codex 就好，什麼都不用改。你只會在幾個時機開口，每次都只是一句話。</p>
+    <p class="lead">照平常的方式用 Claude Code 或 Codex 就好，什麼都不用改。<strong>有兩條路同時在跑</strong>：一條你完全不用管，一條偶爾需要你回一句話。</p>
 
-    <div class="route" aria-label="你的動作">
-      <span class="stop">照常工作</span><span class="to">→</span>
-      <span class="stop">對話自動存檔</span><span class="to">→</span>
-      <span class="stop gate">AI 問「要存嗎」你點頭</span><span class="to">→</span>
-      <span class="stop you">說「寫一份文件」</span><span class="to">→</span>
-      <span class="stop">它去讀程式碼</span><span class="to">→</span>
-      <span class="stop gate">① 確認骨架</span><span class="to">→</span>
-      <span class="stop gate">② 審核頁按兩個鈕</span>
+    <div class="pic">
+      <svg viewBox="0 0 680 300" role="img" aria-label="兩條平行的路：上面是永遠在跑的自動存檔，下面是偶爾才發生、需要你回話的動線">
+        <rect class="f-none s-line dash" x="16" y="34" width="648" height="70" rx="12"/>
+        <text class="t t-muted" x="30" y="26" font-size="14">背景　一直在跑，你完全不用管</text>
+
+        <rect class="f-paper s-line" x="36" y="52" width="156" height="34" rx="8"/>
+        <text class="t" x="114" y="74" text-anchor="middle" font-size="15">每講完一回合</text>
+        <path class="f-none s-line" d="M198 69 H222"/>
+        <polygon class="f-line" points="220,64 232,69 220,74"/>
+
+        <rect class="f-paper s-line" x="238" y="52" width="176" height="34" rx="8"/>
+        <text class="t t-mono" x="326" y="74" text-anchor="middle" font-size="13">memory.db</text>
+        <path class="f-none s-line" d="M420 69 H444"/>
+        <polygon class="f-line" points="442,64 454,69 442,74"/>
+
+        <rect class="f-paper s-line" x="460" y="52" width="184" height="34" rx="8"/>
+        <text class="t" x="552" y="74" text-anchor="middle" font-size="15">以後搜得到</text>
+
+        <path class="f-none s-accent dash" d="M326 90 V150"/>
+        <polygon class="f-accent" points="320,148 326,160 332,148"/>
+        <text class="t t-accent" x="340" y="126" font-size="13">卡片跟文件的素材從這裡來</text>
+
+        <rect class="f-none s-ok dash" x="16" y="176" width="648" height="104" rx="12"/>
+        <text class="t t-ok" x="30" y="168" font-size="14">你的動線　只有需要時才發生，不做也不影響上面那條</text>
+
+        <rect class="f-card s-edge" x="36" y="192" width="230" height="32" rx="8"/>
+        <text class="t t-card" x="151" y="213" text-anchor="middle" font-size="14">AI 問「要存嗎」→ 你點頭</text>
+        <path class="f-none s-edge" d="M272 208 H296"/>
+        <polygon class="f-line" points="294,203 306,208 294,213"/>
+        <rect class="f-card s-edge" x="312" y="192" width="92" height="32" rx="8"/>
+        <text class="t t-card" x="358" y="213" text-anchor="middle" font-size="14">卡片</text>
+        <text class="t t-muted" x="420" y="213" font-size="13">存在本機，還沒上 GitHub</text>
+
+        <rect class="f-ok" x="36" y="236" width="248" height="32" rx="8"/>
+        <text class="t t-paper" x="160" y="257" text-anchor="middle" font-size="14">你說「幫我寫一份⋯⋯的文件」</text>
+        <path class="f-none s-ok" d="M290 252 H314"/>
+        <polygon class="f-ok" points="312,247 324,252 312,257"/>
+        <rect class="f-paper s-accent" x="330" y="236" width="128" height="32" rx="8"/>
+        <text class="t t-accent" x="394" y="257" text-anchor="middle" font-size="14">① 骨架</text>
+        <path class="f-none s-accent" d="M464 252 H488"/>
+        <polygon class="f-accent" points="486,247 498,252 486,257"/>
+        <rect class="f-paper s-accent" x="504" y="236" width="140" height="32" rx="8"/>
+        <text class="t t-accent" x="574" y="257" text-anchor="middle" font-size="14">② 審核頁 → PR</text>
+      </svg>
     </div>
-    <p class="legend"><b>綠色</b>是你主動開口——<strong>整條路線只有這一步</strong>。<b>藍框</b>是它停下來問你，你回一句話就好。白色的完全不用管。</p>
+
+    <p class="legend">上面那條<strong>從你裝好的那一刻就沒停過</strong>，跟你有沒有做下面的事完全無關。下面那條<b>綠色</b>是你主動開口，<b>藍框</b>是它停下來問你。</p>
 
     <h3>哪些自動、哪些要你點頭</h3>
     <p>最容易誤會的一點：<strong>「存對話」跟「存卡片」是兩件不同的事。</strong></p>
