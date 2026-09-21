@@ -301,6 +301,7 @@
   }
   .callout span { font-size: 15px; }
   .callout small { display: block; color: var(--muted); font-size: 14px; }
+  .strike-wrong { text-decoration: line-through; text-decoration-color: var(--warn); text-decoration-thickness: 2px; color: var(--muted); }
 
   code.cmd {
     display: block;
@@ -2048,6 +2049,77 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <h3>常見的誤會：寫文件時讀的不是原始層</h3>
+    <p>三層看久了很容易以為流程是「<span class="strike-wrong">讀原始層 → 經文件層轉譯</span>」。<strong>不是。</strong>原始層在寫文件時只是配角，第一來源是<strong>程式碼</strong>。</p>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th></th><th>讀什麼</th><th>規則層</th><th>程式碼</th><th>文件層</th><th>原始層</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>原始層累積</td>
+            <td>不讀，只寫</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td><strong>一直在寫</strong></td>
+          </tr>
+          <tr>
+            <td><strong>寫文件</strong></td>
+            <td>四個來源</td>
+            <td>① 說明書</td>
+            <td><strong>② 事實</strong></td>
+            <td>③ 避免重複</td>
+            <td>④ 只補「為什麼」</td>
+          </tr>
+          <tr>
+            <td><strong>查東西</strong></td>
+            <td>由上往下</td>
+            <td>完全不碰</td>
+            <td>都查不到才翻</td>
+            <td><strong>① 先看這裡</strong></td>
+            <td>② 不夠再往下</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>為什麼這個差別重要：<strong>只讀原始層寫出來的就是決策摘要</strong>，不是規格文件。因為原始層裡沒有這些——</p>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>文件必須有的</th><th>在原始層嗎</th><th>真正在哪</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>API 的完整 payload</td><td>❌</td><td>request / response DTO</td></tr>
+          <tr><td>必填、格式、值域</td><td>❌</td><td>validation annotation</td></tr>
+          <tr><td>cron 排程</td><td>❌</td><td><code>deploy/env-*.sh</code></td></tr>
+          <tr><td>狀態值 <code>1 / 3 / 4</code></td><td>❌</td><td>enum</td></tr>
+          <tr><td><strong>為什麼選這個方案</strong></td><td>✅</td><td><strong>只有這個在原始層</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ideas">
+      <div class="idea">
+        <h3>文件層不是轉譯器</h3>
+        <p class="note">
+          規則層 ＝ <strong>說明書</strong>（怎麼轉）<br>
+          LLM ＝ <strong>轉譯的人</strong><br>
+          文件層 ＝ <strong>轉出來的東西</strong>
+        </p>
+        <p>文件層是<strong>產出</strong>，不是中間的加工站。真正在轉譯的是 LLM，而它照規則層的指示做。</p>
+      </div>
+      <div class="idea">
+        <h3>一句話帶走</h3>
+        <p><strong>寫入時</strong>讀規則層當說明書、讀程式碼當事實、讀原始層補「為什麼」，產出文件層。<br>
+        <strong>讀取時</strong>只往文件層去，不夠才往原始層挖，<strong>規則層完全用不到</strong>。</p>
+      </div>
     </div>
 
     <p class="note"><strong>規則層是這個設計最容易被低估的部分。</strong> 「頁面要寫原因跟放棄的方案」「不能寫密碼跟個資」「決策被推翻要標記不要刪」——這些都寫在 <code>schema.md</code> 裡，是純文字。團隊想調整 AI 的產出風格，改那份檔案就好，不需要工程師改程式、不需要重新發版、所有人下一次整理就會照新規則做。</p>
