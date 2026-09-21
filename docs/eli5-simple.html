@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>dev-memory 速覽</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --bg: #F1F4F8;
+    --paper: #FFFFFF;
+    --soft: #E2E9F3;
+    --ink: #1B2433;
+    --muted: #5A6577;
+    --line: #C3CDDA;
+    --card: #FFDE85;
+    --card-edge: #D9B34A;
+    --card-ink: #3A2E05;
+    --accent: #3A67EE;
+    --ok: #1F8F63;
+    --warn: #D24B3B;
+    --f-hand: "LXGW WenKai TC", "Kaiti TC", "BiauKai", "PingFang TC", serif;
+    --f-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F151E;
+      --paper: #18212D;
+      --soft: #1F2B3A;
+      --ink: #E6ECF4;
+      --muted: #9AA6B7;
+      --line: #354457;
+      --card: #EDCB63;
+      --card-edge: #B8962F;
+      --accent: #7E9DFF;
+      --ok: #49C08D;
+      --warn: #FF7B6B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F151E;
+    --paper: #18212D;
+    --soft: #1F2B3A;
+    --ink: #E6ECF4;
+    --muted: #9AA6B7;
+    --line: #354457;
+    --card: #EDCB63;
+    --card-edge: #B8962F;
+    --accent: #7E9DFF;
+    --ok: #49C08D;
+    --warn: #FF7B6B;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 17px;
+    line-height: 1.7;
+  }
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 40px 64px;
+    display: grid;
+    gap: 64px;
+  }
+
+  header { display: grid; gap: 14px; }
+  .kicker { font-size: 13px; letter-spacing: .12em; color: var(--muted); }
+  h1, h2, h3 { font-family: var(--f-hand); font-weight: 700; margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(34px, 6vw, 52px); line-height: 1.2; }
+  h2 { font-size: 30px; }
+  h3 { font-size: 24px; line-height: 1.3; }
+  p { margin: 0; }
+  .lead { font-size: 19px; color: var(--muted); max-width: 40rem; }
+  a { color: var(--accent); }
+
+  code {
+    font-family: var(--f-mono);
+    font-size: .84em;
+    background: var(--soft);
+    padding: 1px 7px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  code.cmd {
+    display: block;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding: 8px 12px;
+    line-height: 1.6;
+  }
+
+  section { display: grid; gap: 24px; }
+
+  .route {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 6px;
+    margin-top: 8px;
+  }
+  .stop {
+    font-family: var(--f-hand);
+    font-size: 19px;
+    background: var(--paper);
+    border: 2px solid var(--line);
+    border-radius: 999px;
+    padding: 2px 14px;
+  }
+  .stop.gate { border-color: var(--accent); color: var(--accent); }
+  .stop.you { background: var(--ok); border-color: var(--ok); color: var(--paper); }
+  .to { color: var(--muted); font-size: 15px; }
+  .legend { font-size: 14px; color: var(--muted); }
+  .legend b { color: var(--accent); font-weight: 500; }
+  .legend b.g { color: var(--ok); }
+
+  .more {
+    justify-self: start;
+    font-size: 15px;
+    border: 1.5px dashed var(--line);
+    border-radius: 999px;
+    padding: 4px 14px;
+    text-decoration: none;
+  }
+
+  .pic { background: var(--soft); border-radius: 18px; padding: 18px; }
+  .pic svg { display: block; width: 100%; height: auto; }
+
+  .pains { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+  .pain {
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .pain .big { font-family: var(--f-hand); font-size: 34px; line-height: 1.2; color: var(--warn); }
+  .pain b { font-size: 17px; }
+  .pain p { color: var(--muted); font-size: 15px; }
+
+  .flow { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .flow th, .flow td {
+    border-bottom: 1px solid var(--line);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .flow th { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .flow td:first-child { font-family: var(--f-hand); font-size: 18px; white-space: nowrap; }
+  .flow-wrap { overflow-x: auto; }
+
+  .says { display: grid; gap: 12px; }
+  .say-this {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 18px;
+  }
+  .when {
+    justify-self: start;
+    font-size: 13px;
+    color: var(--accent);
+    border: 1.5px solid currentColor;
+    border-radius: 999px;
+    padding: 2px 10px;
+    margin-top: 6px;
+  }
+  .when.go { color: var(--ok); }
+  .say-this q { display: block; font-family: var(--f-hand); font-size: 22px; }
+  .say-this small { display: block; color: var(--muted); font-size: 15px; margin-top: 2px; }
+
+  .chain {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 6px;
+    font-size: 15px;
+  }
+  .chain span {
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    padding: 2px 10px;
+  }
+  .chain span.gate { border-color: var(--accent); color: var(--accent); }
+  .chain span.you { background: var(--ok); border-color: var(--ok); color: var(--paper); }
+  .chain i { font-style: normal; color: var(--muted); }
+
+  .moments { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+  .moment { display: grid; gap: 10px; align-content: start; }
+  .moment .tag { font-family: var(--f-hand); font-size: 18px; color: var(--accent); font-weight: 700; }
+  .moment .tag.you { color: var(--ok); }
+  .moment p { color: var(--muted); font-size: 15px; }
+
+  .safe { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; border-top: 2px dashed var(--line); }
+  .safe div { display: grid; gap: 2px; padding-block: 14px; border-bottom: 2px dashed var(--line); }
+  .safe b { font-size: 17px; }
+  .safe span { color: var(--muted); font-size: 15px; }
+
+  .note {
+    border-left: 3px solid var(--accent);
+    padding: 4px 0 4px 14px;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  .checks { display: grid; border-top: 2px dashed var(--line); }
+  .check {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    padding-block: 14px;
+    border-bottom: 2px dashed var(--line);
+  }
+  .check small { display: block; color: var(--muted); font-size: 14px; }
+  .chip {
+    font-size: 13px;
+    font-weight: 500;
+    padding: 2px 12px;
+    border-radius: 999px;
+    border: 1.5px solid currentColor;
+    white-space: nowrap;
+  }
+  .chip.done { color: var(--ok); }
+  .chip.wait { color: var(--warn); border-style: dashed; }
+
+  footer { color: var(--muted); font-size: 14px; display: grid; gap: 8px; }
+
+  /* svg paint classes */
+  svg .f-paper { fill: var(--paper); }
+  svg .f-soft { fill: var(--soft); }
+  svg .f-card { fill: var(--card); }
+  svg .f-accent { fill: var(--accent); }
+  svg .f-ok { fill: var(--ok); }
+  svg .f-line { fill: var(--line); }
+  svg .f-ink { fill: var(--ink); }
+  svg .f-none { fill: none; }
+  svg .s-ink { stroke: var(--ink); stroke-width: 2.5; }
+  svg .s-line { stroke: var(--line); stroke-width: 2.5; }
+  svg .s-accent { stroke: var(--accent); stroke-width: 3; }
+  svg .s-ok { stroke: var(--ok); stroke-width: 3; }
+  svg .s-warn { stroke: var(--warn); stroke-width: 3; }
+  svg .s-edge { stroke: var(--card-edge); stroke-width: 2.5; }
+  svg * { stroke-linecap: round; stroke-linejoin: round; }
+  svg .dash { stroke-dasharray: 6 6; }
+  svg .t { font-family: var(--f-hand); fill: var(--ink); }
+  svg .t-mono { font-family: var(--f-mono); }
+  svg .t-card { fill: var(--card-ink); }
+  svg .t-ok { fill: var(--ok); }
+  svg .t-accent { fill: var(--accent); }
+  svg .t-muted { fill: var(--muted); }
+  svg .t-paper { fill: var(--paper); }
+
+  @media (max-width: 720px) {
+    .wrap { gap: 48px; padding-inline: 16px; padding-block: 28px 48px; }
+    .pains, .moments, .safe { grid-template-columns: minmax(0, 1fr); }
+    .stop { font-size: 17px; padding: 1px 11px; }
+    .say-this { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .when { margin-top: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">dev-memory · 五分鐘速覽</div>
+    <h1>程式碼跟對話，<br>變成全隊的文件</h1>
+    <p class="lead">平常照用 Claude Code 或 Codex，對話會自動記下來。要寫文件時說一句話，AI 讀程式碼寫出規格、用開發紀錄補上「當初為什麼」，你審核後自己送 PR。</p>
+    <div class="route" aria-label="整條路線">
+      <span class="stop">自動記</span><span class="to">→</span>
+      <span class="stop">搜得到</span><span class="to">→</span>
+      <span class="stop gate">① 確認骨架</span><span class="to">→</span>
+      <span class="stop gate">② 審核頁</span><span class="to">→</span>
+      <span class="stop you">你按送出</span><span class="to">→</span>
+      <span class="stop">隊友同步</span>
+    </div>
+    <p class="legend"><b>藍框</b>是 AI 停下來等你點頭；<b class="g">綠色</b>那一步只有你能做。</p>
+    <a class="more" href="eli5.html">想看每一步的細節 → 完整版</a>
+  </header>
+
+  <section>
+    <h2>為什麼要做</h2>
+    <div class="pains">
+      <div class="pain">
+        <div class="big">14 天</div>
+        <b>記憶會蒸發</b>
+        <p>對話紀錄預設 14 天就清掉。半年後問「當初為什麼這樣決定」，沒人答得出來。</p>
+      </div>
+      <div class="pain">
+        <div class="big">沒人寫</div>
+        <b>文件是額外工作</b>
+        <p>做完功能還要再寫一次文件，寫完程式一改又過期。</p>
+      </div>
+      <div class="pain">
+        <div class="big">3 / 12</div>
+        <b>中文搜不到</b>
+        <p>原本的工具搜「例外」只找到 3 筆，實際有 12 筆。現在 12 筆全中。</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>一張圖看懂</h2>
+    <p class="lead">兩條路同時在跑：上面那條你完全不用管，下面那條偶爾需要你回一句話。</p>
+    <div class="pic">
+      <svg viewBox="0 0 680 300" role="img" aria-label="兩條平行的路：上面是永遠在跑的自動存檔，下面是偶爾才發生、需要你回話的動線">
+        <rect class="f-none s-line dash" x="16" y="34" width="648" height="70" rx="12"/>
+        <text class="t t-muted" x="30" y="26" font-size="14">背景　一直在跑，你完全不用管，不花 AI 額度</text>
+
+        <rect class="f-paper s-line" x="36" y="52" width="156" height="34" rx="8"/>
+        <text class="t" x="114" y="74" text-anchor="middle" font-size="15">每講完一回合</text>
+        <path class="f-none s-line" d="M198 69 H222"/>
+        <polygon class="f-line" points="220,64 232,69 220,74"/>
+
+        <rect class="f-paper s-line" x="238" y="52" width="176" height="34" rx="8"/>
+        <text class="t t-mono" x="326" y="74" text-anchor="middle" font-size="13">memory.db</text>
+        <path class="f-none s-line" d="M420 69 H444"/>
+        <polygon class="f-line" points="442,64 454,69 442,74"/>
+
+        <rect class="f-paper s-line" x="460" y="52" width="184" height="34" rx="8"/>
+        <text class="t" x="552" y="74" text-anchor="middle" font-size="15">以後搜得到</text>
+
+        <path class="f-none s-accent dash" d="M326 90 V150"/>
+        <polygon class="f-accent" points="320,148 326,160 332,148"/>
+        <text class="t t-accent" x="340" y="126" font-size="13">卡片跟文件的素材從這裡來</text>
+
+        <rect class="f-none s-ok dash" x="16" y="176" width="648" height="104" rx="12"/>
+        <text class="t t-ok" x="30" y="168" font-size="14">你的動線　只有需要時才發生</text>
+
+        <rect class="f-card s-edge" x="36" y="192" width="230" height="32" rx="8"/>
+        <text class="t t-card" x="151" y="213" text-anchor="middle" font-size="14">AI 問「要存嗎」→ 你點頭</text>
+        <path class="f-none s-edge" d="M272 208 H296"/>
+        <polygon class="f-line" points="294,203 306,208 294,213"/>
+        <rect class="f-card s-edge" x="312" y="192" width="92" height="32" rx="8"/>
+        <text class="t t-card" x="358" y="213" text-anchor="middle" font-size="14">卡片</text>
+        <text class="t t-muted" x="420" y="213" font-size="13">存在本機，還沒上 GitHub</text>
+
+        <rect class="f-ok" x="36" y="236" width="248" height="32" rx="8"/>
+        <text class="t t-paper" x="160" y="257" text-anchor="middle" font-size="14">你說「幫我寫一份⋯⋯的文件」</text>
+        <path class="f-none s-ok" d="M290 252 H314"/>
+        <polygon class="f-ok" points="312,247 324,252 312,257"/>
+        <rect class="f-paper s-accent" x="330" y="236" width="128" height="32" rx="8"/>
+        <text class="t t-accent" x="394" y="257" text-anchor="middle" font-size="14">① 骨架</text>
+        <path class="f-none s-accent" d="M464 252 H488"/>
+        <polygon class="f-accent" points="486,247 498,252 486,257"/>
+        <rect class="f-paper s-accent" x="504" y="236" width="140" height="32" rx="8"/>
+        <text class="t t-accent" x="574" y="257" text-anchor="middle" font-size="14">② 審核頁 → PR</text>
+      </svg>
+    </div>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>三個名詞</th><th>是什麼</th><th>誰寫</th><th>放在哪</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>對話</td>
+            <td>你跟 AI 講過的話，原始素材</td>
+            <td>自動收</td>
+            <td>只在你的電腦，不進 git</td>
+          </tr>
+          <tr>
+            <td>卡片</td>
+            <td>一個決定濃縮成三行：<strong>原因、決定、放棄了什麼</strong></td>
+            <td>AI 起草，你確認</td>
+            <td>團隊 repo，只新增不修改</td>
+          </tr>
+          <tr>
+            <td>頁面</td>
+            <td>一篇給人讀的文件，一個主題一頁</td>
+            <td>AI 寫，你在審核頁核准</td>
+            <td>團隊 repo</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>你只要會三句話</h2>
+    <p class="lead">用平常講話的方式講，對應的 skill 自己會被叫起來。真正要你主動開口的只有第三句。</p>
+    <div class="says">
+      <div class="say-this">
+        <span class="when">AI 問你要不要存</span>
+        <div>
+          <q>好，存吧</q>
+          <small>AI 做出決定時會主動提議，起草一張卡片給你看，你說可以才存。約 30 秒。</small>
+        </div>
+      </div>
+      <div class="say-this">
+        <span class="when">想查以前的決定</span>
+        <div>
+          <q>我們之前為什麼改成不中斷？</q>
+          <small>直接問就好。它先翻記憶（文件 → 紀錄 → 原始對話），翻不到才去讀程式碼。</small>
+        </div>
+      </div>
+      <div class="say-this">
+        <span class="when go">功能做完，要留文件</span>
+        <div>
+          <q>幫我寫一份測評點數拋轉 ERP 的文件</q>
+          <small>全程約 10 分鐘，中間停兩次等你回話。<strong>這是唯一會產生 PR 的一句話。</strong>想確定叫到它，就打 <code>/dev-memory:wiki-ingest</code>。</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>寫文件：兩次點頭，一顆只有你能按的按鈕</h2>
+    <div class="chain" aria-label="寫文件的流程">
+      <span>讀程式碼</span><i>→</i>
+      <span class="gate">① 骨架</span><i>→</i>
+      <span>寫檔 + 檢查</span><i>→</i>
+      <span class="gate">② 審核頁</span><i>→</i>
+      <span class="you">送出 PR</span><i>→</i>
+      <span>merge 後 sync</span>
+    </div>
+
+    <div class="moments">
+      <div class="moment">
+        <div class="pic">
+          <svg viewBox="0 0 240 160" role="img" aria-label="文件骨架：分幾節、哪節有圖、哪節有 payload">
+            <rect class="f-paper s-ink" x="36" y="18" width="168" height="126" rx="8"/>
+            <rect class="f-line s-ink" x="96" y="10" width="48" height="16" rx="4"/>
+            <text class="t" x="52" y="56" font-size="14">1 整體流程</text>
+            <rect class="f-none s-ok" x="140" y="42" width="52" height="20" rx="10"/>
+            <text class="t t-ok" x="166" y="57" text-anchor="middle" font-size="12">有圖</text>
+            <text class="t" x="52" y="88" font-size="14">2 API</text>
+            <rect class="f-none s-ok" x="120" y="74" width="72" height="20" rx="10"/>
+            <text class="t t-ok" x="156" y="89" text-anchor="middle" font-size="12">有 payload</text>
+            <text class="t" x="52" y="120" font-size="14">3 設計考量</text>
+            <rect class="f-none s-accent" x="140" y="106" width="52" height="20" rx="10"/>
+            <text class="t t-accent" x="166" y="121" text-anchor="middle" font-size="12">紀錄</text>
+          </svg>
+        </div>
+        <div class="tag">① 確認骨架</div>
+        <h3>先看大綱，再動筆</h3>
+        <p>AI 讀完 controller、DTO、enum、排程設定，先列出分幾節、哪節有 payload。你用講的回「加一節重跑」「可以，開始寫」。</p>
+      </div>
+
+      <div class="moment">
+        <div class="pic">
+          <svg viewBox="0 0 240 160" role="img" aria-label="本機審核頁：左邊編輯，右邊預覽">
+            <rect class="f-paper s-ink" x="10" y="14" width="220" height="126" rx="8"/>
+            <line class="s-line" x1="10" y1="34" x2="230" y2="34"/>
+            <circle class="f-line" cx="24" cy="24" r="3.5"/>
+            <circle class="f-line" cx="36" cy="24" r="3.5"/>
+            <circle class="f-line" cx="48" cy="24" r="3.5"/>
+            <text class="t t-mono t-muted" x="64" y="28" font-size="9">127.0.0.1</text>
+            <line class="s-line" x1="120" y1="34" x2="120" y2="140"/>
+            <rect class="f-line" x="22" y="48" width="80" height="8" rx="4"/>
+            <rect class="f-line" x="22" y="64" width="62" height="8" rx="4"/>
+            <rect class="f-line" x="22" y="80" width="84" height="8" rx="4"/>
+            <line class="s-accent" x1="92" y1="94" x2="92" y2="108"/>
+            <rect class="f-line" x="22" y="96" width="64" height="8" rx="4"/>
+            <rect class="f-accent" x="132" y="46" width="60" height="12" rx="3" opacity=".75"/>
+            <rect class="f-line" x="132" y="66" width="84" height="7" rx="3.5"/>
+            <rect class="f-line" x="132" y="80" width="72" height="7" rx="3.5"/>
+            <rect class="f-line" x="132" y="94" width="80" height="7" rx="3.5"/>
+            <text class="t t-muted" x="66" y="156" text-anchor="middle" font-size="12">左邊改</text>
+            <text class="t t-muted" x="170" y="156" text-anchor="middle" font-size="12">右邊看</text>
+          </svg>
+        </div>
+        <div class="tag">② 審核頁</div>
+        <h3>在瀏覽器改到滿意</h3>
+        <p>自動打開本機審核頁：左邊改、右邊預覽、跟 main 比、看每句話的來源。檢查沒過就按不下「核准並 commit」。</p>
+      </div>
+
+      <div class="moment">
+        <div class="pic">
+          <svg viewBox="0 0 240 160" role="img" aria-label="送出 PR 的按鈕只有你能按，AI 不會 push">
+            <rect class="f-ok" x="16" y="44" width="128" height="52" rx="26"/>
+            <text class="t t-paper" x="80" y="77" text-anchor="middle" font-size="20" font-weight="700">送出 PR</text>
+            <polygon class="f-paper s-ink" points="118,80 118,114 126,106 132,120 139,117 133,103 144,103"/>
+            <text class="t" x="80" y="146" text-anchor="middle" font-size="15">只有你能按</text>
+            <line class="s-ink" x1="200" y1="40" x2="200" y2="52"/>
+            <circle class="f-card s-edge" cx="200" cy="36" r="4"/>
+            <rect class="f-soft s-ink" x="176" y="52" width="48" height="38" rx="8"/>
+            <circle class="f-ink" cx="190" cy="70" r="4"/>
+            <circle class="f-ink" cx="210" cy="70" r="4"/>
+            <rect class="f-soft s-ink" x="184" y="94" width="32" height="22" rx="4"/>
+            <circle class="f-none s-warn" cx="200" cy="80" r="38"/>
+            <line class="s-warn" x1="173" y1="53" x2="227" y2="107"/>
+            <text class="t t-muted" x="200" y="146" text-anchor="middle" font-size="13">AI 不會 push</text>
+          </svg>
+        </div>
+        <div class="tag you">你按送出</div>
+        <h3>PR 作者是你本人</h3>
+        <p>按「送出 PR」才會 push。合併後跑 <code>dev-memory sync</code>，隊友 sync 之後也搜得到。</p>
+      </div>
+    </div>
+
+    <p class="note"><strong>文件的事實來自程式碼，不是對話。</strong>欄位、必填、狀態值、cron 都從 <code>dev</code> 分支讀（<code>git show</code>，不切你的分支）；對話紀錄只拿來寫「設計考量」與 Known Issue。</p>
+  </section>
+
+  <section>
+    <h2>可以放心的地方</h2>
+    <div class="safe">
+      <div><b>原始對話不離開你的電腦</b><span>放在 <code>~/.dev-memory/</code>，不進 git。會給全隊看的只有卡片跟文件，而且都要過審核頁與 PR。</span></div>
+      <div><b>AI 碰不到送出</b><span>push 跟開 PR 只有你能按，AI 從頭到尾不會替你 push。</span></div>
+      <div><b>背景收集零成本</b><span>每回合存對話是純程式在搬檔案，不呼叫模型，也沒有常駐程序。</span></div>
+      <div><b>壞掉不會拖垮你</b><span>記憶的錯誤全部吞掉只留 log，不會讓你的對話中斷。本機索引隨時可刪，重跑 <code>dm setup</code> 就重建。</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>上手四步</h2>
+    <div class="says">
+      <div class="say-this">
+        <span class="when">1　裝工具</span>
+        <div><code class="cmd">brew install bun gh &amp;&amp; gh auth login</code></div>
+      </div>
+      <div class="say-this">
+        <span class="when">2　裝 plugin</span>
+        <div>
+          <code class="cmd">claude plugin marketplace add git@github.com:xinqilin/dev-memory.git
+claude plugin install dev-memory@104mis-plugins</code>
+          <small>Codex 要在 <code>/hooks</code> 信任一次，然後重開 session。</small>
+        </div>
+      </div>
+      <div class="say-this">
+        <span class="when">3　clone 文件庫</span>
+        <div><small>團隊共用的文件 repo，clone 到哪都可以。</small></div>
+      </div>
+      <div class="say-this">
+        <span class="when go">4　跑一次 setup</span>
+        <div>
+          <code class="cmd">dm setup --repo ~/project-other/&lt;文件庫&gt;</code>
+          <small>建索引、灌既有對話、同步隊友的文件、逐項檢查環境。<strong>做完就能用了。</strong>缺什麼它會直接說要跑哪一行。</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>現在做到哪</h2>
+    <div class="checks">
+      <div class="check">
+        <span>端對端走完真實 PR<small>讀程式碼 → 確認骨架 → 產生文件 → 本機審核 → PR → merge → sync</small></span>
+        <b class="chip done">2 次</b>
+      </div>
+      <div class="check">
+        <span>中文搜尋<small>逐字比對找得到的，全部都找得到</small></span>
+        <b class="chip done">12 = 12</b>
+      </div>
+      <div class="check">
+        <span>文件以程式碼為第一來源<small>第一次跑就抓到既有文件三個錯</small></span>
+        <b class="chip done">已驗證</b>
+      </div>
+      <div class="check">
+        <span>Codex 上的 hook<small>Claude Code 已驗證；Codex 要手動信任 hook，還沒測</small></span>
+        <b class="chip wait">待測</b>
+      </div>
+      <div class="check">
+        <span>正式上線<small>切到正式文件庫、找隊友試用、停掉舊工具</small></span>
+        <b class="chip wait">下一階段</b>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <a class="more" href="eli5.html">完整版：搜尋怎麼切中文、三層架構、九個步驟、每個技術選擇的理由 →</a>
+    <span>摘自 docs/eli5.html · 2026-09-21</span>
+  </footer>
+
+</div>
+</body>
+</html>
