@@ -683,24 +683,58 @@
 
     <div class="route" aria-label="你的動作">
       <span class="stop">照常工作</span><span class="to">→</span>
-      <span class="stop you">說「存起來」</span><span class="to">→</span>
+      <span class="stop">對話自動存檔</span><span class="to">→</span>
+      <span class="stop gate">AI 問「要存嗎」你點頭</span><span class="to">→</span>
       <span class="stop you">說「寫一份文件」</span><span class="to">→</span>
       <span class="stop">它去讀程式碼</span><span class="to">→</span>
       <span class="stop gate">① 確認骨架</span><span class="to">→</span>
       <span class="stop gate">② 審核頁按兩個鈕</span>
     </div>
-    <p class="legend"><b>綠色</b>是你主動開口，<b>藍框</b>是它自己停下來等你回話。其他時間你完全不用管它。</p>
+    <p class="legend"><b>綠色</b>是你主動開口——<strong>整條路線只有這一步</strong>。<b>藍框</b>是它停下來問你，你回一句話就好。白色的完全不用管。</p>
 
-    <h3>你會講的五句話</h3>
-    <p>用平常講話的方式講出來，對應的 skill 自己會被叫起來——括號裡的名字只是讓你知道是誰在做事。</p>
+    <h3>哪些自動、哪些要你點頭</h3>
+    <p>最容易誤會的一點：<strong>「存對話」跟「存卡片」是兩件不同的事。</strong></p>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th></th><th>誰觸發</th><th>你要做什麼</th><th>為什麼這樣設計</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>對話存檔</td>
+            <td><strong>完全自動</strong>（Stop hook，每講完一回合）</td>
+            <td><strong>什麼都不用做</strong></td>
+            <td>只存在你電腦裡，不可逆也無害。索引裡那兩千多筆對話，你一次都沒開口過</td>
+          </tr>
+          <tr>
+            <td>卡片</td>
+            <td><strong>AI 會主動提議</strong>，但要你點頭</td>
+            <td>說一句「好」，或改一改再存</td>
+            <td>卡片會進團隊 repo、只增不改，而且會變成未來文件的「設計考量」——<strong>錯的卡片比沒有卡片更糟</strong></td>
+          </tr>
+          <tr>
+            <td>寫文件</td>
+            <td><strong>只有你能開口</strong></td>
+            <td>說「幫我寫一份〈主題〉的文件」</td>
+            <td>只有你知道現在這個主題值不值得寫成一頁</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note"><strong>你不用記得要存卡片。</strong> 每個 session 開始時，plugin 會告訴 AI：「做出決定時——原因、決定了什麼、放棄了什麼——主動提議存起來」。所以是它問你，不是你想起來。而 <code>mem-save</code> 的規則寫死一句：<strong>沒給使用者看過的卡片，不准存</strong>。</p>
+
+    <h3>你會講的話</h3>
+    <p>下面五句裡，<strong>真正要你主動開口的只有第三句</strong>（寫文件）。第一句是回應 AI 的提議，第二句就是平常問問題，最後兩句很少用。用平常講話的方式講就好，對應的 skill 自己會被叫起來。</p>
     <p class="note"><strong>想要確定叫到它，就打斜線指令</strong>：<code>/dev-memory:wiki-ingest</code>。格式是 <code>/plugin名:skill名</code>，四個都可以叫：<code>mem-save</code>、<code>mem-setup</code>、<code>wiki-ingest</code>、<code>wiki-lint</code>。用講的比較自然，但關鍵字沒對上時斜線指令是確定的。</p>
 
     <div class="says">
       <div class="say-this">
-        <span class="when">剛做完一個決定</span>
+        <span class="when">AI 問你要不要存</span>
         <div>
-          <q>把這個決定存起來</q>
-          <small><code>mem-save</code> 會起草一張卡片：原因、決定、放棄了什麼。印出來給你看，你說「可以」才存進本機。約 30 秒，當下做最準，因為理由還在腦子裡。</small>
+          <q>好，存吧</q>
+          <small><strong>通常是 AI 先開口問。</strong><code>mem-save</code> 會起草一張卡片：原因、決定、放棄了什麼，印出來給你看，你說「可以」才存進本機。約 30 秒。<br>它沒問但你覺得值得記，也可以自己講「把這個決定存起來」。</small>
         </div>
       </div>
 
@@ -748,7 +782,7 @@
         <tbody>
           <tr>
             <td>做決定的當下</td>
-            <td>講「存起來」</td>
+            <td>AI 問你就點頭</td>
             <td>卡片很便宜，寧可多存。它是之後文件「設計考量」那一節的來源</td>
           </tr>
           <tr>
