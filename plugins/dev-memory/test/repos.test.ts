@@ -30,8 +30,8 @@ test("reads the table form, including the branch hints", async () => {
 
   const entries = (await readReposYaml(dir)).get("billing")!;
   expect(entries).toEqual([
-    { id: "104corp/api", defaultBranch: "dev", branchPerJob: false, jobBranchPrefix: "batch/" },
-    { id: "104corp/batch", defaultBranch: "main", branchPerJob: true, jobBranchPrefix: "job/" },
+    { id: "104corp/api", refs: ["dev"], defaultBranch: "dev", branchPerJob: false, jobBranchPrefix: "batch/" },
+    { id: "104corp/batch", refs: ["main"], defaultBranch: "main", branchPerJob: true, jobBranchPrefix: "job/" },
   ]);
 });
 
@@ -43,7 +43,7 @@ test("still reads the older bare-string form", async () => {
 `);
 
   const entries = (await readReposYaml(dir)).get("billing")!;
-  expect(entries).toEqual([{ id: "104corp/api", defaultBranch: "main", branchPerJob: false, jobBranchPrefix: "batch/" }]);
+  expect(entries).toEqual([{ id: "104corp/api", refs: ["main"], defaultBranch: "main", branchPerJob: false, jobBranchPrefix: "batch/" }]);
 });
 
 test("a repo with no repos.yaml yields nothing rather than throwing", async () => {

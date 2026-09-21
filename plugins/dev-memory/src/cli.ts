@@ -11,7 +11,7 @@ import { formatReport, parseCases, runEval, suggestCases } from "./core/eval";
 import { entityIndex, missingEntityPages } from "./core/entities";
 import { exportRecords } from "./core/export";
 import { formatLint, lintRepo } from "./core/lint";
-import { configSuggestion, readReposYaml, resolveRepos } from "./core/repos";
+import { configSuggestion, readReposYaml, resolveRepos, saveRepoPaths } from "./core/repos";
 import { findStalePages, formatStale } from "./core/staleness";
 import { indexExistingDocs } from "./core/index-docs";
 import { initRepo } from "./core/init-repo";
@@ -41,7 +41,7 @@ Usage:
   dev-memory ingest-start <slug>      Open a worktree for a new ingest and print where it is
   dev-memory export --branch <b>      Write local records into the worktree as JSONL
   dev-memory index-docs               List the repo's existing docs in wiki/index.md
-  dev-memory repos                    Where each code repo is on this machine (--product)
+  dev-memory repos                    Where each code repo is on this machine (--product, --save)
   dev-memory entities                 Which tables, APIs and queues the records mention (--product, --json)
   dev-memory lint                     Check the memory repo: links, orphans, sources, duplicates (--repo)
   dev-memory stale                    Ask GitHub whether the code behind a page has moved on (--repo)
@@ -130,7 +130,7 @@ async function runExport(args: string[]): Promise<number> {
 }
 
 async function runRepos(args: string[]): Promise<number> {
-  const { values } = parseArgs({ args, options: { repo: { type: "string" }, product: { type: "string" } } });
+  const { values } = parseArgs({ args, options: { repo: { type: "string" }, product: { type: "string" }, save: { type: "boolean" } } });
   const memory = await memoryRepo(values.repo);
   if (!memory) return 2;
 
@@ -147,13 +147,19 @@ async function runRepos(args: string[]): Promise<number> {
     const resolved = await resolveRepos(entries);
     for (const repo of resolved) {
       const note = repo.branchPerJob ? `  （一支批次一個分支，前綴 ${repo.jobBranchPrefix}）` : "";
+      const refs = `  ref 依序試：${repo.refs.join(" → ")}`;
       if (repo.path) {
         console.log(`  ✓ ${repo.id}`);
         console.log(`    ${repo.path}  [${repo.via === "config" ? "設定檔" : "自動找到"}]${note}`);
+        console.log(`  ${refs}`);
       } else {
         missing++;
         console.log(`  ✗ ${repo.id}  找不到本機 clone${note}`);
       }
+    }
+    if (values.save) {
+      const saved = await saveRepoPaths(resolved);
+      if (saved > 0) console.log(`\n  已寫進 ${configPath()}（${saved} 個），之後不再重新探測`);
     }
     const suggestion = configSuggestion(resolved);
     if (suggestion) {

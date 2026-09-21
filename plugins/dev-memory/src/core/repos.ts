@@ -7,11 +7,17 @@
 import { readdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { loadConfig } from "./config";
+import { configPath, loadConfig } from "./config";
 import { repoIdFromDir } from "./repo-id";
 
 export interface RepoEntry {
   id: string;
+  /**
+   * Refs to look in, best first. There is no single right answer across a team's repos:
+   * one has dev ahead of master, another has master ahead of dev, a third keeps each job
+   * on its own branch. So the repo declares its order and the writer reports what it used.
+   */
+  refs: string[];
   defaultBranch: string;
   /** The module for a job lives on its own branch, not on the default one. */
   branchPerJob: boolean;
@@ -43,9 +49,12 @@ export async function readReposYaml(memoryRepo: string): Promise<Map<string, Rep
       const raw = typeof item === "string" ? { id: item } : (item as Record<string, unknown>);
       const id = String(raw.id ?? "").trim();
       if (!id) continue;
+      const declared = Array.isArray(raw.refs) ? raw.refs.map(String).filter(Boolean) : [];
+      const fallback = String(raw.default_branch ?? "main");
       entries.push({
         id,
-        defaultBranch: String(raw.default_branch ?? "main"),
+        refs: declared.length > 0 ? declared : [fallback],
+        defaultBranch: declared[0] ?? fallback,
         branchPerJob: raw.branch_per_job === true,
         jobBranchPrefix: String(raw.job_branch_prefix ?? "batch/"),
       });
@@ -109,4 +118,51 @@ export function configSuggestion(resolved: ResolvedRepo[]): string | null {
     "[repos]",
     ...missing.map((repo) => `"${repo.id}" = "~/你 clone 的位置/${repo.id.split("/").at(-1)}"`),
   ].join("\n");
+}
+
+/**
+ * Write resolved paths into config.toml's [repos] block.
+ *
+ * Detection is a convenience, not a contract: once a path is written down, a moved or renamed
+ * checkout produces a clear error instead of silently resolving to something else.
+ * Bun parses TOML but cannot serialize it, so the block is edited line by line.
+ */
+export async function saveRepoPaths(resolved: ResolvedRepo[]): Promise<number> {
+  const found = resolved.filter((repo) => repo.path !== null);
+  if (found.length === 0) return 0;
+
+  const path = configPath();
+  const text = (await Bun.file(path).exists()) ? await Bun.file(path).text() : "";
+  const lines = text.split("\n");
+
+  const entries = new Map(found.map((repo) => [repo.id, repo.path as string]));
+  const out: string[] = [];
+  let inRepos = false;
+  let sawRepos = false;
+
+  for (const line of lines) {
+    if (line.trim().startsWith("[")) {
+      if (inRepos) {
+        // Leaving the block: flush whatever was not already present.
+        for (const [id, dir] of entries) out.push(`"${id}" = "${dir}"`);
+        entries.clear();
+      }
+      inRepos = line.trim() === "[repos]";
+      if (inRepos) sawRepos = true;
+    } else if (inRepos) {
+      const id = line.match(/^\s*"([^"]+)"\s*=/)?.[1];
+      if (id && entries.has(id)) {
+        out.push(`"${id}" = "${entries.get(id)}"`);
+        entries.delete(id);
+        continue;
+      }
+    }
+    out.push(line);
+  }
+
+  if (!sawRepos) out.push("", "[repos]");
+  for (const [id, dir] of entries) out.push(`"${id}" = "${dir}"`);
+
+  await Bun.write(path, `${out.join("\n").trimEnd()}\n`);
+  return found.length;
 }
