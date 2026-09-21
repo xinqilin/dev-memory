@@ -1556,6 +1556,133 @@
   </section>
 
   <section>
+    <h2>每個機制用了什麼技術，為什麼</h2>
+    <p class="lead">一次看完：什麼時候跑、誰觸發、用什麼做的、為什麼是那個做法。沒有黑盒子。</p>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>機制</th><th>誰觸發</th><th>用什麼技術</th><th>為什麼是這個</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>存對話</td>
+            <td><strong>自動</strong>　每回合</td>
+            <td><code>Stop</code> hook ＋ byte offset 增量讀</td>
+            <td>不用你記得；只讀新增的行，跑幾次都不會重複</td>
+          </tr>
+          <tr>
+            <td>補漏</td>
+            <td><strong>自動</strong>　每次開 session</td>
+            <td><code>SessionStart</code> hook 掃兩個工具的逐字稿目錄</td>
+            <td>當機或強制關掉會漏掉最後一回合，開新 session 時撿回來</td>
+          </tr>
+          <tr>
+            <td>中文切詞</td>
+            <td><strong>自動</strong>　寫入時</td>
+            <td>重疊 bigram（兩字一塊），程式自己切</td>
+            <td>不用詞庫、不用編譯擴充；新詞跟打錯字也有效</td>
+          </tr>
+          <tr>
+            <td>搜尋</td>
+            <td><strong>自動</strong>　AI 回答前</td>
+            <td>SQLite FTS5 倒排索引 ＋ bm25 排序</td>
+            <td>零安裝；<code>LIKE</code> 要掃全表又沒有相關度</td>
+          </tr>
+          <tr>
+            <td>AI 拿得到搜尋</td>
+            <td><strong>自動</strong>　工具啟動時</td>
+            <td>MCP server（stdio），兩個工具共用同一支</td>
+            <td>寫一次兩邊都能用，不用各做一套整合</td>
+          </tr>
+          <tr>
+            <td>起草卡片</td>
+            <td><strong>AI 提議 → 你點頭</strong></td>
+            <td><code>mem-save</code> skill ＋ ULID ＋ 內容雜湊去重</td>
+            <td>ULID 可排序又跨機器唯一；同樣內容存兩次自動變成沒事發生</td>
+          </tr>
+          <tr>
+            <td>開工作區</td>
+            <td><strong>你說要寫文件</strong>之後自動</td>
+            <td><code>git worktree</code>，開在 repo 隔壁的資料夾</td>
+            <td><strong>你的 clone 一個字都不會被動到</strong>，你可以同時在上面工作</td>
+          </tr>
+          <tr>
+            <td>讀程式碼</td>
+            <td><strong>自動</strong>　寫文件時</td>
+            <td><code>git show &lt;ref&gt;:&lt;path&gt;</code> 與 <code>git ls-tree</code></td>
+            <td>不 checkout，<strong>不會切掉你正在工作的分支</strong>；還能讀別的分支</td>
+          </tr>
+          <tr>
+            <td>審核頁</td>
+            <td><strong>自動開</strong>，內容由你決定</td>
+            <td><code>Bun.serve</code> 綁 <code>127.0.0.1</code>、隨機 port、UUID token</td>
+            <td>只有你這台連得到；關掉視窗就沒了，不留服務</td>
+          </tr>
+          <tr>
+            <td>頁面即時同步</td>
+            <td><strong>自動</strong>　檔案被改時</td>
+            <td>SSE（<code>text/event-stream</code>）＋ 內容雜湊做樂觀鎖</td>
+            <td>你、AI、IDE 可以同時改同一個檔，衝突時問你要留哪一版</td>
+          </tr>
+          <tr>
+            <td>核准</td>
+            <td><strong>你按按鈕</strong></td>
+            <td>worktree 裡 <code>git commit</code>，＋ 機密／個資掃描擋關</td>
+            <td>commit 還在本機，反悔成本是零</td>
+          </tr>
+          <tr>
+            <td>送出 PR</td>
+            <td><strong>只有你能按</strong></td>
+            <td><code>git push</code> ＋ <code>gh pr create</code></td>
+            <td>沿用你已經登入的 <code>gh</code>，不用另外管 token</td>
+          </tr>
+          <tr>
+            <td>卡片進 repo</td>
+            <td><strong>自動</strong>　寫文件時一起</td>
+            <td>JSONL，路徑 <code>records/&lt;產品&gt;/&lt;年月&gt;/&lt;作者&gt;.jsonl</code></td>
+            <td><strong>一人一月一檔、只在尾巴 append</strong> —— 兩個人同月提交也不會 merge 衝突</td>
+          </tr>
+          <tr>
+            <td>同步隊友的</td>
+            <td><strong>你跑 sync</strong></td>
+            <td>對 <code>origin/main</code> 用 <code>ls-tree</code> ＋ <code>show</code> 讀</td>
+            <td>不讀工作目錄——你可能正在寫一半，半成品不該變成搜尋結果</td>
+          </tr>
+          <tr>
+            <td>CI 把關</td>
+            <td><strong>自動</strong>　PR 開出來時</td>
+            <td>GitHub Actions：連結檢查、索引檢查、gitleaks</td>
+            <td>本機審核頁會擋一次，CI 再擋一次；兩道比一道好</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>四個比較不明顯的選擇</h3>
+    <div class="ideas">
+      <div class="idea">
+        <h3>為什麼用 SQLite 不用 PostgreSQL</h3>
+        <p>資料是<strong>每個人自己的</strong>，沒有共享需求——共享的部分走 git。SQLite 是一個檔案，刪掉重建就好，而且 FTS5 內建全文檢索。用 PG 等於要每個隊友裝一個資料庫服務，為了一個可丟棄的索引，不划算。</p>
+      </div>
+      <div class="idea">
+        <h3>為什麼用 git worktree</h3>
+        <p>要在不干擾你的情況下改檔案。<code>git stash</code> 會動到你的工作區，另外 clone 一份又要重抓整個 repo。worktree <strong>共用同一個 <code>.git</code>，但有獨立的工作目錄跟分支</strong>——開在你的 repo 隔壁，你完全感覺不到。</p>
+      </div>
+      <div class="idea">
+        <h3>為什麼審核頁要 token</h3>
+        <p>它是一個真的 HTTP server。雖然只綁 <code>127.0.0.1</code>，但<strong>同一台機器上的任何程式都連得到</strong>。所以每次啟動產生一組 UUID，第一次開頁時換成 <code>SameSite=Strict</code> 的 cookie——瀏覽器不會幫別的網站送這個 cookie。</p>
+      </div>
+      <div class="idea">
+        <h3>為什麼 JSONL 不用一般 JSON</h3>
+        <p>一個大 JSON 陣列，兩個人各加一筆就會在同一行衝突。JSONL 一行一筆、<strong>只在檔尾 append</strong>，git 會把兩邊的新行都收下。再加上一人一月一個檔，連碰都碰不到彼此。<strong>這個在測試裡真的 merge 過兩個 branch 驗證。</strong></p>
+      </div>
+    </div>
+
+    <p class="note"><strong>整條路上只有三件事需要你</strong>：對 AI 提議的卡片點頭、說要寫哪個主題的文件、在審核頁按那兩個鈕。其他全部是程式在跑，而且<strong>沒有一個是常駐的</strong>——hook 跑完就結束，審核頁關掉就沒了。</p>
+  </section>
+
+  <section>
     <h2>哪一步在哪裡做</h2>
     <p class="lead">對話裡只挑內容、對計畫。真正的編輯跟審核在瀏覽器，不是在對話視窗裡。</p>
     <div class="checks">
