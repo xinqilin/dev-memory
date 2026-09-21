@@ -2015,6 +2015,7 @@
         <h3>兩個方向</h3>
         <p><strong>往下找</strong>：越往下越細、越沒整理過，但越接近當時真正發生的事。先看整理過的答案，不夠再往下挖。<br>
         <strong>往上長</strong>：越往上越濃縮、讀的人越多。每上一層都有人確認過，所以錯的東西不會自己爬上去。</p>
+        <p class="note"><strong>這三層不是同時都在用的。</strong>「往上長」是<strong>寫文件的時候</strong>，「往下找」是<strong>查東西的時候</strong>。而<strong>規則層只服務寫入</strong>——AI 寫之前必讀，讀的人完全不需要知道文件是照什麼規則寫的。</p>
       </div>
     </div>
 
@@ -2028,21 +2029,21 @@
             <td>規則層</td>
             <td><code>schema.md</code>（怎麼寫文件、來源優先序）、<code>repos.yaml</code>（哪些 repo 屬於哪個產品）</td>
             <td>人</td>
-            <td>AI 每次整理前必讀</td>
+            <td><strong>只有寫入時</strong>：AI 每次動筆前必讀，查東西時完全不碰</td>
             <td>隨時改。<strong>改這裡＝改 AI 的行為</strong>，不用碰程式</td>
           </tr>
           <tr>
             <td>整理層</td>
             <td><code>README.md</code> 唯一索引、<code>spec/</code> 主題文件、<code>maintenance/</code> SOP</td>
             <td>AI 寫，人在審核頁核准</td>
-            <td>人跟 AI 都<strong>先讀這層</strong></td>
+            <td><strong>兩邊都用</strong>：寫入時產出，查東西時第一個被讀（搜尋權重 ×3）</td>
             <td>可以改寫。被推翻的頁面標成「已取代」而不是刪掉，搜尋不再列出</td>
           </tr>
           <tr>
             <td>原始層</td>
             <td><code>records/*.jsonl</code> 卡片；本機的完整對話</td>
             <td>自動蒐集，卡片由人確認</td>
-            <td>追溯時才往下翻</td>
+            <td>寫入時一直在累積；查東西時是<strong>最後的退路</strong>（權重 ×2 / ×1）</td>
             <td><strong>只增不改</strong>。決策變了寫新的一筆，指向舊的那筆</td>
           </tr>
         </tbody>
