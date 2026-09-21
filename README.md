@@ -187,7 +187,8 @@ dm repos --save
 | `review --branch <b>` | 開本機審核頁 |
 | `publish --branch <b>` | push 並開 PR（**只有你自己能跑**） |
 | `init-repo <dir>` | 把文件庫的骨架加進既有 repo，不覆蓋任何現有檔案 |
-| `archive <file>` · `init` · `record` · `export` · `ingest-start` · `index-docs` | hook 跟 skill 內部用的 |
+| `index-docs` | 把 repo 原本就有的人工文件補進 README 索引（接手既有文件庫時用） |
+| `archive <file>` · `init` · `record` · `export` · `ingest-start` | hook 跟 skill 內部用的 |
 
 ---
 
@@ -232,7 +233,7 @@ dm repos --save
 
 ```bash
 cd plugins/dev-memory
-bun test          # 147 個測試
+bun test          # 160 個測試
 bun run build     # 改完 src/ 要重新打包 dist/
 ```
 

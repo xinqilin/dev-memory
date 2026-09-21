@@ -40,7 +40,7 @@ Usage:
   dev-memory sync                     Import the memory repo's main branch into the local index (--repo, --skip-fetch)
   dev-memory ingest-start <slug>      Open a worktree for a new ingest and print where it is
   dev-memory export --branch <b>      Write local records into the worktree as JSONL
-  dev-memory index-docs               List the repo's existing docs in the index (BROKEN: still writes wiki/index.md)
+  dev-memory index-docs               Add the repo's existing hand-written docs to the README index
   dev-memory repos                    Where each code repo is on this machine (--product, --save)
   dev-memory entities                 Which tables, APIs and queues the records mention (--product, --json)
   dev-memory lint                     Check the docs: links, README index, duplicate titles, supersedes (--repo)
@@ -230,7 +230,10 @@ async function runIndexDocs(args: string[]): Promise<number> {
   if (!repo) return 2;
 
   const result = await indexExistingDocs(repo);
-  console.log(`${result.docs.length} existing docs listed in ${result.indexPath}${result.changed ? "" : "  (unchanged)"}`);
+  console.log(
+    `${result.docs.length} 份文件補進 ${result.indexPath}，${result.alreadyIndexed} 份原本就索引到了${result.changed ? "" : "（沒有變更）"}`,
+  );
+  for (const doc of result.docs) console.log(`  ${doc}`);
   return 0;
 }
 

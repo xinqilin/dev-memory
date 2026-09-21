@@ -5,7 +5,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openDb } from "../src/core/db";
 import { exportRecords } from "../src/core/export";
-import { indexExistingDocs } from "../src/core/index-docs";
 
 const dirs: string[] = [];
 function workspace() {
@@ -115,26 +114,4 @@ test("two authors in the same month never touch the same file, so their branches
   const files = git(repo, "ls-tree", "-r", "--name-only", "HEAD").split("\n").filter((f) => f.startsWith("records/"));
   expect(files.sort()).toEqual(["records/billing/2026-09/bill.lin.jsonl", "records/billing/2026-09/teammate.jsonl"]);
   db.close();
-});
-
-test("index-docs lists the repo's own documentation and stays idempotent", async () => {
-  const { dir } = workspace();
-  const repo = join(dir, "docrepo");
-  mkdirSync(join(repo, "maintenance"), { recursive: true });
-  mkdirSync(join(repo, "wiki"), { recursive: true });
-  await Bun.write(join(repo, "maintenance", "aws.md"), "# AWS 每月盤點\n內容\n");
-  await Bun.write(join(repo, "spec.md"), "沒有標題的文件\n");
-  await Bun.write(join(repo, "README.md"), "# repo\n");
-  await Bun.write(join(repo, "wiki", "index.md"), "# 開發記憶總目錄\n\n## 這個 repo 的頁面\n\n_還沒有頁面。_\n\n## 既有的人工文件\n\n_把原本就有的文件列在這裡。_\n");
-
-  const first = await indexExistingDocs(repo);
-  expect(first.docs).toEqual(["maintenance/aws.md", "spec.md"]);
-  expect(first.changed).toBe(true);
-
-  const index = await Bun.file(join(repo, "wiki", "index.md")).text();
-  expect(index).toContain("[AWS 每月盤點](../maintenance/aws.md)");
-  expect(index).toContain("[spec](../spec.md)"); // falls back to the filename
-  expect(index).toContain("## 這個 repo 的頁面"); // the other sections survive
-
-  expect((await indexExistingDocs(repo)).changed).toBe(false);
 });
