@@ -217,26 +217,27 @@
     font-size: 15px;
   }
 
-  .checks { display: grid; border-top: 2px dashed var(--line); }
-  .check {
+  .duo {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
     align-items: center;
-    padding-block: 14px;
-    border-bottom: 2px dashed var(--line);
   }
-  .check small { display: block; color: var(--muted); font-size: 14px; }
-  .chip {
-    font-size: 13px;
-    font-weight: 500;
-    padding: 2px 12px;
-    border-radius: 999px;
-    border: 1.5px solid currentColor;
-    white-space: nowrap;
+  .duo-say { display: grid; gap: 12px; align-content: start; }
+
+  .blocks { display: grid; gap: 16px; padding: 4px 2px; }
+  .brow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .brow-label { width: 100%; font-size: 14px; color: var(--muted); }
+  .blk {
+    font-family: var(--f-hand);
+    font-size: 22px;
+    background: var(--card);
+    color: var(--card-ink);
+    border: 2px solid var(--card-edge);
+    border-radius: 8px;
+    padding: 2px 10px;
   }
-  .chip.done { color: var(--ok); }
-  .chip.wait { color: var(--warn); border-style: dashed; }
+  .blk.mono { font-family: var(--f-mono); font-size: 15px; padding: 5px 10px; }
 
   footer { color: var(--muted); font-size: 14px; display: grid; gap: 8px; }
 
@@ -267,7 +268,7 @@
 
   @media (max-width: 720px) {
     .wrap { gap: 48px; padding-inline: 16px; padding-block: 28px 48px; }
-    .pains, .moments, .safe { grid-template-columns: minmax(0, 1fr); }
+    .pains, .moments, .safe, .duo { grid-template-columns: minmax(0, 1fr); }
     .stop { font-size: 17px; padding: 1px 11px; }
     .say-this { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .when { margin-top: 0; }
@@ -278,7 +279,7 @@
 <div class="wrap">
 
   <header>
-    <div class="kicker">dev-memory · 五分鐘速覽</div>
+    <div class="kicker">dev-memory · 速覽</div>
     <h1>程式碼跟對話，<br>變成全隊的文件</h1>
     <p class="lead">平常照用 Claude Code 或 Codex，對話會自動記下來。要寫文件時說一句話，AI 讀程式碼寫出規格、用開發紀錄補上「當初為什麼」，你審核後自己送 PR。</p>
     <div class="route" aria-label="整條路線">
@@ -509,6 +510,105 @@
   </section>
 
   <section>
+    <h2>三層式架構：借自 LLM Wiki</h2>
+    <p class="lead">核心想法來自 Karpathy 的 LLM Wiki：不要每次問問題都從頭翻原始資料，而是讓 LLM 維護一層整理過的內容，人只負責把關。前面的三個名詞就住在這裡：對話和卡片在原始層，頁面在文件層。</p>
+
+    <div class="duo">
+      <div class="pic">
+        <svg viewBox="0 0 320 250" role="img" aria-label="三層：規則層在上，文件層在中間，原始層在下">
+          <rect class="f-none s-line dash" x="30" y="14" width="260" height="52" rx="8"/>
+          <text class="t" x="160" y="40" text-anchor="middle" font-size="17">規則層</text>
+          <text class="t t-mono t-muted" x="160" y="58" text-anchor="middle" font-size="10">schema.md · repos.yaml</text>
+          <text class="t t-muted" x="160" y="80" text-anchor="middle" font-size="12">人寫，AI 每次動筆前先讀</text>
+
+          <rect class="f-card s-edge" x="30" y="92" width="260" height="60" rx="8"/>
+          <text class="t t-card" x="160" y="118" text-anchor="middle" font-size="18" font-weight="700">文件層</text>
+          <text class="t t-mono t-card" x="160" y="138" text-anchor="middle" font-size="10">README.md · spec/ · maintenance/</text>
+          <text class="t t-muted" x="160" y="168" text-anchor="middle" font-size="12">AI 寫、人核准；可以改寫</text>
+
+          <rect class="f-soft s-ink" x="30" y="180" width="260" height="56" rx="8"/>
+          <text class="t" x="160" y="206" text-anchor="middle" font-size="17">原始層</text>
+          <text class="t t-mono t-muted" x="160" y="224" text-anchor="middle" font-size="10">records/*.jsonl · 本機對話</text>
+        </svg>
+      </div>
+      <div class="duo-say">
+        <h3>往上長，往下找</h3>
+        <p><strong>寫文件時往上長</strong>：對話 → 卡片 → 頁面，越往上越濃縮。每上一層都有人點頭，錯的東西不會自己爬上去。</p>
+        <p><strong>查東西時往下找</strong>：先看文件層，不夠再翻卡片，最後才翻原始對話。搜尋權重就照這個順序：文件 ×3 ＞ 紀錄 ×2 ＞ 對話 ×1。</p>
+        <p><strong>規則層只在寫入時用到</strong>：AI 動筆前必讀，查東西的人完全不用知道它。</p>
+      </div>
+    </div>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>這一層</th><th>裡面有什麼</th><th>誰寫</th><th>能不能改</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>規則層</td>
+            <td><code>schema.md</code>（文件怎麼寫、來源優先序）、<code>repos.yaml</code>（產品有哪些 repo）</td>
+            <td>人</td>
+            <td>隨時改。<strong>改這份 markdown 就等於改 AI 的行為</strong>，不用改程式、不用發版</td>
+          </tr>
+          <tr>
+            <td>文件層</td>
+            <td><code>README.md</code> 唯一索引、<code>spec/</code> 主題文件</td>
+            <td>AI 寫，人在審核頁核准</td>
+            <td>可以改寫。被推翻的頁面標成「已取代」而不是刪掉</td>
+          </tr>
+          <tr>
+            <td>原始層</td>
+            <td><code>records/*.jsonl</code> 卡片、本機的完整對話</td>
+            <td>自動收，卡片由人確認</td>
+            <td><strong>只增不改</strong>，所以每句話都追得回源頭</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note"><strong>跟 LLM Wiki 最大的差別：我們的原始層不是事實。</strong>原作的原始素材（PDF、網頁）就是事實本身；我們的對話跟紀錄記的是<strong>當初的提案</strong>，真正的事實在程式碼，而且天天在變。所以多掛了第四個來源：<strong>程式碼是第一來源</strong>，紀錄只負責解釋「為什麼」。</p>
+  </section>
+
+  <section>
+    <h2>中文怎麼搜得到：bigram ＋ unigram</h2>
+    <p class="lead">中文沒有空白，整句會被當成一個詞，所以原本的工具搜不到。存進去之前先自己切成小積木，不靠詞庫、不靠模型。</p>
+
+    <div class="pic">
+      <div class="blocks" role="img" aria-label="「例外處理」切成兩字一塊與單字，程式名字保留完整並拆開">
+        <div class="brow">
+          <span class="brow-label">bigram：兩字一塊，重疊切</span>
+          <span class="blk">例外</span><span class="blk">外處</span><span class="blk">處理</span>
+        </div>
+        <div class="brow">
+          <span class="brow-label">unigram：每個單字另外存一份</span>
+          <span class="blk">例</span><span class="blk">外</span><span class="blk">處</span><span class="blk">理</span>
+        </div>
+        <div class="brow">
+          <span class="brow-label">程式名字：整個留著，另外拆開</span>
+          <span class="blk mono">sapStatus</span><span class="to">→</span>
+          <span class="blk mono">sapstatus</span><span class="blk mono">sap</span><span class="blk mono">status</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="duo">
+      <div class="duo-say">
+        <h3>為什麼用 bigram，不用斷詞器</h3>
+        <p>jieba 這類斷詞器靠<strong>詞庫</strong>，遇到新詞、專有名詞就認不出來，詞庫還要有人維護。重疊切法保證<strong>任兩個相鄰的字都會變成一個 token</strong>，不需要知道詞的邊界在哪。</p>
+        <p class="note">代價是索引變大、偶爾誤中（查「中斷」撈到「途中斷了」），靠排序壓下去。</p>
+      </div>
+      <div class="duo-say">
+        <h3>為什麼還要加 unigram</h3>
+        <p>只存 bigram 時，<strong>一段中文的最後一個字不會是任何一塊的開頭</strong>。「更新中介表」切成 <code>更新 新中 中介 介表</code>，查「表」就漏掉。</p>
+        <p class="note">加上 unigram 之後，實測查「表」從 341 筆變 423 筆，「中介表」「排程表」以前全部漏掉。</p>
+      </div>
+    </div>
+
+    <p class="note">排序用 SQLite 內建的 <strong>bm25</strong>：命中越多、詞越罕見、文件越短，分數越高。沒有向量、沒有 embedding 模型，所以隊友只要裝 Bun 就能用，查一次不到 10ms、不花 AI 額度。</p>
+  </section>
+
+  <section>
     <h2>可以放心的地方</h2>
     <div class="safe">
       <div><b>原始對話不離開你的電腦</b><span>放在 <code>~/.dev-memory/</code>，不進 git。會給全隊看的只有卡片跟文件，而且都要過審核頁與 PR。</span></div>
@@ -547,34 +647,8 @@ claude plugin install dev-memory@104mis-plugins</code>
     </div>
   </section>
 
-  <section>
-    <h2>現在做到哪</h2>
-    <div class="checks">
-      <div class="check">
-        <span>端對端走完真實 PR<small>讀程式碼 → 確認骨架 → 產生文件 → 本機審核 → PR → merge → sync</small></span>
-        <b class="chip done">2 次</b>
-      </div>
-      <div class="check">
-        <span>中文搜尋<small>逐字比對找得到的，全部都找得到</small></span>
-        <b class="chip done">12 = 12</b>
-      </div>
-      <div class="check">
-        <span>文件以程式碼為第一來源<small>第一次跑就抓到既有文件三個錯</small></span>
-        <b class="chip done">已驗證</b>
-      </div>
-      <div class="check">
-        <span>Codex 上的 hook<small>Claude Code 已驗證；Codex 要手動信任 hook，還沒測</small></span>
-        <b class="chip wait">待測</b>
-      </div>
-      <div class="check">
-        <span>正式上線<small>切到正式文件庫、找隊友試用、停掉舊工具</small></span>
-        <b class="chip wait">下一階段</b>
-      </div>
-    </div>
-  </section>
-
   <footer>
-    <a class="more" href="eli5.html">完整版：搜尋怎麼切中文、三層架構、九個步驟、每個技術選擇的理由 →</a>
+    <a class="more" href="eli5.html">完整版：bm25 與語意搜尋的比較、九個步驟、借了 LLM Wiki 哪些又改了哪些、每個技術選擇的理由 →</a>
     <span>摘自 docs/eli5.html · 2026-09-21</span>
   </footer>
 
