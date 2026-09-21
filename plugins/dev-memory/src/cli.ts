@@ -40,10 +40,10 @@ Usage:
   dev-memory sync                     Import the memory repo's main branch into the local index (--repo, --skip-fetch)
   dev-memory ingest-start <slug>      Open a worktree for a new ingest and print where it is
   dev-memory export --branch <b>      Write local records into the worktree as JSONL
-  dev-memory index-docs               List the repo's existing docs in wiki/index.md
+  dev-memory index-docs               List the repo's existing docs in the index (BROKEN: still writes wiki/index.md)
   dev-memory repos                    Where each code repo is on this machine (--product, --save)
   dev-memory entities                 Which tables, APIs and queues the records mention (--product, --json)
-  dev-memory lint                     Check the memory repo: links, orphans, sources, duplicates (--repo)
+  dev-memory lint                     Check the docs: links, README index, duplicate titles, supersedes (--repo)
   dev-memory stale                    Ask GitHub whether the code behind a page has moved on (--repo)
   dev-memory review --branch <b>      Serve the local review page for that ingest
   dev-memory publish --branch <b>     Push and open the PR. Only run this yourself; the agent must not.

@@ -119,3 +119,39 @@ test("tooling and raw material are not documents", async () => {
   expect(code).toBe(0);
   expect(out).toContain("0 docs, 1 records");
 });
+
+test("two documents under the same heading are a warning, not an error", async () => {
+  const dir = await repo({
+    "README.md": "# 目錄\n1. [甲](./spec/a.md)\n2. [乙](./spec/b.md)\n",
+    "spec/a.md": "# 測評點數拋轉 ERP\n\n第一份。\n",
+    "spec/b.md": "# 測評點數拋轉 ERP\n\n有人又寫了一份。\n",
+  });
+
+  const { out, code } = await lint(dir);
+  expect(code).toBe(0); // a warning: sometimes it is deliberate, so it does not block
+  expect(out).toContain('title "測評點數拋轉 ERP" is also used by');
+  expect(out).toContain("0 errors, 2 warnings");
+});
+
+test("supersedes must name a record that exists", async () => {
+  const replacement = { ...RECORD, id: "01JBFIXTURE0000000000000002", supersedes: "01JBFIXTURE0000000000000099" };
+  const dir = await repo({
+    "README.md": "# 目錄\n",
+    "records/billing/2026-09/bill.lin.jsonl": `${JSON.stringify(RECORD)}\n${JSON.stringify(replacement)}\n`,
+  });
+
+  const { out, code } = await lint(dir);
+  expect(code).toBe(1);
+  expect(out).toContain("supersedes points at a record that is not in this repo: 01JBFIXTURE0000000000000099");
+});
+
+test("supersedes pointing at a record in the same repo is fine", async () => {
+  const replacement = { ...RECORD, id: "01JBFIXTURE0000000000000002", supersedes: RECORD.id };
+  const dir = await repo({
+    "README.md": "# 目錄\n",
+    "records/billing/2026-09/bill.lin.jsonl": `${JSON.stringify(RECORD)}\n${JSON.stringify(replacement)}\n`,
+  });
+
+  const { code } = await lint(dir);
+  expect(code).toBe(0);
+});

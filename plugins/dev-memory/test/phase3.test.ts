@@ -127,6 +127,50 @@ describe("lint", () => {
     db.close();
   });
 
+  test("two documents under the same heading are flagged", async () => {
+    const { repo: dir, db } = await repo({
+      "README.md": "# 目錄\n1. [甲](./spec/a.md)\n2. [乙](./spec/b.md)\n",
+      "spec/a.md": "# 測評點數拋轉 ERP\n\n第一份。\n",
+      "spec/b.md": "# 測評點數拋轉 ERP\n\n又一份。\n",
+    });
+
+    const report = await lintRepo(db, dir);
+    const dupes = report.findings.filter((finding) => finding.message.includes("標題"));
+    expect(dupes).toHaveLength(2);
+    expect(dupes[0].level).toBe("warning");
+    db.close();
+  });
+
+  test("supersedes must name a record that exists somewhere", async () => {
+    const line = (id: string, extra: Record<string, unknown> = {}) =>
+      JSON.stringify({
+        id,
+        author: "a",
+        host: "claude-code",
+        type: "decision",
+        title: "t",
+        body: "b",
+        content_hash: "sha256:x",
+        created_at: "2026-09-21T00:00:00.000Z",
+        ...extra,
+      });
+
+    const { repo: dir, db } = await repo({
+      "README.md": "# 目錄\n",
+      "records/billing/2026-09/bill.lin.jsonl":
+        `${line("01JBSOURCE0000000000000001")}\n` +
+        `${line("01JBSOURCE0000000000000002", { supersedes: "01JBSOURCE0000000000000001" })}\n` +
+        `${line("01JBSOURCE0000000000000003", { supersedes: "01JBSOURCE0000000000000009" })}\n`,
+    });
+
+    const report = await lintRepo(db, dir);
+    const broken = report.findings.filter((finding) => finding.message.includes("supersedes"));
+    expect(broken).toHaveLength(1); // only the one pointing at 0009
+    expect(broken[0].level).toBe("error");
+    expect(broken[0].message).toContain("01JBSOURCE0000000000000009");
+    db.close();
+  });
+
   test("a record id nobody has is a warning, not an error", async () => {
     const { repo: dir, db } = await repo({
       "README.md": "# 目錄\n1. [匯出報表](./spec/export.md)\n",

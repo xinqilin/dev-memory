@@ -12,6 +12,8 @@ import { join, relative } from "node:path";
 const RECORD_PATH = /^records\/[a-z0-9-]+\/\d{4}-\d{2}\/[^/]+\.jsonl$/;
 const REQUIRED_RECORD_FIELDS = ["id", "author", "host", "type", "title", "body", "content_hash", "created_at"];
 // Directories that hold documents. Everything else (records/, tools/, .github/) is not a doc.
+// The plugin's src/core/lint.ts spells this out too: CI runs without the plugin installed, so
+// neither file can import from the other. Changing one means changing the other.
 const DOC_DIRS = ["spec", "maintenance", "guidelines", "config", "dr", "bank", "poc"];
 
 const problems: string[] = [];
@@ -24,6 +26,7 @@ const rel = (path: string) => relative(root, path) || path;
 
 // ---------- records ----------
 const recordIds = new Set<string>();
+const supersedes = new Map<string, { target: string; where: string }>();
 
 for await (const path of new Glob("records/**/*.jsonl").scan({ cwd: root, absolute: true })) {
   const file = rel(path);
@@ -55,6 +58,7 @@ for await (const path of new Glob("records/**/*.jsonl").scan({ cwd: root, absolu
     if (record.content_hash && !String(record.content_hash).startsWith("sha256:")) {
       fail(where, "content_hash must start with sha256:");
     }
+    if (id && record.supersedes) supersedes.set(id, { target: String(record.supersedes), where });
   });
 }
 
@@ -84,6 +88,26 @@ for (const file of docs) {
       if (!asDir) fail(file, `broken link: ${target}`);
     }
   }
+}
+
+// A record that claims to replace another must name one that exists. CI only sees the repo, so
+// a target that exists solely in someone's local index still fails here — as it should: the
+// history has to hold together for everyone, not just for the author.
+for (const [id, { target, where }] of supersedes) {
+  if (!recordIds.has(target)) fail(where, `supersedes points at a record that is not in this repo: ${target}`);
+}
+
+// ---------- duplicate titles ----------
+// Two documents under the same heading are one topic written twice: search returns both, and
+// the next edit lands on whichever one the author happened to open.
+const byTitle = new Map<string, string[]>();
+for (const file of docs) {
+  const title = (await Bun.file(join(root, file)).text()).match(/^#\s+(.+)$/m)?.[1].trim();
+  if (title) byTitle.set(title, [...(byTitle.get(title) ?? []), file]);
+}
+for (const [title, files] of byTitle) {
+  if (files.length < 2) continue;
+  for (const file of files) warn(file, `title "${title}" is also used by ${files.filter((f) => f !== file).join(", ")}`);
 }
 
 // ---------- index ----------

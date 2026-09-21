@@ -1,8 +1,12 @@
 // Structural checks over a memory repo working copy.
 //
-// The repo's own tools/lint.ts runs the same rules in CI, where the plugin is not installed.
-// This one runs on the author's machine, so it can additionally check what only the local index
-// knows: whether the records a document cites still exist.
+// The repo's own tools/lint.ts runs the structural rules in CI, where the plugin is not
+// installed. The two overlap but are not identical, and neither can import from the other:
+//   here only      frontmatter left over from the old layout, a missing H1, and anything that
+//                  needs the local index (a cited record that is not in the repo but is on this
+//                  machine, a supersedes target that only exists locally)
+//   tools/lint.ts  the JSONL schema and duplicate record ids, which CI must catch on its own
+// DOC_DIRS is spelled out in both files on purpose; changing one means changing the other.
 //
 // Documents are prose, not data: there is no frontmatter and no schema to validate. What can
 // break is navigation — a link that points nowhere, or a page README never links to.
@@ -25,34 +29,56 @@ export interface LintReport {
   records: number;
 }
 
-async function readRecordIds(repo: string): Promise<Set<string>> {
+interface RepoRecords {
+  ids: Set<string>;
+  /** id -> the record it claims to replace, for the records that claim to replace one. */
+  supersedes: Map<string, { target: string; file: string }>;
+}
+
+async function readRecords(repo: string): Promise<RepoRecords> {
   const ids = new Set<string>();
+  const supersedes = new Map<string, { target: string; file: string }>();
+
   for await (const relative of new Glob("records/**/*.jsonl").scan({ cwd: repo })) {
     const text = await Bun.file(join(repo, relative)).text();
     for (const line of text.split("\n")) {
       if (!line.trim()) continue;
       try {
-        const id = JSON.parse(line).id;
-        if (id) ids.add(String(id));
+        const record = JSON.parse(line);
+        if (!record.id) continue;
+        ids.add(String(record.id));
+        if (record.supersedes) {
+          supersedes.set(String(record.id), { target: String(record.supersedes), file: relative });
+        }
       } catch {
         // tools/lint.ts reports malformed lines; here they just do not contribute an id.
       }
     }
   }
-  return ids;
+  return { ids, supersedes };
+}
+
+/** A document's title is its first level-one heading, which is also how sync indexes it. */
+function headingOf(text: string): string | null {
+  return text.match(/^#\s+(.+)$/m)?.[1].trim() ?? null;
 }
 
 export async function lintRepo(db: Database, repo: string): Promise<LintReport> {
   const findings: Finding[] = [];
-  const recordIds = await readRecordIds(repo);
+  const { ids: recordIds, supersedes } = await readRecords(repo);
 
   const docs: string[] = [];
   for (const dir of DOC_DIRS) {
     for await (const relative of new Glob(`${dir}/**/*.md`).scan({ cwd: repo })) docs.push(relative);
   }
 
+  const byTitle = new Map<string, string[]>();
+
   for (const path of docs) {
     const text = await Bun.file(join(repo, path)).text();
+
+    const title = headingOf(text);
+    if (title) byTitle.set(title, [...(byTitle.get(title) ?? []), path]);
 
     if (text.startsWith("---\n")) {
       findings.push({ level: "warning", path, message: "文件開頭有 frontmatter，GitHub 會渲染成一大張表格" });
@@ -78,6 +104,27 @@ export async function lintRepo(db: Database, repo: string): Promise<LintReport> 
       const local = db.query("select id from record where id = ?").get(id);
       if (!local) findings.push({ level: "warning", path, message: `提到的紀錄 ${id} 不在這個 repo 也不在本機索引` });
     }
+  }
+
+  // Two documents under the same title are almost always one topic written twice: search returns
+  // both, and the next edit lands on whichever one the author happened to open.
+  for (const [title, paths] of byTitle) {
+    if (paths.length < 2) continue;
+    for (const path of paths) {
+      const others = paths.filter((other) => other !== path).join("、");
+      findings.push({ level: "warning", path, message: `標題「${title}」跟其他文件重複：${others}` });
+    }
+  }
+
+  // A record that claims to replace another must name one that exists, or the history breaks.
+  for (const [id, { target, file }] of supersedes) {
+    if (recordIds.has(target)) continue;
+    if (db.query("select id from record where id = ?").get(target)) continue;
+    findings.push({
+      level: "error",
+      path: file,
+      message: `紀錄 ${id} 的 supersedes 指向不存在的紀錄 ${target}`,
+    });
   }
 
   // README.md is the only index: a document it does not link to is a document nobody finds.
