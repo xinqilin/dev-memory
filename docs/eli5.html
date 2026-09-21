@@ -1077,6 +1077,124 @@
   </section>
 
   <section>
+    <h2>你說一句話之後，它做了什麼</h2>
+    <p class="lead">從你開口到預覽頁出現，中間有九步。你只在第五步回一句話。</p>
+
+    <div class="pic">
+      <svg viewBox="0 0 680 420" role="img" aria-label="寫文件的九個步驟：從你開口、讀程式碼、確認骨架，到產生預覽頁">
+        <rect class="f-ok" x="150" y="10" width="380" height="34" rx="8"/>
+        <text class="t t-paper" x="340" y="32" text-anchor="middle" font-size="15">你：「幫我寫一份 sap-create-bu-data 的文件」</text>
+        <path class="f-none s-line" d="M340 44 V62"/><polygon class="f-line" points="334,60 340,72 346,60"/>
+
+        <rect class="f-none s-line dash" x="20" y="76" width="640" height="150" rx="12"/>
+        <text class="t t-muted" x="34" y="68" font-size="13">它自己做，你不用管</text>
+
+        <rect class="f-paper s-line" x="36" y="92" width="290" height="30" rx="6"/>
+        <text class="t" x="181" y="112" text-anchor="middle" font-size="13">① repos.yaml：這個產品有哪些 repo</text>
+        <rect class="f-paper s-line" x="354" y="92" width="290" height="30" rx="6"/>
+        <text class="t" x="499" y="112" text-anchor="middle" font-size="13">② config.toml：那些 repo 在我電腦的哪</text>
+
+        <rect class="f-accent" x="36" y="132" width="608" height="34" rx="6"/>
+        <text class="t t-paper" x="340" y="154" text-anchor="middle" font-size="14">③ git show origin/dev:&lt;檔案&gt; ── 直接從 dev 分支讀程式碼，不 checkout</text>
+
+        <rect class="f-paper s-line" x="36" y="176" width="290" height="40" rx="6"/>
+        <text class="t" x="181" y="192" text-anchor="middle" font-size="13">④ 搜記憶找「為什麼」</text>
+        <text class="t t-muted" x="181" y="209" text-anchor="middle" font-size="11">紀錄只供設計考量與 Known Issue</text>
+        <rect class="f-paper s-line" x="354" y="176" width="290" height="40" rx="6"/>
+        <text class="t" x="499" y="192" text-anchor="middle" font-size="13">⑤ 查現有文件有沒有重疊</text>
+        <text class="t t-muted" x="499" y="209" text-anchor="middle" font-size="11">有就連過去，不重寫</text>
+
+        <path class="f-none s-line" d="M340 226 V244"/><polygon class="f-line" points="334,242 340,254 346,242"/>
+
+        <rect class="f-paper s-accent" x="150" y="258" width="380" height="42" rx="8"/>
+        <text class="t t-accent" x="340" y="276" text-anchor="middle" font-size="15">⑥ 確認點：把骨架給你看</text>
+        <text class="t t-muted" x="340" y="293" text-anchor="middle" font-size="12">分幾節、哪節有 payload、哪節連出去</text>
+        <text class="t t-ok" x="548" y="283" font-size="13">← 你回一句</text>
+
+        <path class="f-none s-line" d="M340 300 V318"/><polygon class="f-line" points="334,316 340,328 346,316"/>
+
+        <rect class="f-none s-line dash" x="20" y="332" width="640" height="76" rx="12"/>
+        <rect class="f-paper s-line" x="36" y="346" width="196" height="30" rx="6"/>
+        <text class="t" x="134" y="366" text-anchor="middle" font-size="13">⑦ 開 worktree 寫檔案</text>
+        <rect class="f-paper s-line" x="246" y="346" width="196" height="30" rx="6"/>
+        <text class="t" x="344" y="366" text-anchor="middle" font-size="13">⑧ lint 檢查</text>
+        <rect class="f-card s-edge" x="456" y="346" width="188" height="30" rx="6"/>
+        <text class="t t-card" x="550" y="366" text-anchor="middle" font-size="13">⑨ 開預覽頁</text>
+        <text class="t t-muted" x="340" y="396" text-anchor="middle" font-size="12">你的 clone 從頭到尾沒被動過</text>
+      </svg>
+    </div>
+
+    <h3>九步各自在做什麼</h3>
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>步驟</th><th>做什麼</th><th>為什麼要這樣</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>① 查 repo 清單</td>
+            <td>讀團隊文件庫的 <code>repos.yaml</code>：這個產品有哪些 code repo、要讀哪一支分支</td>
+            <td>這份是共用的，所以只寫 repo 身分，不寫任何人的本機路徑</td>
+          </tr>
+          <tr>
+            <td>② 查本機位置</td>
+            <td>讀 <code>~/.dev-memory/config.toml</code> 的 <code>[repos]</code></td>
+            <td>每個人 clone 的位置都不同，這份是你自己的、不進 git</td>
+          </tr>
+          <tr>
+            <td><strong>③ 讀程式碼</strong></td>
+            <td><code>git show origin/dev:&lt;路徑&gt;</code> 與 <code>git ls-tree</code>，讀 controller、DTO、enum、entity、排程設定</td>
+            <td><strong>不 checkout</strong>——那是你正在工作的 repo，切分支會毀掉你的進度。讀 <code>dev</code> 是因為開發完成的程式碼都在那</td>
+          </tr>
+          <tr>
+            <td>④ 搜記憶</td>
+            <td>找這個主題相關的開發紀錄</td>
+            <td>只拿來寫「設計考量」與「Known Issue」。欄位與數值一律以程式碼為準</td>
+          </tr>
+          <tr>
+            <td>⑤ 查重疊</td>
+            <td>現有文件有沒有寫過這個主題的一部分</td>
+            <td><strong>有就連過去，不重寫</strong>。同一件事寫兩遍，改的時候一定有一邊忘了改</td>
+          </tr>
+          <tr>
+            <td><strong>⑥ 給你骨架</strong></td>
+            <td>主題、讀了哪些 repo 與分支、分成哪幾節、哪節有 payload／圖／對照表、哪節只連出去</td>
+            <td><strong>這時候還沒有任何檔案被寫</strong>。改大綱比改成品便宜太多</td>
+          </tr>
+          <tr>
+            <td>⑦ 寫檔案</td>
+            <td>開 git worktree，寫文件、更新 README 索引、補雙向連結、匯出紀錄</td>
+            <td>worktree 在你的 repo 隔壁，共用同一個 <code>.git</code> 但獨立工作目錄</td>
+          </tr>
+          <tr>
+            <td>⑧ lint</td>
+            <td>連結指得到嗎、README 索引到了嗎、紀錄格式對嗎</td>
+            <td>錯誤在開預覽頁之前就修掉，不要浪費你的時間</td>
+          </tr>
+          <tr>
+            <td>⑨ 預覽頁</td>
+            <td>本機網頁，左邊改、右邊看、跟 main 比對</td>
+            <td>從這裡開始都是你的決定：改到滿意、核准、送 PR</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ideas">
+      <div class="idea">
+        <h3>為什麼第 ③ 步是整件事的關鍵</h3>
+        <p>前面兩步只是找路，<strong>第三步才是文件跟事實對齊的地方</strong>。API 的欄位、必填規則、狀態值、cron 運算式——這些只有程式碼知道。</p>
+        <p class="note">而且是<strong>每次寫文件都重讀一次</strong>，不是靠快取或記憶。程式碼改了，下次寫出來的文件就跟著改。</p>
+      </div>
+      <div class="idea">
+        <h3>為什麼第 ⑤ 步值得特別做</h3>
+        <p>實際跑第二篇的時候，<code>sap-create-bu-data</code> 跟既有的測評點數文件有一半重疊。正確的產出是<strong>只寫沒寫過的那一半，重疊的地方留一句「見某某文件」</strong>。</p>
+        <p class="note">文件庫會爛掉，多半不是因為寫得不好，是因為<strong>同一件事散在三個地方，改的時候只改了一個</strong>。</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <h2>跑一次給你看</h2>
     <p class="lead">這是真的跑過的一次：測評點數拋轉 ERP，從程式碼變成團隊 repo 裡的一份規格。</p>
 
