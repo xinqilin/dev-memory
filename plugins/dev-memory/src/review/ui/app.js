@@ -117,10 +117,31 @@ const renderRecords = (text) => {
 };
 
 const isRecordsFile = (path) => (path ?? "").endsWith(".jsonl");
+const isMarkdown = (path) => (path ?? "").endsWith(".md");
+
+/** Config and data files are not prose: markdown-rendering them turns # comments into headings. */
+const renderPlain = (text, path) => {
+  const strip = el("meta");
+  strip.innerHTML = "";
+  chip(strip, path.split(".").at(-1).toUpperCase());
+  chip(strip, `${text.split("\n").length} 行`);
+  strip.hidden = false;
+
+  preview.innerHTML = "";
+  const block = document.createElement("pre");
+  block.className = "rec-body";
+  block.textContent = text;
+  preview.append(block);
+};
 
 const render = (text) => {
-  if (isRecordsFile(current?.path)) {
+  const path = current?.path ?? "";
+  if (isRecordsFile(path)) {
     renderRecords(text);
+    return;
+  }
+  if (!isMarkdown(path)) {
+    renderPlain(text, path);
     return;
   }
   const { meta, body } = splitFrontmatter(text);
