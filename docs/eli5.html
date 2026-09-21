@@ -729,6 +729,48 @@
 
     <p class="legend">上面那條<strong>從你裝好的那一刻就沒停過</strong>，跟你有沒有做下面的事完全無關。下面那條<b>綠色</b>是你主動開口，<b>藍框</b>是它停下來問你。</p>
 
+    <h3>上面那條是怎麼跑起來的</h3>
+    <p>靠兩個 <strong>hook</strong>——兩個工具都支援的「發生某件事時幫我執行一行指令」機制。裝 plugin 的時候一起註冊，不用你設定。</p>
+
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead>
+          <tr><th>hook</th><th>什麼時候跑</th><th>做什麼</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Stop</code></td>
+            <td><strong>每講完一回合</strong>，AI 回答結束的那一刻</td>
+            <td>把這個 session 的逐字稿檔案<strong>新增的部分</strong>讀進 <code>memory.db</code>。這是主要的收集路徑</td>
+          </tr>
+          <tr>
+            <td><code>SessionStart</code></td>
+            <td>每次開新的 session</td>
+            <td>補掃兩個工具的所有逐字稿，撿回上次漏掉的（當機、強制關掉都會漏），再把「索引裡有什麼、記得先搜記憶」這段話交給 AI</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>三個設計上的細節</h3>
+    <div class="ideas">
+      <div class="idea">
+        <h3>只讀新增的部分</h3>
+        <p>每個逐字稿檔案記著<strong>上次讀到第幾個 byte</strong>，下次從那裡接著讀，而且<strong>只吃完整的行</strong>——寫到一半的那行留到下次。所以不管跑幾次都不會重複，也不會半筆資料進去。</p>
+        <p class="note">檔案變小就代表被換掉了，游標歸零重讀。</p>
+      </div>
+      <div class="idea">
+        <h3>壞掉也不會拖垮你</h3>
+        <p>Stop hook 裡所有錯誤都被吞掉、只留一行 log，最後一定 <code>exit 0</code>。<strong>記憶壞掉不該讓你的對話中斷</strong>——它只是個旁邊的東西，不是主線。</p>
+      </div>
+      <div class="idea">
+        <h3>為什麼是 Stop 不是 SessionEnd</h3>
+        <p><code>SessionEnd</code> 只有 1～3 秒，來不及寫完就被砍。<code>Stop</code> 每回合都跑一次，每次只處理一點點，所以永遠來得及——而且你中途關掉視窗也已經存好了。</p>
+      </div>
+    </div>
+
+    <p class="note">花多少錢：<strong>零</strong>。這兩個 hook 是純程式在搬檔案，沒有呼叫任何模型。沒有常駐程序、沒有定時任務——<code>Stop</code> 跑完就結束了。</p>
+
     <h3>哪些自動、哪些要你點頭</h3>
     <p>最容易誤會的一點：<strong>「存對話」跟「存卡片」是兩件不同的事。</strong></p>
 
