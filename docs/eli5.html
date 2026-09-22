@@ -2747,6 +2747,52 @@
     </div>
 
     <p class="note"><strong>什麼時候會改變主意：</strong>累積到 50 題以上的評測集，而且實測關鍵字的 Recall 卡住上不去；或是開始出現大量「我知道討論過但想不起來當初用什麼詞」的情況。到那時做法也不是二選一，而是 <strong>hybrid search</strong>——關鍵字一份排名、向量一份排名，兩份融合。</p>
+
+    <h3>要說服別人時，這六個理由依強度排序</h3>
+    <p>上面那張表講的是「現在為什麼不需要」。真的被追問「為什麼不套 embedding」，<strong>「本機跑不動」是最弱的理由</strong>——它聽起來像做不到。下面才是設計理由，最強的在最前面。</p>
+
+    <div class="callouts">
+      <div class="callout">
+        <b>1</b>
+        <span>搜尋結果的<strong>消費者是 LLM，不是人</strong>。<small>embedding 的價值在於「使用者打模糊的字，系統猜他要什麼」。但這裡打字的是 agent：它會自己換同義詞重搜三次、先讀 README 再決定關鍵字、拿搜到的識別字再搜一輪。<strong>語意那一層已經在 agent 腦袋裡了</strong>，再塞一個小模型進去，是拿一個弱兩個數量級的模型去做同一件事。</small></span>
+      </div>
+      <div class="callout">
+        <b>2</b>
+        <span>這裡的 query 大宗是識別字，<strong>精準比對是特性不是缺陷</strong>。<small>實際會搜的是 <code>BuRecordCountRequest</code>、<code>erp_data_record</code>、<code>ChainedTransactionManager</code>、<code>cron(35 00 * * ? *)</code>。這些是罕見詞，bm25 天生給它們最高權重；embedding 會把 <code>BuRecordCountRequest</code> 跟 <code>BuRecordCountResult</code> 壓到幾乎同一個點——但這兩個在文件裡是不同階段。<strong>embedding 擅長模糊，我要的是精確。</strong></small></span>
+      </div>
+      <div class="callout">
+        <b>3</b>
+        <span><strong>可除錯，而且錯得出來。</strong><small>真的發生過：中文搜不到一段話的最後一個字。能定位到「只切 bigram 沒切 unigram」，修完查「表」從 341 筆變 423 筆，有數字可比。換成向量，這個 bug 不會被發現——它只會變成「有時候搜不太準」，然後沒有下一步。bm25 的分數拆得開：哪個詞命中、幾次、文件多長；向量距離拆不開。</small></span>
+      </div>
+      <div class="callout">
+        <b>4</b>
+        <span><strong>零依賴＝裝得起來＝有人用。</strong><small>plugin 是 git clone 裝的，沒有 node_modules。FTS5 是 SQLite 內建、<code>bun:sqlite</code> 是 Bun 內建，整條搜尋路徑的第三方依賴是 0。要 embedding 就要模型檔＋runtime＋向量索引，這三個都是「同事 clone 完跑不起來」的來源。<strong>團隊工具的採用率上限，是它的安裝成功率。</strong></small></span>
+      </div>
+      <div class="callout">
+        <b>5</b>
+        <span><strong>決定論：索引隨時能重建，向量不行。</strong><small>索引是派生層、<code>records/</code> 才是原始層，所以換切詞方式只要 rebuild 一次（實測 0.9 秒）。向量只有在同一個模型、同一個版本下可比：同事 A 裝 v1.5、B 裝 v1，索引就不能共用、不能一起 commit、結果不可重現。寫入端也一樣——FTS5 insert 是微秒級、同步跑在 hook 裡沒感覺，每一筆都要 embed 就是幾十到幾百 ms。</small></span>
+      </div>
+      <div class="callout">
+        <b>6</b>
+        <span><strong>規模不對，瓶頸不在檢索。</strong><small>embedding 的收益曲線要到「幾十萬份文件＋自然語言問句」才變陡。這裡是一條產品線的量級，關鍵字的 Recall 已經接近可用上限。<strong>真正的瓶頸是文件本身寫得好不好</strong>——把工程預算花在寫出一篇有故事線的規格，回報遠大於把 Recall 從 0.85 推到 0.88。</small></span>
+      </div>
+    </div>
+
+    <p class="note"><strong>雲端 embedding API 直接出局。</strong>那等於把公司程式碼片段跟對話紀錄送出去。要避開就只能本地跑，於是繞回第 4 點——所以這不是懶得接 API，是接了就違規。</p>
+
+    <h3>誠實的反面：什麼時候關鍵字會輸</h3>
+    <p>先自己講，比被問到才講好。真正會輸的場景是：<strong>「我要找那個處理退款失敗重試的東西」，但你完全不記得任何識別字，而且文件裡用的詞跟你腦中的詞不一樣</strong>——這種 query 現在搜不到。緩解有兩層：agent 會自己改寫 query 重試，而且 README 是唯一索引，真的找不到就整份讀完再決定。</p>
+
+    <div class="ideas">
+      <div class="idea">
+        <h3>報告時的一句話</h3>
+        <p>檢索層要的是<strong>精確、可解釋、零依賴、可重建</strong>；語意理解那一層交給已經在現場的 LLM 做。架構上 <code>records/</code> 是原始層、索引是派生層，<strong>要加 hybrid search 不用動資料，多一張表就好</strong>——所以這不是放棄 embedding，是先做了那個不加也能用、加了也不用重來的部分。</p>
+      </div>
+      <div class="idea">
+        <h3>為什麼要這樣講</h3>
+        <p class="note">同一件事，講成<strong>有意識的排序</strong>跟講成能力限制，聽起來差很多：前者是路線圖上還沒輪到的一步，後者是做不到。而且前者剛好是實話——資料留著，隨時能加。</p>
+      </div>
+    </div>
   </section>
 
   <section>
