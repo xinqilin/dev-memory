@@ -219,3 +219,122 @@
 - **放棄**：(1) 交錯吐 unigram 與 bigram——會破壞 phrase 的相鄰性，最準的那一項查詢失效。(2) 直接採用外部範例程式——會失去 camelCase／snake_case 拆分。
 - **量測**：評測集 Recall@5 維持 100%，MRR 0.590 → 0.750（只有 5 題，只能說沒變差）。索引 19.6 → 27.4 MB。
 
+
+## 2026-09-22：lint 與 index-docs 的文件／實作漂移，0.6.0
+
+### Goal
+
+把「重寫 `core/lint.ts` 為文件版面」之後留下的漂移清乾淨，並補上 `docs/eli5.html`／`eli5-simple.html`
+對「為什麼沒有套 embedding model」的說法（Bill 要拿去報告，會被同事追問）。
+
+### Current Status
+
+- plugin **0.6.0**，`bun test` **160 pass / 0 fail**。
+- 三個 commit：`d9b2047`（lint）、`992f463`（0.6.0 / index-docs）、`34c9804`（eli5）。
+- **三個 commit 都已推上 `origin/master`**（`34c9804`，ahead/behind 0 0）。剩下的只有本檔這次的改動。
+
+### What Was Done This Session
+
+- **lint 補回兩個檢查**（`src/core/lint.ts` 與 `templates/memory-repo/tools/lint.ts` 各一份）：
+  重複標題（warning）、`supersedes` 必須指到存在的紀錄（error）。plugin 端接受只存在於本機索引的目標，CI 端看不到索引。
+- **重寫 `skills/wiki-lint/SKILL.md`**：改成逐條列出 lint 真正做的 7 項檢查，並寫明「取代關係掛在紀錄上，不是文件上」。
+- **修好 `index-docs`**：原本寫 `wiki/index.md`（版面已經沒有這個路徑）而且**沒有任何測試**。
+  改成附加到 `README.md` 的「## 既有的人工文件」一節，只列 README 還沒連到的檔案 →
+  它因此變成 lint「文件沒被索引到」那個錯誤的解法。排除 `records/`、`node_modules/`、`tools/`、
+  `.github/`、`README.md`、`schema.md`、`CLAUDE.md`、`AGENTS.md`。
+- 新增 `test/index-docs.test.ts`（6 個：只列未索引、無 H1 退回檔名、跑兩次不變、檔案刪掉會離開清單、
+  後續段落不被吃掉）；刪掉 `test/export.test.ts` 裡驗舊行為的那個測試。
+- 拿 `104mis-billing-doc` 的**副本**實跑（沒動正本）：18 份補進 README、19 份原本就索引到了。
+- **eli5 兩份都補上「為什麼沒有用 embedding 模型」**：六個理由依強度排序 + 誠實的反面 + 報告用的一句話。
+
+### What Didn't Work
+
+- 第一次跑 `index-docs` 把 `CLAUDE.md` 也列進文件清單——那是給 agent 的指示不是文件，已加進排除清單（含子目錄）。
+
+### Key Decisions Made
+
+- **兩個 linter 不是同一份規則，而且誰都不能 import 誰**（plugin 端有索引、CI 端沒有）。
+  `DOC_DIRS` 的重複是刻意的，兩邊註解都寫明了，不要再嘗試合併。
+- **eli5 不改原本那張「現在為什麼不需要 Ollama」的表**，新增的是「被追問時怎麼答」，兩者用途不同。
+- eli5 裡的數字一律沿用本專案量過的（341→423、重建 0.9 秒），沒有編新數字。
+
+### Next Steps
+
+1. `claude plugin update dev-memory` 拉 0.6.0（程式碼已在 remote 上）。
+   （**沒 bump 版本號 `plugin update` 會是 no-op**，之前被這個坑過一次，舊版 `sync` 清掉了本機索引。）
+2. **等 Bill 正式測試第二次** → `/dev-memory:wiki-ingest 主題是 sap-create-bu-data`。
+   前兩次都是測試、產物已丟棄；**這次要真的送 PR**，寫成 `spec/batch/sap-create-bu-data.md`。
+   素材位置：`104mis-billing-batch-aws` 的 **branch `batch/sap-create-bu-data`**（一支批次一個 branch，
+   只能用 `git show <branch>:<path>` 讀，不得 checkout）；cron 在 `config/batch-schedule.md`。
+3. 補 `spec/testing-point-to-erp.md` 兩個已知錯誤（該檔已 merge）：
+   (a) `globalTransactionManager` 是 `ChainedTransactionManager`，**不是原子的**（反序 commit，可能部分成功）；
+   (b)「失敗: M」的計數**不含** `markFail` 的紀錄。
+4. Codex 端的 hook／安裝仍未實測——這是唯一還沒驗證的相容性宣稱。
+5. 之後把 `104mis-billing-doc-test` 換成正式的 `104mis-billing-doc`。
+
+### Critical Files
+
+- `plugins/dev-memory/src/core/index-docs.ts` — 這次重寫，是 lint「未索引」錯誤的配套解法。
+- `plugins/dev-memory/src/core/lint.ts` 與 `templates/memory-repo/tools/lint.ts` — 刻意重複的兩份規則。
+- `plugins/dev-memory/skills/wiki-ingest/SKILL.md` — 下一步 `sap-create-bu-data` 會照這個流程跑。
+- `docs/eli5.html`、`docs/eli5-simple.html` — 要拿去報告，改動前先問。
+
+### Gotchas Found This Session
+
+- **沒有測試的程式，改版面時會被靜默留在原地。** `index-docs` 指向一個不存在的路徑很久都沒人發現，
+  因為它一個測試都沒有。這次漂移的兩個 commit 是同一個根因：重寫之後沒有回頭檢查誰還在用舊假設。
+- **`git rev-parse --short HEAD origin/master` 一定會失敗**：`--short` 只接受單一 revision，
+  兩個就報 `fatal: Needed a single revision`。這個訊息看起來像「ref 不存在」，其實無關——
+  這次就是照字面解讀，誤判成三個 commit 沒推上去。查推送狀態用
+  `git rev-list --left-right --count origin/master...HEAD`，空的 `git log origin/master..HEAD` 就代表推完了。
+
+### Active Skill
+
+無。等 Bill 下 `/dev-memory:wiki-ingest`（主題 `sap-create-bu-data`）才進下一段。
+
+### 0.6.1：卡片不會再悄悄消失（2026-09-22，已修，未 commit）
+
+- **捨棄時卡片退回本機**：新增 `ingest-discard --branch <b>`（`worktree.ts` 的 `discardIngest()`）：
+  把這次匯出的卡片從 `submitted` 退回 `local`，再刪工作區跟本機分支。工作區被手動刪掉也行，會從分支重建再算。
+  **已 push 的分支拒絕**：卡片在那個 PR 裡，退回會被匯出第二次，舊 PR 之後被 merge 就會出現重複 id。
+  審核頁在卡片檔上按「捨棄這頁」也會退回（`server.ts` 的 `/api/discard`）。
+  只退回「這個分支新增、main 上沒有」的 id，而且只動 `submitted`，已 merge 的不會被碰到。
+- **兩邊都保留**：寫進 `wiki-ingest` skill 跟兩份 eli5；`export.ts` 兩句過頭的註解改掉
+  （"their PRs cannot conflict"、"a merge is always a clean append"）。
+- **PR 說明**：「頁面：`wiki/`」→「文件：見 `README.md` 索引」。
+- **`dm setup` 的 repo 結構檢查**：`wiki` → `README.md`。測試夾具原本放著 `wiki/`，所以舊檢查一直通過；
+  夾具改成跟範本一樣之後，測試先失敗、改完通過。
+- **`dm entities` 改成看文件內容**：原本找 frontmatter `type: entity` 的頁面，新文件沒有 frontmatter，所以
+  每張表永遠被列成「還沒有頁面」（連寫在 `spec/testing-point-to-erp.md` 裡的 `erp_data_record`、`ErpDataRecordType`
+  也是）。現在只要任何一份文件提到這個名字（不分大小寫）就算有。真實資料跑完剩下三個確實沒有文件寫到的：
+  `/bu-record-count/create`、`/apis/order/create`、`erp_product_data`。`wiki-lint` 改成提議「在用到它的
+  流程文件裡補一節」，不再提議每張表一頁。查詢用 `status is not 'superseded'`，NULL 也不會被排除。
+- **session 開頭那句 hook**（`session-start.ts:28`）原本叫 AI「回答完就提議存成一頁」，改成「把答案存成
+  note 卡片；文件是一個主題一份、主題完成時用 wiki-ingest 寫」。`mem-save` skill 最後那句「wiki 就是這樣長大的」
+  也改成「note 是原料，不是文件」。
+- **`init-repo` 跑完的提示**改成叫人跑 `index-docs`，不再提 `wiki/index.md`。
+- **`dm stale` 重寫**：原本只掃 `wiki/`、靠 frontmatter `code_refs`，新文件都沒有，所以永遠回報 0 份
+  （舊測試用 `wiki/`＋frontmatter 的假資料，所以壞了還是會過）。現在讀文件最後的「程式碼位置」表
+  （內容｜repo｜分支｜路徑，可寫「同上」、資料夾、`{a,b}`），用本機 clone 查那個分支在**文件最後一次 commit**
+  之後有沒有改過、路徑還在不在。不用 `gh`、不用連網，只看本機最後一次 fetch 到的內容。解析在 `code-refs.ts`
+  （拆出來避免 lint ↔ staleness 互相 import）。lint 只在文件有這張表時才檢查格式跟 repo 名稱。
+  真實資料：`spec/testing-point-to-erp.md` 的 6 個路徑都查得到，0 份過時；手動核對過兩個 repo 最後修改都早於文件。
+  範本 `schema.md` 已寫明格式；**既有文件 repo 裡的 `schema.md` 是複本，不會自動更新**。
+- `bun test` 166 個：165 過、1 個失敗是環境問題（見下）。
+
+### 還沒修
+
+- **PR 在 GitHub 上關掉沒 merge**：卡片會停在 `submitted`。要用 `gh` 查 PR 狀態才能判斷，這次不處理。
+- **`test/tokenize.claude-mem.test.ts` 只有 claude-mem 開著才會過**：`claude-mem.db` 是 WAL 模式，claude-mem
+  停掉後 `-wal`／`-shm` 被收掉，唯讀連線建不出 `-shm` 就打不開。要改就用 `immutable=1` 開，這次沒動。
+
+- **`DOC_DIRS` 寫死七個資料夾**：`sync` 只收 `spec/ maintenance/ guidelines/ config/ dr/ bank/ poc/` 裡的文件。
+  billing 的文件都在裡面，沒事；別的產品的文件 repo 用其他資料夾名稱的話，那些文件進不了搜尋，也沒有提示。
+- **日期用 UTC**：分支名稱跟卡片檔的月份都是 `toISOString()`。台灣早上 8 點前開的 ingest，分支名稱是前一天；
+  每月 1 號早上 8 點前存的卡片會放進上個月的檔。只影響命名。
+
+### 決定不做
+
+- 中文 `git user.name` 會讓卡片檔名變成 `-.jsonl`（分支名稱反而保留中文）。公司如果都用 `firstname.lastname` 就不影響。
+- 同一個人同時開兩個都帶新卡片的 PR，會在卡片檔衝突。不做結構性修法，PR 當下兩邊都保留就好。
+  依序 ingest（前一個 merge 後才開下一個）實測不會衝突，因為 `ingest-start` 會先 fetch `origin/main`。

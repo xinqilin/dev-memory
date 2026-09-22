@@ -12,13 +12,13 @@ import { entityIndex, missingEntityPages } from "./core/entities";
 import { exportRecords } from "./core/export";
 import { formatLint, lintRepo } from "./core/lint";
 import { configSuggestion, readReposYaml, resolveRepos, saveRepoPaths } from "./core/repos";
-import { findStalePages, formatStale } from "./core/staleness";
+import { findStaleDocs, formatStale } from "./core/staleness";
 import { indexExistingDocs } from "./core/index-docs";
 import { initRepo } from "./core/init-repo";
 import { publish } from "./core/publish";
 import { formatSetup, runSetup } from "./core/setup";
 import { sync as syncRepo } from "./core/sync";
-import { branchName, changedPages, ensureWorktree } from "./core/worktree";
+import { branchName, changedPages, discardIngest, ensureWorktree } from "./core/worktree";
 import { startReviewServer } from "./review/server";
 import { repoIdFromDir } from "./core/repo-id";
 import { type RecordInput, addRecord, contentHash, findByContentHash, gitAuthor } from "./core/record";
@@ -40,11 +40,12 @@ Usage:
   dev-memory sync                     Import the memory repo's main branch into the local index (--repo, --skip-fetch)
   dev-memory ingest-start <slug>      Open a worktree for a new ingest and print where it is
   dev-memory export --branch <b>      Write local records into the worktree as JSONL
+  dev-memory ingest-discard --branch <b>  Throw an unsent ingest away and hand its records back to the next one
   dev-memory index-docs               Add the repo's existing hand-written docs to the README index
   dev-memory repos                    Where each code repo is on this machine (--product, --save)
   dev-memory entities                 Which tables, APIs and queues the records mention (--product, --json)
   dev-memory lint                     Check the docs: links, README index, duplicate titles, supersedes (--repo)
-  dev-memory stale                    Ask GitHub whether the code behind a page has moved on (--repo)
+  dev-memory stale                    Compare each document's 程式碼位置 table with the local clones (--repo)
   dev-memory review --branch <b>      Serve the local review page for that ingest
   dev-memory publish --branch <b>     Push and open the PR. Only run this yourself; the agent must not.
 `;
@@ -129,6 +130,34 @@ async function runExport(args: string[]): Promise<number> {
   }
 }
 
+async function runIngestDiscard(args: string[]): Promise<number> {
+  const { values } = parseArgs({ args, options: { repo: { type: "string" }, branch: { type: "string" } } });
+  const repo = await memoryRepo(values.repo);
+  if (!repo) return 2;
+  if (!values.branch) {
+    console.error("ingest-discard needs --branch <branch>");
+    return 2;
+  }
+
+  const config = await loadConfig();
+  const db = openDb();
+  try {
+    const result = discardIngest(repo, values.branch, db, `origin/${config.memory.branch}`);
+    if (result.status === "missing") {
+      console.error(`找不到 ${values.branch}：沒有這個分支，也沒有它的工作區`);
+      return 1;
+    }
+    if (result.status === "pushed") {
+      console.error(`${values.branch} 已經 push 過，卡片在它的 PR 裡，本機什麼都沒動。\n要放棄的話，到 GitHub 把 PR 關掉。`);
+      return 1;
+    }
+    console.log(`已捨棄 ${values.branch}：工作區跟本機分支都刪了，${result.returned} 張卡片退回本機，下次 ingest 會再帶上`);
+    return 0;
+  } finally {
+    db.close();
+  }
+}
+
 async function runRepos(args: string[]): Promise<number> {
   const { values } = parseArgs({ args, options: { repo: { type: "string" }, product: { type: "string" }, save: { type: "boolean" } } });
   const memory = await memoryRepo(values.repo);
@@ -186,7 +215,7 @@ async function runEntities(args: string[]): Promise<number> {
       return 0;
     }
     for (const entity of entities) {
-      const page = missing.has(`${entity.kind}:${entity.name}`) ? "  ← 還沒有頁面" : "";
+      const page = missing.has(`${entity.kind}:${entity.name}`) ? "  ← 還沒有文件提到" : "";
       console.log(`${entity.kind.padEnd(9)} ${entity.name}${page}`);
       if (entity.writers.length > 0) console.log(`          寫入：${entity.writers.join(", ")}`);
       if (entity.readers.length > 0) console.log(`          讀取：${entity.readers.join(", ")}`);
@@ -220,7 +249,7 @@ async function runStale(args: string[]): Promise<number> {
   const repo = await memoryRepo(values.repo);
   if (!repo) return 2;
 
-  console.log(formatStale(await findStalePages(repo)));
+  console.log(formatStale(await findStaleDocs(repo)));
   return 0;
 }
 
@@ -330,7 +359,7 @@ async function runInitRepo(args: string[]): Promise<number> {
   for (const file of kept) console.log(`kept     ${file}`);
   console.log(`\n${created.length} added, ${kept.length} already there. Nothing was overwritten.`);
   if (created.length > 0) {
-    console.log("Next: fill in repos.yaml, list the existing docs in wiki/index.md, then commit.");
+    console.log("Next: fill in repos.yaml, run dev-memory index-docs to list the existing docs in README.md, then commit.");
   }
   return 0;
 }
@@ -530,6 +559,8 @@ switch (command) {
     process.exit(await runIngestStart(rest));
   case "export":
     process.exit(await runExport(rest));
+  case "ingest-discard":
+    process.exit(await runIngestDiscard(rest));
   case "index-docs":
     process.exit(await runIndexDocs(rest));
   case "repos":

@@ -13,8 +13,8 @@ Let `CLI` mean `bun "${CLAUDE_PLUGIN_ROOT}/src/cli.ts"`.
 
 ```bash
 CLI lint            # see the exact list below
-CLI stale           # asks GitHub whether the code behind each document changed since the document did
-CLI entities        # which tables, APIs and queues the records mention, and which have no page yet
+CLI stale           # compares each document's 程式碼位置 table with the local clones of the code repos
+CLI entities        # which tables, APIs and queues the records mention, and which no document mentions
 ```
 
 `CLI lint` checks exactly these, and nothing else:
@@ -28,9 +28,14 @@ CLI entities        # which tables, APIs and queues the records mention, and whi
 | A 26-character record id in the text that is in neither the repo nor the local index | warning |
 | Frontmatter left over from the old layout | warning |
 | A document with no `#` heading | error |
+| A 程式碼位置 table `stale` cannot read, or one naming a repo `repos.yaml` does not declare | warning |
 
 Report what came back in plain words, grouped by what the author would do about it. Errors block
 a clean repo; warnings are judgement calls.
+
+`CLI stale` can only judge a document that has a 程式碼位置 table; the rest are counted, not
+judged. Most hand-written documents have none, which is not a finding. It reads the local clones,
+so a repo that is not cloned here, or a branch not fetched, is reported as unreachable.
 
 ## 2. The judgement half
 
@@ -44,8 +49,9 @@ The command cannot read meaning. You can. Read the documents the topic touches a
 - **Documents that answer nothing**: a page that restates what the code says, with no 設計考量
   and no Known Issue, is a worse version of reading the code. Propose merging it into a fuller
   document or dropping it.
-- **Missing entity pages**: `CLI entities` lists tables and APIs the records mention. Where several
-  repos touch the same one, that entity deserves a page saying who writes it and who reads it.
+- **Entities no document mentions**: `CLI entities` flags tables and APIs the records mention that
+  no document talks about. Where several repos touch one of them, propose a section in the document
+  of the flow that uses it — who writes it, who reads it. Not a page of its own.
 
 For each finding, say what is wrong, quote the evidence, and propose one action. Do not rewrite
 anything yet.

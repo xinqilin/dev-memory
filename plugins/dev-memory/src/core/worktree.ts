@@ -1,9 +1,12 @@
 // An ingest writes pages in a separate git worktree, never in the clone the author is reading.
-// That way an ingest in progress cannot disturb their working copy, and abandoning it is just
-// removing a directory.
+// That way an ingest in progress cannot disturb their working copy. Abandoning one is not just
+// removing a directory, though: its cards were marked submitted when exported, so discardIngest
+// hands them back first.
+import type { Database } from "bun:sqlite";
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { addedRecordIds, isRecordsPath, returnToLocal } from "./export";
 
 export interface Worktree {
   path: string;
@@ -65,6 +68,33 @@ export function removeWorktree(repoPath: string, branch: string): void {
   const path = worktreePath(repoPath, branch);
   if (!existsSync(path)) return;
   git(repoPath, ["worktree", "remove", "--force", path]);
+}
+
+export interface DiscardResult {
+  status: "discarded" | "pushed" | "missing";
+  /** Cards moved back to local, so the next ingest carries them. */
+  returned: number;
+}
+
+/** Throw an ingest away: hand its cards back, then remove the worktree and the local branch. */
+export function discardIngest(repoPath: string, branch: string, db: Database, base = "origin/main"): DiscardResult {
+  const hasBranch = tryGit(repoPath, ["rev-parse", "--verify", `refs/heads/${branch}`]) !== null;
+  if (!hasBranch && !existsSync(join(worktreePath(repoPath, branch), ".git"))) return { status: "missing", returned: 0 };
+
+  // Pushed means its cards are in a PR. Handing them back would export them a second time, and
+  // if that PR were merged later the same id would land in the repo twice.
+  if (tryGit(repoPath, ["rev-parse", "--verify", `refs/remotes/origin/${branch}`]) !== null) return { status: "pushed", returned: 0 };
+
+  // A worktree deleted by hand is recreated from its branch, so its cards can still be counted.
+  const { path } = ensureWorktree(repoPath, branch, { base, fetch: false });
+  const ids = changedPages(path, base)
+    .filter((page) => page.status !== "deleted" && isRecordsPath(page.path))
+    .flatMap((page) => addedRecordIds(readFileSync(join(path, page.path), "utf8"), baseVersion(path, page.path, base)));
+  const returned = returnToLocal(db, ids);
+
+  removeWorktree(repoPath, branch);
+  git(repoPath, ["branch", "-D", branch]);
+  return { status: "discarded", returned };
 }
 
 export interface ChangedPage {

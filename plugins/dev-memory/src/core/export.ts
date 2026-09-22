@@ -1,7 +1,9 @@
 // Writing local records into the memory repo worktree as JSONL.
 //
-// One file per author per month per product, append-only. That layout is what keeps two people
-// submitting in the same month from ever touching the same file, so their PRs cannot conflict.
+// One file per author per month per product, append-only. That layout keeps two people submitting
+// in the same month out of each other's files. It does not keep one person's two open PRs apart:
+// both append to the end of the same file, and the second to merge conflicts. Resolving that is
+// always "keep both sides" — line order means nothing here, and dropping a side loses cards silently.
 import type { Database } from "bun:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -84,18 +86,7 @@ export async function exportRecords(db: Database, worktree: string, options: Exp
 
     const file = Bun.file(full);
     const existing = (await file.exists()) ? await file.text() : "";
-    const seen = new Set(
-      existing
-        .split("\n")
-        .filter(Boolean)
-        .map((line) => {
-          try {
-            return JSON.parse(line).id as string;
-          } catch {
-            return "";
-          }
-        }),
-    );
+    const seen = recordIds(existing);
 
     const lines: string[] = [];
     for (const row of records) {
@@ -108,7 +99,7 @@ export async function exportRecords(db: Database, worktree: string, options: Exp
     }
     if (lines.length === 0) continue;
 
-    // Append: existing lines are never rewritten, so a merge is always a clean append.
+    // Append: existing lines are never rewritten, so a teammate's lines are never touched.
     const body = existing.endsWith("\n") || existing === "" ? existing : `${existing}\n`;
     await Bun.write(full, `${body}${lines.join("\n")}\n`);
     result.files.push(relative);
@@ -120,4 +111,37 @@ export async function exportRecords(db: Database, worktree: string, options: Exp
   }
 
   return result;
+}
+
+export function isRecordsPath(path: string): boolean {
+  return path.startsWith("records/") && path.endsWith(".jsonl");
+}
+
+function recordIds(text: string): Set<string> {
+  const ids = new Set<string>();
+  for (const line of text.split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const id = JSON.parse(line).id;
+      if (id) ids.add(String(id));
+    } catch {
+      // a broken line is lint's business, not ours
+    }
+  }
+  return ids;
+}
+
+/** The cards a records file gained on an ingest branch: in the worktree copy, not on the base branch. */
+export function addedRecordIds(current: string, base: string | null): string[] {
+  const before = recordIds(base ?? "");
+  return [...recordIds(current)].filter((id) => !before.has(id));
+}
+
+/**
+ * Undo the 'submitted' mark for cards whose ingest was thrown away, so the next ingest carries them.
+ * Only 'submitted' moves: a merged card is in the repo already and must stay where it is.
+ */
+export function returnToLocal(db: Database, ids: string[]): number {
+  if (ids.length === 0) return 0;
+  return db.run(`update record set status = 'local' where status = 'submitted' and id in (${ids.map(() => "?").join(", ")})`, ids).changes;
 }

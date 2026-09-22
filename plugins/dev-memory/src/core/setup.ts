@@ -103,11 +103,11 @@ function checkMemoryRepo(repo: string | null): Check[] {
     fix: origin.ok ? undefined : "git remote add origin <團隊 repo 的網址>",
   });
 
-  const scaffolded = ["schema.md", "wiki", "records"].every((entry) => existsSync(join(repo, entry)));
+  const scaffolded = ["schema.md", "README.md", "records"].every((entry) => existsSync(join(repo, entry)));
   checks.push({
     name: "repo 結構",
     ok: scaffolded,
-    detail: scaffolded ? "schema.md、wiki/、records/ 都在" : "還沒有 schema.md / wiki/ / records/",
+    detail: scaffolded ? "schema.md、README.md、records/ 都在" : "還沒有 schema.md / README.md / records/",
     fix: scaffolded ? undefined : `dev-memory init-repo ${repo}`,
   });
 

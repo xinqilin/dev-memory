@@ -57,7 +57,20 @@
 
 有些 repo 是**一支批次一個分支**（標 `branch_per_job: true`），預設分支上找不到模組，要指定分支讀。
 
-在文件最後的「相關文件 / 程式碼位置」表裡註明讀的是哪一支 ref，方便之後回頭核對。
+文件最後的「相關文件 / 程式碼位置」表，**讀過的每個檔都要列**，而且格式固定——`dev-memory stale`
+靠這張表判斷程式碼在文件之後有沒有改過，漏列的檔改了也不會有人知道：
+
+| 內容 | repo | 分支 | 路徑 |
+|---|---|---|---|
+| API 端點與 payload | `104mis-billing-api-aws` | `dev` | `src/main/java/.../BillingToErpController.java` |
+| 批次主程式 | `104mis-billing-batch-aws` | `batch/sap-create-bu-data` | `src/main/java/.../sapCreateBuData/` |
+| 排程設定 | 同上 | 同上 | `deploy/env-{dev,staging,production}.sh` |
+
+- 四個欄位就叫「內容、repo、分支、路徑」
+- repo 寫 `repos.yaml` 裡的名字，owner 可以省略
+- 分支寫**實際讀的那一支**
+- 路徑可以是檔案、資料夾，或用 `{a,b}` 列同一個地方的幾個檔
+- 跟上一列一樣就寫「同上」
 
 ## 文件骨架
 

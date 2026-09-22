@@ -30,8 +30,8 @@ async function memoryRepo(scaffolded = true) {
   git(remote, "init", "-q", "-b", "main");
   await Bun.write(join(remote, "README.md"), "# memory\n");
   if (scaffolded) {
+    // The template's layout: README.md is the index and there is no wiki/ any more.
     await Bun.write(join(remote, "schema.md"), "# 規則\n");
-    await Bun.write(join(remote, "wiki", "index.md"), "# 目錄\n");
     await Bun.write(join(remote, "records", "README.md"), "# 紀錄\n");
   }
   git(remote, "add", ".");

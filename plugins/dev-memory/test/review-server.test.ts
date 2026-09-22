@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { contentHash, startReviewServer, type ReviewServer } from "../src/review/server";
 import { ensureWorktree } from "../src/core/worktree";
+import { openDb } from "../src/core/db";
+import { addRecord } from "../src/core/record";
 
 const dirs: string[] = [];
 const servers: ReviewServer[] = [];
@@ -140,6 +142,42 @@ test("discard removes a new page and restores an edited one", async () => {
   const removed = (await (await api("/api/discard?path=wiki/new.md", { method: "POST" })).json()) as any;
   expect(removed.removed).toBe(true);
   expect(existsSync(join(worktree, "wiki", "new.md"))).toBe(false);
+});
+
+test("discarding the records file hands its cards back to the next ingest", async () => {
+  const originalHome = process.env.DEV_MEMORY_HOME;
+  process.env.DEV_MEMORY_HOME = mkdtempSync(join(tmpdir(), "dev-memory-review-home-"));
+  dirs.push(process.env.DEV_MEMORY_HOME);
+  try {
+    const { api, root, clone, worktree } = await scenario();
+    const db = openDb();
+    const card = (title: string, status: string) => {
+      const { id } = addRecord(db, { type: "decision", title, body: "原因：…", product: "billing" }, { cwd: root });
+      db.run("update record set status = ? where id = ?", [status, id]);
+      return id;
+    };
+    const merged = card("已經在 main 上的卡片", "merged");
+    const exported = card("這次 ingest 匯出的卡片", "submitted");
+
+    const file = "records/billing/2026-09/t.jsonl";
+    const remote = join(root, "remote");
+    await Bun.write(join(remote, file), `{"id":"${merged}"}\n`);
+    git(remote, "add", ".");
+    git(remote, "commit", "-q", "-m", "records");
+    git(clone, "fetch", "-q", "origin");
+    await Bun.write(join(worktree, file), `{"id":"${merged}"}\n{"id":"${exported}"}\n`);
+
+    const response = await api(`/api/discard?path=${encodeURIComponent(file)}`, { method: "POST" });
+    expect(response.status).toBe(200);
+    expect(await Bun.file(join(worktree, file)).text()).toBe(`{"id":"${merged}"}\n`);
+
+    const status = (id: string) => (db.query("select status from record where id = ?").get(id) as { status: string }).status;
+    expect(status(exported)).toBe("local");
+    expect(status(merged)).toBe("merged");
+    db.close();
+  } finally {
+    process.env.DEV_MEMORY_HOME = originalHome;
+  }
 });
 
 test("approve refuses while a check fails, and commits once it passes", async () => {

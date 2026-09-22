@@ -42,7 +42,7 @@ export function publish(worktree: string, branch: string, options: PublishOption
   const title = options.title ?? `memory: ${branch.split("/").at(-1)}`;
   const body =
     options.body ??
-    ["這個 PR 由 dev-memory 產生。", "", "- 紀錄：`records/`", "- 頁面：`wiki/`", "", "作者已在本機審核頁確認過內容。"].join("\n");
+    ["這個 PR 由 dev-memory 產生。", "", "- 紀錄：`records/`", "- 文件：見 `README.md` 索引", "", "作者已在本機審核頁確認過內容。"].join("\n");
 
   const pr = run(worktree, "gh", ["pr", "create", "--base", base, "--head", branch, "--title", title, "--body", body]);
   if (!pr.ok) {

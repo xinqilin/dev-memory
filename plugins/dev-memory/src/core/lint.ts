@@ -2,9 +2,10 @@
 //
 // The repo's own tools/lint.ts runs the structural rules in CI, where the plugin is not
 // installed. The two overlap but are not identical, and neither can import from the other:
-//   here only      frontmatter left over from the old layout, a missing H1, and anything that
-//                  needs the local index (a cited record that is not in the repo but is on this
-//                  machine, a supersedes target that only exists locally)
+//   here only      frontmatter left over from the old layout, a missing H1, a 程式碼位置 table
+//                  that stale cannot read, and anything that needs the local index (a cited record
+//                  that is not in the repo but is on this machine, a supersedes target that only
+//                  exists locally)
 //   tools/lint.ts  the JSONL schema and duplicate record ids, which CI must catch on its own
 // DOC_DIRS is spelled out in both files on purpose; changing one means changing the other.
 //
@@ -13,6 +14,8 @@
 import type { Database } from "bun:sqlite";
 import { Glob } from "bun";
 import { dirname, join } from "node:path";
+import { parseCodeRefs } from "./code-refs";
+import { readReposYaml } from "./repos";
 
 /** Directories that hold documents. Everything else is tooling or raw material. */
 export const DOC_DIRS = ["spec", "maintenance", "guidelines", "config", "dr", "bank", "poc"];
@@ -73,6 +76,8 @@ export async function lintRepo(db: Database, repo: string): Promise<LintReport> 
   }
 
   const byTitle = new Map<string, string[]>();
+  // Tables name a repo as owner/repo or by its bare name; both count as declared.
+  const declared = new Set([...(await readReposYaml(repo)).values()].flat().flatMap((entry) => [entry.id, entry.id.split("/").at(-1)!]));
 
   for (const path of docs) {
     const text = await Bun.file(join(repo, path)).text();
@@ -96,6 +101,15 @@ export async function lintRepo(db: Database, repo: string): Promise<LintReport> 
       if (await Bun.file(resolved).exists()) continue;
       if (await Bun.file(join(resolved, "README.md")).exists()) continue;
       findings.push({ level: "error", path, message: `連結指向不存在的檔案：${target}` });
+    }
+
+    // Only a document that has a 程式碼位置 table is held to it; most hand-written ones have none.
+    const table = parseCodeRefs(text);
+    for (const problem of table?.problems ?? []) findings.push({ level: "warning", path, message: problem });
+    for (const name of new Set(table?.refs.map((ref) => ref.repo))) {
+      if (declared.size > 0 && !declared.has(name)) {
+        findings.push({ level: "warning", path, message: `程式碼位置表的 repo「${name}」不在 repos.yaml 裡` });
+      }
     }
 
     // A document may cite the records behind its "設計考量" section.

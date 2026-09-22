@@ -25,7 +25,7 @@ try {
       `Repo: ${repo ?? "not a git repo — nothing will be submitted from here"}. Search mode: ${provider === "none" ? "keyword only" : provider}.`,
       "Before answering questions about past decisions in this codebase, search the development memory first (memory_search, or `dev-memory search <words>`).",
       "When a decision is made — the reason, what was decided, what was rejected — offer to save it with the mem-save skill.",
-      "If you answered a question from the memory and the answer was not already a wiki page, offer to file it as one: that is how the wiki grows without anyone writing docs on purpose.",
+      "If you answered a question by piecing together records or raw conversation, and no document already says it, offer to save the answer as a note with the mem-save skill. Documents are written one per subject, when the subject is finished, with the wiki-ingest skill; never offer a document per answer.",
     ].join("\n");
   } finally {
     db.close();

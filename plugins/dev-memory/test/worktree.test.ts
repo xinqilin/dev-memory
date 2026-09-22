@@ -3,7 +3,9 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { baseVersion, branchName, changedPages, ensureWorktree, removeWorktree, slugify } from "../src/core/worktree";
+import { baseVersion, branchName, changedPages, discardIngest, ensureWorktree, removeWorktree, slugify, worktreePath } from "../src/core/worktree";
+import { openDb } from "../src/core/db";
+import { addRecord } from "../src/core/record";
 
 const dirs: string[] = [];
 function git(cwd: string, ...args: string[]) {
@@ -97,4 +99,87 @@ test("a brand-new directory is listed as its files, not as the directory", async
     "wiki/dev-memory/decisions/one.md",
     "wiki/dev-memory/decisions/two.md",
   ]);
+});
+
+// ---------- discarding a whole ingest ----------
+
+const FILE = "records/billing/2026-09/t.jsonl";
+
+/** A memory repo whose main already holds one merged card, and a local index that knows about it. */
+async function withCards() {
+  const pair = await repoPair();
+  const db = openDb(join(pair.root, "memory.db"));
+  const card = (title: string, status: string) => {
+    const { id } = addRecord(db, { type: "decision", title, body: "原因：…", product: "billing" }, { cwd: pair.root });
+    db.run("update record set status = ? where id = ?", [status, id]);
+    return id;
+  };
+  const merged = card("已經在 main 上", "merged");
+  await Bun.write(join(pair.remote, FILE), `{"id":"${merged}"}\n`);
+  git(pair.remote, "add", ".");
+  git(pair.remote, "commit", "-q", "-m", "records");
+  git(pair.clone, "fetch", "-q", "origin");
+  const status = (id: string) => (db.query("select status from record where id = ?").get(id) as { status: string }).status;
+  return { ...pair, db, card, merged, status };
+}
+
+const branchExists = (repo: string, branch: string) =>
+  spawnSync("git", ["-C", repo, "rev-parse", "--verify", `refs/heads/${branch}`]).status === 0;
+
+test("discarding an ingest hands its cards back, and removes the worktree and the branch", async () => {
+  const { clone, db, card, merged, status } = await withCards();
+  const branch = "mem/t/20260922-drop";
+  const { path } = ensureWorktree(clone, branch, { fetch: false });
+
+  const committed = card("匯出後已 commit", "submitted");
+  await Bun.write(join(path, FILE), `{"id":"${merged}"}\n{"id":"${committed}"}\n`);
+  git(path, "add", ".");
+  git(path, "commit", "-q", "-m", "approve");
+  const uncommitted = card("匯出後還沒 commit", "submitted");
+  await Bun.write(join(path, FILE), `{"id":"${merged}"}\n{"id":"${committed}"}\n{"id":"${uncommitted}"}\n`);
+
+  expect(discardIngest(clone, branch, db)).toEqual({ status: "discarded", returned: 2 });
+  expect(status(committed)).toBe("local");
+  expect(status(uncommitted)).toBe("local");
+  expect(status(merged)).toBe("merged");
+  expect(existsSync(path)).toBe(false);
+  expect(branchExists(clone, branch)).toBe(false);
+});
+
+test("a pushed ingest is left alone: its cards are in a PR", async () => {
+  const { clone, db, card, merged, status } = await withCards();
+  const branch = "mem/t/20260922-sent";
+  const { path } = ensureWorktree(clone, branch, { fetch: false });
+  const sent = card("已經送出 PR", "submitted");
+  await Bun.write(join(path, FILE), `{"id":"${merged}"}\n{"id":"${sent}"}\n`);
+  git(path, "add", ".");
+  git(path, "commit", "-q", "-m", "approve");
+  git(path, "push", "-q", "-u", "origin", branch);
+
+  expect(discardIngest(clone, branch, db)).toEqual({ status: "pushed", returned: 0 });
+  expect(status(sent)).toBe("submitted");
+  expect(existsSync(path)).toBe(true);
+  expect(branchExists(clone, branch)).toBe(true);
+});
+
+test("a worktree removed by hand still gives its cards back from the branch", async () => {
+  const { clone, db, card, merged, status } = await withCards();
+  const branch = "mem/t/20260922-gone";
+  const { path } = ensureWorktree(clone, branch, { fetch: false });
+  const orphan = card("工作區被手動刪掉", "submitted");
+  await Bun.write(join(path, FILE), `{"id":"${merged}"}\n{"id":"${orphan}"}\n`);
+  git(path, "add", ".");
+  git(path, "commit", "-q", "-m", "approve");
+  removeWorktree(clone, branch);
+
+  expect(discardIngest(clone, branch, db)).toEqual({ status: "discarded", returned: 1 });
+  expect(status(orphan)).toBe("local");
+  expect(existsSync(worktreePath(clone, branch))).toBe(false);
+  expect(branchExists(clone, branch)).toBe(false);
+});
+
+test("discarding an ingest that does not exist changes nothing", async () => {
+  const { clone, db } = await withCards();
+  expect(discardIngest(clone, "mem/t/20260922-never", db)).toEqual({ status: "missing", returned: 0 });
+  expect(branchExists(clone, "mem/t/20260922-never")).toBe(false);
 });

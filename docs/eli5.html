@@ -272,19 +272,6 @@
   .say-this q { display: block; font-family: var(--f-hand); font-size: 21px; }
   .say-this small { display: block; color: var(--muted); font-size: 15px; margin-top: 2px; }
 
-  .picks { display: grid; border-top: 2px dashed var(--line); }
-  .pick {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 4px 14px;
-    align-items: center;
-    padding-block: 12px;
-    border-bottom: 2px dashed var(--line);
-  }
-  .pick > b { font-family: var(--f-hand); font-size: 20px; color: var(--muted); }
-  .pick > div { display: grid; gap: 2px; }
-  .pick strong { font-size: 16px; }
-  .pick p { color: var(--muted); font-size: 14px; }
 
   .callouts { display: grid; gap: 10px; }
   .callout { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: baseline; }
@@ -887,55 +874,55 @@
     <h3>確認點 ①：骨架怎麼看</h3>
     <p>它讀完程式碼之後，會先給你一份<strong>大綱</strong>——不是檔案、不是卡片清單，就是「這份文件打算長什麼樣」。像這樣：</p>
 
-    <div class="picks">
-      <div class="pick">
-        <b>主題</b>
-        <div>
-          <strong>測評點數拋轉 ERP</strong>
-          <p>跨 <code>billing-api-aws</code>（<code>dev</code>）與 <code>billing-batch-aws</code>（<code>batch/sap-create-bu-data</code>）兩個 repo</p>
-        </div>
-        <span class="chip done">新增</span>
-      </div>
-      <div class="pick">
-        <b>1</b>
-        <div>
-          <strong>整體流程</strong>
-          <p>mermaid sequenceDiagram：BU → API → 中介表 → cron → SAP</p>
-        </div>
-        <span class="chip done">有圖</span>
-      </div>
-      <div class="pick">
-        <b>2</b>
-        <div>
-          <strong>階段一：BU 呼叫 API</strong>
-          <p>兩支端點的<strong>完整 request / response JSON</strong>，2.0 與 3.0 各一份，含必填與值域</p>
-        </div>
-        <span class="chip done">有 payload</span>
-      </div>
-      <div class="pick">
-        <b>3</b>
-        <div>
-          <strong>階段二、三：中介表與批次拋轉</strong>
-          <p>欄位、狀態值、三種型別的去向與去重鍵</p>
-        </div>
-        <span class="chip done">有表</span>
-      </div>
-      <div class="pick">
-        <b>4</b>
-        <div>
-          <strong>情境對照表</strong>
-          <p>六種情境 × 處理方式／狀態／log／<strong>重跑行為</strong></p>
-        </div>
-        <span class="chip done">有表</span>
-      </div>
-      <div class="pick">
-        <b>5</b>
-        <div>
-          <strong>設計考量 · Known Issue · 維運</strong>
-          <p>「為什麼」從紀錄來；還會列出<strong>程式碼跟既有文件不一致的地方</strong></p>
-        </div>
-        <span class="chip done">留</span>
-      </div>
+    <div class="pic">
+      <svg viewBox="0 0 680 356" role="img" aria-label="文件骨架的樣子：主題測評點數拋轉 ERP，跨兩個 repo，分成五節。前四節的內容從程式碼讀出來，分別有流程圖、payload、兩張表；第五節設計考量與 Known Issue 從卡片來">
+        <rect class="f-paper s-ink" x="20" y="14" width="640" height="304" rx="10"/>
+        <text class="t" x="44" y="50" font-size="20" font-weight="700">測評點數拋轉 ERP</text>
+        <rect class="f-none s-ok" x="584" y="30" width="56" height="26" rx="13"/>
+        <text class="t t-ok" x="612" y="48" text-anchor="middle" font-size="13">新增</text>
+        <text class="t t-mono t-muted" x="44" y="74" font-size="11">billing-api-aws @ dev　·　billing-batch-aws @ batch/sap-create-bu-data</text>
+        <line class="s-line" x1="36" y1="88" x2="644" y2="88"/>
+        <rect class="f-accent" x="36" y="107" width="6" height="26" rx="3"/>
+        <text class="t t-muted" x="58" y="126" font-size="15">1</text>
+        <text class="t" x="80" y="126" font-size="14">整體流程</text>
+        <text class="t t-muted" x="300" y="126" font-size="12">BU → API → 中介表 → cron → SAP</text>
+        <rect class="f-none s-ok" x="560" y="108" width="84" height="24" rx="12"/>
+        <text class="t t-ok" x="602" y="125" text-anchor="middle" font-size="12">有圖</text>
+        <line class="s-line dash" x1="36" y1="141" x2="644" y2="141" style="stroke-width:1"/>
+        <rect class="f-accent" x="36" y="149" width="6" height="26" rx="3"/>
+        <text class="t t-muted" x="58" y="168" font-size="15">2</text>
+        <text class="t" x="80" y="168" font-size="14">階段一：BU 呼叫 API</text>
+        <text class="t t-muted" x="300" y="168" font-size="12">兩支端點完整的 request / response</text>
+        <rect class="f-none s-ok" x="560" y="150" width="84" height="24" rx="12"/>
+        <text class="t t-ok" x="602" y="167" text-anchor="middle" font-size="12">有 payload</text>
+        <line class="s-line dash" x1="36" y1="183" x2="644" y2="183" style="stroke-width:1"/>
+        <rect class="f-accent" x="36" y="191" width="6" height="26" rx="3"/>
+        <text class="t t-muted" x="58" y="210" font-size="15">3</text>
+        <text class="t" x="80" y="210" font-size="14">階段二、三：中介表與批次拋轉</text>
+        <text class="t t-muted" x="300" y="210" font-size="12">欄位、狀態值、去重鍵</text>
+        <rect class="f-none s-ok" x="560" y="192" width="84" height="24" rx="12"/>
+        <text class="t t-ok" x="602" y="209" text-anchor="middle" font-size="12">有表</text>
+        <line class="s-line dash" x1="36" y1="225" x2="644" y2="225" style="stroke-width:1"/>
+        <rect class="f-accent" x="36" y="233" width="6" height="26" rx="3"/>
+        <text class="t t-muted" x="58" y="252" font-size="15">4</text>
+        <text class="t" x="80" y="252" font-size="14">情境對照表</text>
+        <text class="t t-muted" x="300" y="252" font-size="12">六種情境 × 處理方式 × 重跑行為</text>
+        <rect class="f-none s-ok" x="560" y="234" width="84" height="24" rx="12"/>
+        <text class="t t-ok" x="602" y="251" text-anchor="middle" font-size="12">有表</text>
+        <line class="s-line dash" x1="36" y1="267" x2="644" y2="267" style="stroke-width:1"/>
+        <rect class="f-card s-edge" x="36" y="275" width="6" height="26" rx="3"/>
+        <text class="t t-muted" x="58" y="294" font-size="15">5</text>
+        <text class="t" x="80" y="294" font-size="14">設計考量・Known Issue・維運</text>
+        <text class="t t-muted" x="300" y="294" font-size="12">「為什麼」＋程式碼跟文件不一致的地方</text>
+        <rect class="f-none s-ok" x="560" y="276" width="84" height="24" rx="12"/>
+        <text class="t t-ok" x="602" y="293" text-anchor="middle" font-size="12">留</text>
+
+        <rect class="f-accent" x="40" y="334" width="6" height="14" rx="3"/>
+        <text class="t t-muted" x="54" y="346" font-size="12">從程式碼讀出來</text>
+        <rect class="f-card s-edge" x="186" y="334" width="6" height="14" rx="3"/>
+        <text class="t t-muted" x="200" y="346" font-size="12">從卡片（開發紀錄）來</text>
+        <text class="t t-muted" x="644" y="346" text-anchor="end" font-size="12">這時還沒有任何檔案被寫</text>
+      </svg>
     </div>
 
     <p>你就用講的回它，不用點也不用編輯檔案：</p>
@@ -1050,7 +1037,7 @@
     <div class="callouts">
       <div class="callout">
         <b>1</b>
-        <span>左邊那一排是<strong>檔案，不是卡片</strong>。<small>常見誤會：看到好幾個會以為要挑。不用挑——文件本體、紀錄原文、README 索引，少了任何一個就會斷掉，所以它們一起 commit。真的不想要某一頁，按「捨棄這頁」。</small></span>
+        <span>左邊那一排是<strong>檔案，不是卡片</strong>。<small>常見誤會：看到好幾個會以為要挑。不用挑——文件本體、紀錄原文、README 索引，少了任何一個就會斷掉，所以它們一起 commit。真的不想要某一頁，按「捨棄這頁」。整份都不要了，跟 AI 說「這份不要了」，它會先把卡片退回本機，再清掉工作區。</small></span>
       </div>
       <div class="callout">
         <b>2</b>
@@ -1079,106 +1066,90 @@
 
   <section>
     <h2>你說一句話之後，它做了什麼</h2>
-    <p class="lead">從你開口到預覽頁出現，中間有九步。你只在第五步回一句話。</p>
+    <p class="lead">從你開口到預覽頁出現，中間有九步。你只在第六步回一句話。</p>
 
     <div class="pic">
-      <svg viewBox="0 0 680 420" role="img" aria-label="寫文件的九個步驟：從你開口、讀程式碼、確認骨架，到產生預覽頁">
+      <svg viewBox="0 0 680 530" role="img" aria-label="寫文件的九個步驟：先查 repo 清單跟本機位置，用 git show 讀分支上的程式碼，搜記憶只補為什麼、查重疊有就連過去，然後把骨架給你確認，確認後才開 worktree 寫檔、lint、開預覽頁">
         <rect class="f-ok" x="150" y="10" width="380" height="34" rx="8"/>
         <text class="t t-paper" x="340" y="32" text-anchor="middle" font-size="15">你：「幫我寫一份 sap-create-bu-data 的文件」</text>
         <path class="f-none s-line" d="M340 44 V62"/><polygon class="f-line" points="334,60 340,72 346,60"/>
 
-        <rect class="f-none s-line dash" x="20" y="76" width="640" height="150" rx="12"/>
+        <rect class="f-none s-line dash" x="20" y="76" width="640" height="250" rx="12"/>
         <text class="t t-muted" x="34" y="68" font-size="13">它自己做，你不用管</text>
 
-        <rect class="f-paper s-line" x="36" y="92" width="290" height="30" rx="6"/>
-        <text class="t" x="181" y="112" text-anchor="middle" font-size="13">① repos.yaml：這個產品有哪些 repo</text>
-        <rect class="f-paper s-line" x="354" y="92" width="290" height="30" rx="6"/>
-        <text class="t" x="499" y="112" text-anchor="middle" font-size="13">② config.toml：那些 repo 在我電腦的哪</text>
+        <!-- 1, 2: where to read. One file is shared, the other is yours. -->
+        <rect class="f-paper s-line" x="36" y="92" width="290" height="48" rx="6"/>
+        <rect class="f-soft s-line" x="48" y="102" width="20" height="26" rx="3"/>
+        <path class="f-none s-line" d="M53 110 H63 M53 116 H63 M53 122 H60"/>
+        <text class="t" x="80" y="112" font-size="13">① repos.yaml：有哪些 repo、讀哪支</text>
+        <text class="t t-muted" x="80" y="130" font-size="11">團隊共用，只寫 repo 身分、不寫本機路徑</text>
 
-        <rect class="f-accent" x="36" y="132" width="608" height="34" rx="6"/>
-        <text class="t t-paper" x="340" y="154" text-anchor="middle" font-size="14">③ git show origin/dev:&lt;檔案&gt; ── 直接從 dev 分支讀程式碼，不 checkout</text>
+        <rect class="f-paper s-line" x="354" y="92" width="290" height="48" rx="6"/>
+        <rect class="f-soft s-line" x="366" y="102" width="20" height="26" rx="3"/>
+        <circle class="f-ok" cx="382" cy="124" r="5"/>
+        <text class="t" x="398" y="112" font-size="13">② config.toml：在你電腦的哪</text>
+        <text class="t t-muted" x="398" y="130" font-size="11">每個人不同，是你自己的，不進 git</text>
 
-        <rect class="f-paper s-line" x="36" y="176" width="290" height="40" rx="6"/>
-        <text class="t" x="181" y="192" text-anchor="middle" font-size="13">④ 搜記憶找「為什麼」</text>
-        <text class="t t-muted" x="181" y="209" text-anchor="middle" font-size="11">紀錄只供設計考量與 Known Issue</text>
-        <rect class="f-paper s-line" x="354" y="176" width="290" height="40" rx="6"/>
-        <text class="t" x="499" y="192" text-anchor="middle" font-size="13">⑤ 查現有文件有沒有重疊</text>
-        <text class="t t-muted" x="499" y="209" text-anchor="middle" font-size="11">有就連過去，不重寫</text>
+        <path class="f-none s-line" d="M181 140 V150"/><polygon class="f-line" points="176,148 181,156 186,148"/>
+        <path class="f-none s-line" d="M499 140 V150"/><polygon class="f-line" points="494,148 499,156 504,148"/>
 
-        <path class="f-none s-line" d="M340 226 V244"/><polygon class="f-line" points="334,242 340,254 346,242"/>
+        <!-- 3: the step that ties the document to the facts -->
+        <rect class="f-accent" x="36" y="158" width="608" height="64" rx="6"/>
+        <text class="t t-paper" x="340" y="178" text-anchor="middle" font-size="14">③ 用 git show 直接讀分支上的程式碼，不 checkout</text>
+        <rect class="f-paper" x="52" y="188" width="196" height="24" rx="12"/>
+        <text class="t t-mono" x="150" y="204" text-anchor="middle" font-size="11">billing-api-aws @ dev</text>
+        <rect class="f-paper" x="260" y="188" width="236" height="24" rx="12"/>
+        <text class="t t-mono" x="378" y="204" text-anchor="middle" font-size="11">billing-batch-aws @ batch/…</text>
+        <rect class="f-soft" x="508" y="188" width="120" height="24" rx="12"/>
+        <text class="t t-mono t-muted" x="568" y="204" text-anchor="middle" font-size="11">git checkout</text>
+        <line class="s-warn" x1="516" y1="200" x2="620" y2="200"/>
 
-        <rect class="f-paper s-accent" x="150" y="258" width="380" height="42" rx="8"/>
-        <text class="t t-accent" x="340" y="276" text-anchor="middle" font-size="15">⑥ 確認點：把骨架給你看</text>
-        <text class="t t-muted" x="340" y="293" text-anchor="middle" font-size="12">分幾節、哪節有 payload、哪節連出去</text>
-        <text class="t t-ok" x="548" y="283" font-size="13">← 你回一句</text>
+        <!-- 4, 5: memory only explains why; existing docs are linked, not rewritten -->
+        <rect class="f-paper s-line" x="36" y="234" width="290" height="80" rx="6"/>
+        <text class="t" x="52" y="254" font-size="13">④ 搜記憶找「為什麼」</text>
+        <rect class="f-card s-edge" x="52" y="266" width="14" height="18" rx="2"/>
+        <rect class="f-card s-edge" x="60" y="270" width="14" height="18" rx="2"/>
+        <rect class="f-card s-edge" x="68" y="274" width="14" height="18" rx="2"/>
+        <path class="f-none s-line" d="M92 283 H108"/><polygon class="f-line" points="106,278 114,283 106,288"/>
+        <text class="t" x="120" y="288" font-size="12">只寫進 設計考量 · Known Issue</text>
+        <text class="t t-muted" x="52" y="307" font-size="11">欄位與數值一律以程式碼為準</text>
 
-        <path class="f-none s-line" d="M340 300 V318"/><polygon class="f-line" points="334,316 340,328 346,316"/>
+        <rect class="f-paper s-line" x="354" y="234" width="290" height="80" rx="6"/>
+        <text class="t" x="370" y="254" font-size="13">⑤ 查既有文件有沒有重疊</text>
+        <rect class="f-paper s-line" x="370" y="264" width="20" height="24" rx="3"/>
+        <rect class="f-soft s-accent" x="381" y="269" width="20" height="24" rx="3"/>
+        <path class="f-none s-line" d="M414 283 H430"/><polygon class="f-line" points="428,278 436,283 428,288"/>
+        <text class="t" x="442" y="288" font-size="12">有就連過去，不重寫</text>
+        <text class="t t-muted" x="370" y="307" font-size="11">同一件事只寫在一個地方</text>
 
-        <rect class="f-none s-line dash" x="20" y="332" width="640" height="76" rx="12"/>
-        <rect class="f-paper s-line" x="36" y="346" width="196" height="30" rx="6"/>
-        <text class="t" x="134" y="366" text-anchor="middle" font-size="13">⑦ 開 worktree 寫檔案</text>
-        <rect class="f-paper s-line" x="246" y="346" width="196" height="30" rx="6"/>
-        <text class="t" x="344" y="366" text-anchor="middle" font-size="13">⑧ lint 檢查</text>
-        <rect class="f-card s-edge" x="456" y="346" width="188" height="30" rx="6"/>
-        <text class="t t-card" x="550" y="366" text-anchor="middle" font-size="13">⑨ 開預覽頁</text>
-        <text class="t t-muted" x="340" y="396" text-anchor="middle" font-size="12">你的 clone 從頭到尾沒被動過</text>
+        <path class="f-none s-line" d="M340 326 V336"/><polygon class="f-line" points="334,334 340,346 346,334"/>
+
+        <!-- 6: the only point that waits for you -->
+        <rect class="f-paper s-accent" x="150" y="348" width="380" height="50" rx="8"/>
+        <text class="t t-accent" x="340" y="368" text-anchor="middle" font-size="15">⑥ 確認點：把骨架給你看</text>
+        <text class="t t-muted" x="340" y="388" text-anchor="middle" font-size="12">分幾節、哪節有 payload・<tspan class="t-accent">這時還沒寫任何檔案</tspan></text>
+        <text class="t t-ok" x="542" y="378" font-size="13">← 你回一句</text>
+
+        <path class="f-none s-line" d="M340 398 V408"/><polygon class="f-line" points="334,406 340,418 346,406"/>
+
+        <!-- 7, 8, 9: written next door, checked, then handed to you -->
+        <rect class="f-none s-line dash" x="20" y="422" width="640" height="98" rx="12"/>
+        <rect class="f-paper s-line" x="36" y="436" width="192" height="50" rx="6"/>
+        <text class="t" x="132" y="456" text-anchor="middle" font-size="13">⑦ 開 worktree 寫檔案</text>
+        <text class="t t-muted" x="132" y="476" text-anchor="middle" font-size="11">在你的 repo 隔壁，共用 .git</text>
+        <path class="f-none s-line" d="M228 461 H238"/><polygon class="f-line" points="236,456 244,461 236,466"/>
+
+        <rect class="f-paper s-line" x="246" y="436" width="192" height="50" rx="6"/>
+        <text class="t" x="342" y="456" text-anchor="middle" font-size="13">⑧ lint 檢查</text>
+        <text class="t t-muted" x="342" y="476" text-anchor="middle" font-size="11">連結、索引、紀錄格式，先修掉</text>
+        <path class="f-none s-line" d="M438 461 H448"/><polygon class="f-line" points="446,456 454,461 446,466"/>
+
+        <rect class="f-card s-edge" x="456" y="436" width="188" height="50" rx="6"/>
+        <text class="t t-card" x="550" y="456" text-anchor="middle" font-size="13">⑨ 開預覽頁</text>
+        <text class="t t-card" x="550" y="476" text-anchor="middle" font-size="11">從這裡開始都是你的決定</text>
+
+        <text class="t t-muted" x="340" y="508" text-anchor="middle" font-size="12">你的 clone 從頭到尾沒被動過</text>
       </svg>
-    </div>
-
-    <h3>九步各自在做什麼</h3>
-    <div class="flow-wrap">
-      <table class="flow">
-        <thead>
-          <tr><th>步驟</th><th>做什麼</th><th>為什麼要這樣</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>① 查 repo 清單</td>
-            <td>讀團隊文件庫的 <code>repos.yaml</code>：這個產品有哪些 code repo、要讀哪一支分支</td>
-            <td>這份是共用的，所以只寫 repo 身分，不寫任何人的本機路徑</td>
-          </tr>
-          <tr>
-            <td>② 查本機位置</td>
-            <td>讀 <code>~/.dev-memory/config.toml</code> 的 <code>[repos]</code></td>
-            <td>每個人 clone 的位置都不同，這份是你自己的、不進 git</td>
-          </tr>
-          <tr>
-            <td><strong>③ 讀程式碼</strong></td>
-            <td><code>git show origin/dev:&lt;路徑&gt;</code> 與 <code>git ls-tree</code>，讀 controller、DTO、enum、entity、排程設定</td>
-            <td><strong>不 checkout</strong>——那是你正在工作的 repo，切分支會毀掉你的進度。讀 <code>dev</code> 是因為開發完成的程式碼都在那</td>
-          </tr>
-          <tr>
-            <td>④ 搜記憶</td>
-            <td>找這個主題相關的開發紀錄</td>
-            <td>只拿來寫「設計考量」與「Known Issue」。欄位與數值一律以程式碼為準</td>
-          </tr>
-          <tr>
-            <td>⑤ 查重疊</td>
-            <td>現有文件有沒有寫過這個主題的一部分</td>
-            <td><strong>有就連過去，不重寫</strong>。同一件事寫兩遍，改的時候一定有一邊忘了改</td>
-          </tr>
-          <tr>
-            <td><strong>⑥ 給你骨架</strong></td>
-            <td>主題、讀了哪些 repo 與分支、分成哪幾節、哪節有 payload／圖／對照表、哪節只連出去</td>
-            <td><strong>這時候還沒有任何檔案被寫</strong>。改大綱比改成品便宜太多</td>
-          </tr>
-          <tr>
-            <td>⑦ 寫檔案</td>
-            <td>開 git worktree，寫文件、更新 README 索引、補雙向連結、匯出紀錄</td>
-            <td>worktree 在你的 repo 隔壁，共用同一個 <code>.git</code> 但獨立工作目錄</td>
-          </tr>
-          <tr>
-            <td>⑧ lint</td>
-            <td>連結指得到嗎、README 索引到了嗎、紀錄格式對嗎</td>
-            <td>錯誤在開預覽頁之前就修掉，不要浪費你的時間</td>
-          </tr>
-          <tr>
-            <td>⑨ 預覽頁</td>
-            <td>本機網頁，左邊改、右邊看、跟 main 比對</td>
-            <td>從這裡開始都是你的決定：改到滿意、核准、送 PR</td>
-          </tr>
-        </tbody>
-      </table>
     </div>
 
     <div class="ideas">
@@ -1239,7 +1210,7 @@
             <td>產生</td>
             <td>寫文件、更新 README 索引、把紀錄匯出成 JSONL</td>
             <td>—</td>
-            <td>worktree 裡的檔案</td>
+            <td>worktree 裡的檔案；卡片轉 <code>submitted</code></td>
           </tr>
           <tr>
             <td><strong>確認點 ②</strong></td>
@@ -1256,8 +1227,14 @@
           <tr>
             <td>合併後</td>
             <td>—</td>
-            <td>merge，然後 <code>sync</code></td>
+            <td>merge（卡片檔衝突就<strong>兩邊都保留</strong>），然後 <code>sync</code></td>
             <td>卡片轉 <code>merged</code>、頁面進索引</td>
+          </tr>
+          <tr>
+            <td>不要了</td>
+            <td>只有你說不要才做：<code>ingest-discard</code></td>
+            <td>說「這份不要了」</td>
+            <td>卡片退回 <code>local</code>，下次 ingest 再帶上；工作區跟本機分支刪掉。已送出 PR 的不動</td>
           </tr>
         </tbody>
       </table>
@@ -1806,7 +1783,7 @@
             <td>卡片進 repo</td>
             <td><strong>自動</strong>　寫文件時一起</td>
             <td>JSONL，路徑 <code>records/&lt;產品&gt;/&lt;年月&gt;/&lt;作者&gt;.jsonl</code></td>
-            <td><strong>一人一月一檔、只在尾巴 append</strong> —— 兩個人同月提交也不會 merge 衝突</td>
+            <td><strong>一人一月一檔、只在尾巴 append</strong> —— 兩個人同月提交也不會 merge 衝突。同一個人同時開兩個都有新卡片的 PR 會撞，<strong>兩邊都保留</strong>就好</td>
           </tr>
           <tr>
             <td>同步隊友的</td>
@@ -1841,6 +1818,7 @@
       <div class="idea">
         <h3>為什麼 JSONL 不用一般 JSON</h3>
         <p>一個大 JSON 陣列，兩個人各加一筆就會在同一行衝突。JSONL 一行一筆、<strong>只在檔尾 append</strong>，git 會把兩邊的新行都收下。再加上一人一月一個檔，連碰都碰不到彼此。<strong>這個在測試裡真的 merge 過兩個 branch 驗證。</strong></p>
+        <p>唯一會撞的是<strong>同一個人同時開兩個 PR、兩邊都有新卡片</strong>：兩邊都在同一個檔尾加行，後 merge 的那個會衝突。解法永遠是<strong>兩邊都保留</strong>——行的順序沒有意義，少留一邊，那幾張卡片就悄悄從團隊 repo 消失。依序做（前一個 merge 後才開下一個）不會撞，因為開工作區前會先抓最新的 main。</p>
       </div>
     </div>
 
@@ -2238,7 +2216,7 @@
           <tr>
             <td>問答回填</td>
             <td>有價值的答案存回去變成一頁</td>
-            <td>一樣：答完如果還沒有對應文件，會問你要不要順手寫一份</td>
+            <td>不一樣：答案存成一張卡片（原料），不會一個答案變一頁。文件是主題完成時才一次寫一份</td>
           </tr>
         </tbody>
       </table>
@@ -2823,11 +2801,11 @@
       </div>
       <div class="check">
         <span>自動測試<small>每個功能都有測試，包含真的開 git worktree、真的合併兩個 branch</small></span>
-        <b class="chip done">147 個</b>
+        <b class="chip done">166 個</b>
       </div>
       <div class="check">
-        <span>文件過時偵測<small>頁面寫完後，它引用的兩個程式檔又各被改了 2、3 次，系統自己標出來</small></span>
-        <b class="chip done">真的抓到</b>
+        <span>文件過時偵測<small>讀文件最後的「程式碼位置」表，用本機 clone 比對。測試裡改過跟被刪掉的檔都抓得到；真實文件的 6 個路徑都查得到，目前沒有過時</small></span>
+        <b class="chip done">驗證過</b>
       </div>
       <div class="check">
         <span>文件與程式碼的落差偵測<small>寫文件時自動比對紀錄、既有文件與程式碼，對不上就標進 Known Issue</small></span>

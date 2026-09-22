@@ -180,12 +180,13 @@ dm repos --save
 | `sync` | 從文件庫的 main 匯入紀錄跟文件（`--skip-fetch`）。**PR merge 後要自己跑，不會自動** |
 | `repos` | 每個 code repo 在這台機器的哪裡（`--save` 寫進 config.toml、`--product`） |
 | `sweep` | 掃描兩個工具的所有對話紀錄，補上漏掉的 |
-| `entities` | 紀錄提到哪些資料表、API、queue，誰寫誰讀，哪些還沒有頁面 |
+| `entities` | 紀錄提到哪些資料表、API、queue，誰寫誰讀，哪些還沒有任何文件提到 |
 | `lint` | 檢查壞連結、沒被 README 索引的文件、殘留的 frontmatter |
-| `stale` | 問 GitHub：頁面引用的程式碼在那之後有沒有被改過 |
+| `stale` | 用本機 clone 比對：文件「程式碼位置」表列的程式碼，在文件之後有沒有改過或被搬走 |
 | `eval <file.yaml>` | 用評測集量搜尋準不準（`--suggest` 生候選題目） |
 | `review --branch <b>` | 開本機審核頁 |
 | `publish --branch <b>` | push 並開 PR（**只有你自己能跑**） |
+| `ingest-discard --branch <b>` | 整份 ingest 不要了：卡片退回本機、刪工作區跟本機分支。已送出 PR 的不動 |
 | `init-repo <dir>` | 把文件庫的骨架加進既有 repo，不覆蓋任何現有檔案 |
 | `index-docs` | 把 repo 原本就有的人工文件補進 README 索引（接手既有文件庫時用） |
 | `archive <file>` · `init` · `record` · `export` · `ingest-start` | hook 跟 skill 內部用的 |
@@ -208,7 +209,7 @@ dm repos --save
 | 審核頁沒有樣式、清單空白 | 用到舊版的 plugin | 更新 plugin 後重開；網址要含 `?token=` |
 | 審核頁「核准」按不下去 | 有檢查沒過 | 看「檢查結果」分頁，點檔名跳過去修 |
 | 「送出 PR」是灰的 | 還沒 commit | 先按「核准並 commit」 |
-| `stale` 說查不到 | `gh` 沒登入，或沒有那個 code repo 的權限 | `gh auth login`；沒權限的 repo 會被略過，不會猜 |
+| `stale` 說查不到 | 那個 code repo 沒 clone 在這台機器，或本機沒有表上寫的分支 | `dm repos` 看要補哪一行；分支沒有就先 `git fetch` |
 | 想重來 | 本機索引是可丟棄的 | 刪掉 `~/.dev-memory/memory.db`，再跑 `dm setup` |
 
 ---
@@ -233,7 +234,7 @@ dm repos --save
 
 ```bash
 cd plugins/dev-memory
-bun test          # 160 個測試
+bun test          # 166 個測試
 bun run build     # 改完 src/ 要重新打包 dist/
 ```
 

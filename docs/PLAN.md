@@ -209,7 +209,7 @@ dev-memory 審核  |  branch: mem/bill.lin/20260917-sap-create-bu-data
    - `repos/<repo>.md`：這個 repo 負責什麼
 5. **搜尋排序**：同 repo > 同產品 > 全部；wiki 頁 > 紀錄 > 原始對話；已被取代的內容不列出。
 6. **自動歸成同一個功能**：同產品底下 branch 名稱主幹相同，或提到同一個 entity，ingest 會提議歸在一起，由作者確認。
-7. **偵測文件過時**：`/wiki-lint` 用 `gh api repos/{repo}/commits?path=&since=` 比對 `code_refs` 列的檔案有沒有更新過，不需要在本機 clone 其他 repo。
+7. **偵測文件過時**：讀文件最後的「程式碼位置」表（內容｜repo｜分支｜路徑），用本機 clone 查那個分支在文件最後一次 commit 之後有沒有改過、路徑還在不在。不用 `gh`、不用連網；沒有這張表的人工文件只計數，不判斷。（2026-09-22 從 `gh api` ＋ frontmatter `code_refs` 改過來：新文件沒有 frontmatter。）
 
 ## 開發目錄結構：`/Users/bill.lin/project-plugin`
 
@@ -375,6 +375,7 @@ updated: 2026-09-04
 - `core/lint.ts` ＋ `/wiki-lint` skill：壞連結（`[[slug]]` 跟相對連結都查）、孤兒頁、`superseded_by` 指向、**`sources[]` 指得到真實紀錄**、同名 active 頁。語意矛盾交給 skill 的判斷半。
 - `core/staleness.ts`：用 `gh api repos/{repo}/commits?path=&since=` 查 `code_refs` 的檔案有沒有在頁面更新後被改過。實測對 `xinqilin/dev-memory` 正確抓到 tokenize.ts（2 個 commit）跟 search.ts（3 個）。`gh` 不可用時回報略過，不猜。
 - **問答回填**：SessionStart 注入的指引加一句，mem-save skill 加「Filing an answer back」段落。
+- **2026-09-22 變更**：過時偵測改讀文件的程式碼位置表＋本機 clone（見上面第 7 點）；問答回填改成把答案存成 note 卡片，不再提議一個答案一頁；`entities` 改成看有沒有任何文件提到，不再找 entity 頁。
 - **來源檢查**：除了 id 存不存在，另外比對頁面標題跟來源紀錄有沒有共同用字，沒有就出警告（標明是提示、要人工確認）。
 - **評測集**：`dev-memory eval --suggest` 從現有記憶生候選題目（標題當種子、識別字跟數字當判斷關鍵詞），但明講「query 要改寫成你自己的問法」——50 題的正式評測集仍然要人來寫。
 

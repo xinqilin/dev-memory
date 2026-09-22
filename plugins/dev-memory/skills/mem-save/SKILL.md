@@ -56,15 +56,15 @@ Show the returned id and tell the user the record is local until it is submitted
 ## Filing an answer back
 
 The same flow works for a question you just answered from the memory. If the answer took real
-digging — you pieced it together from several records or from raw conversation — and the wiki does
-not already say it, offer to save it as a `note`:
+digging — you pieced it together from several records or from raw conversation — and no document
+already says it, offer to save it as a `note`:
 
 - **title**: the question, in the words someone would ask it again
 - **body**: the answer, then where it came from (record ids, files, commits)
 
-Do not file answers that only restate an existing page, and do not file anything the user did not
-agree to. This is how the wiki grows from real questions instead of from someone remembering to
-write documentation.
+Do not file answers that only restate an existing document, and do not file anything the user did
+not agree to. A note is raw material, not a document: the next document written on that subject
+draws on it. Never offer to turn one answer into a document of its own.
 
 ## Notes
 

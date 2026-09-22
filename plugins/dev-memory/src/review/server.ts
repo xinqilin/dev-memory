@@ -11,6 +11,7 @@ import { join, relative, resolve } from "node:path";
 import { type Check, checkFile, hasErrors } from "./checks";
 import { baseVersion, changedPages } from "../core/worktree";
 import { openDb } from "../core/db";
+import { addedRecordIds, isRecordsPath, returnToLocal } from "../core/export";
 import { get as getEntry } from "../core/search";
 
 export interface ReviewOptions {
@@ -159,6 +160,17 @@ export function startReviewServer(options: ReviewOptions): ReviewServer {
         if (!path) return json({ error: "bad path" }, 400);
         const relPath = relative(worktree, path);
         const original = baseVersion(worktree, relPath, base);
+
+        // Its cards were marked submitted when exported; throwing the file away without handing
+        // them back would strand them, and no later ingest would ever carry them.
+        if (isRecordsPath(relPath) && (await Bun.file(path).exists())) {
+          const db = openDb();
+          try {
+            returnToLocal(db, addedRecordIds(await Bun.file(path).text(), original));
+          } finally {
+            db.close();
+          }
+        }
 
         if (original === null) {
           await Bun.file(path).delete();

@@ -84,8 +84,13 @@ export function entityIndex(db: Database, options: { product?: string } = {}): E
   return [...found.values()].sort((a, b) => (a.kind === b.kind ? a.name.localeCompare(b.name) : a.kind.localeCompare(b.kind)));
 }
 
-/** Which entities have no page yet, so ingest knows what to propose. */
+/**
+ * Which entities no document mentions. A table is covered by the document of the flow that uses
+ * it, not by a page of its own, so the test is whether any document talks about it at all.
+ */
 export function missingEntityPages(db: Database, entities: EntitySummary[]): EntitySummary[] {
-  const pages = (db.query("select path from page where type = 'entity'").all() as { path: string }[]).map((row) => row.path);
-  return entities.filter((entity) => !pages.some((path) => path.endsWith(`/${entity.slug}.md`)));
+  const bodies = (db.query("select body from page where status is not 'superseded'").all() as { body: string }[]).map((row) =>
+    row.body.toLowerCase(),
+  );
+  return entities.filter((entity) => !bodies.some((body) => body.includes(entity.name.toLowerCase())));
 }
