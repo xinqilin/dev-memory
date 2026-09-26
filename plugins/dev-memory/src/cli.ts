@@ -39,7 +39,7 @@ Usage:
   dev-memory init-repo <dir>          Add the memory repo scaffolding to an existing repository
   dev-memory sync                     Import the memory repo's main branch into the local index (--repo, --skip-fetch)
   dev-memory ingest-start <slug>      Open a worktree for a new ingest and print where it is
-  dev-memory export --branch <b>      Write local records into the worktree as JSONL
+  dev-memory export --branch <b>      Write local records from the repos in repos.yaml into the worktree as JSONL (--id)
   dev-memory ingest-discard --branch <b>  Throw an unsent ingest away and hand its records back to the next one
   dev-memory index-docs               Add the repo's existing hand-written docs to the README index
   dev-memory repos                    Where each code repo is on this machine (--product, --save)
@@ -75,6 +75,11 @@ async function addRecordFromStdin(): Promise<number> {
     const record = addRecord(db, input);
     console.log(`saved ${record.id} (${record.type}) ${record.title}`);
     console.log(`author ${record.author}  repos ${record.repos.join(", ") || "none"}  branch ${record.branch ?? "none"}`);
+    console.log(
+      (await loadConfig()).memory.repo
+        ? "stored locally until it is submitted to the memory repo"
+        : `personal mode: stored only in ${dbPath()}`,
+    );
     return 0;
   } finally {
     db.close();
@@ -110,7 +115,10 @@ async function runIngestStart(args: string[]): Promise<number> {
 }
 
 async function runExport(args: string[]): Promise<number> {
-  const { values } = parseArgs({ args, options: { repo: { type: "string" }, branch: { type: "string" } } });
+  const { values } = parseArgs({
+    args,
+    options: { repo: { type: "string" }, branch: { type: "string" }, id: { type: "string", multiple: true } },
+  });
   const repo = await memoryRepo(values.repo);
   if (!repo) return 2;
   if (!values.branch) {
@@ -121,9 +129,12 @@ async function runExport(args: string[]): Promise<number> {
   const worktree = ensureWorktree(repo, values.branch, { fetch: false });
   const db = openDb();
   try {
-    const result = await exportRecords(db, worktree.path);
+    const result = await exportRecords(db, worktree.path, { ids: values.id });
     console.log(`${result.written} records written, ${result.alreadyThere} already in the repo`);
     for (const file of result.files) console.log(`  ${file}`);
+    if (result.outOfScope > 0) {
+      console.log(`${result.outOfScope} local records stay on this machine: none of their repos is in repos.yaml (to send one anyway: --id <id>)`);
+    }
     return 0;
   } finally {
     db.close();

@@ -71,17 +71,19 @@ test("setMemoryRepo adds the section when the config has none", async () => {
   expect((await loadConfig()).memory).toEqual({ repo: "/somewhere/memory", branch: "main" });
 });
 
-test("a fresh machine is told exactly what is missing", async () => {
+test("a fresh machine without a team repo is set up in personal mode", async () => {
   home();
   const result = await runSetup({ sweep: false, sync: false });
 
   const repoCheck = result.checks.find((check) => check.name === "memory repo")!;
-  expect(repoCheck.ok).toBe(false);
-  expect(repoCheck.fix).toContain("--repo");
+  expect(repoCheck.ok).toBe(true);
+  expect(repoCheck.detail).toContain("個人模式");
+  expect(repoCheck.detail).toContain("--repo"); // how to join a team later
+  expect(result.checks.find((check) => check.name === "gh")!.ok).toBe(true); // personal mode never opens a PR
 
   const output = formatSetup(result);
-  expect(output).toContain("✗ memory repo");
-  expect(output).toContain("還有 1 件事要處理");
+  expect(output).toContain("✓ memory repo");
+  expect(output).toContain("都好了（個人模式）");
   expect(result.checks.find((check) => check.name === "本機索引")!.ok).toBe(true); // the index is created regardless
 });
 

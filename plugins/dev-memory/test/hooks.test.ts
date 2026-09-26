@@ -86,6 +86,27 @@ test("the session-start hook sweeps and reports what it found", async () => {
   expect(turnCount(env.DEV_MEMORY_HOME)).toBe(5);
 });
 
+test("without a team repo the session-start hook says personal mode and never points at wiki-ingest", async () => {
+  const { env } = await workspace();
+  const { stdout } = await runHook("session-start.ts", { session_id: "s", source: "startup", cwd: "/repo" }, env);
+
+  const context = JSON.parse(stdout).hookSpecificOutput.additionalContext as string;
+  expect(context).toContain("Personal mode");
+  expect(context).toContain("上次、之前"); // the trigger covers earlier conversations, not only decisions
+  expect(context).not.toContain("wiki-ingest");
+});
+
+test("with a team repo the session-start hook sends documents to wiki-ingest", async () => {
+  const { env } = await workspace();
+  mkdirSync(env.DEV_MEMORY_HOME, { recursive: true });
+  await Bun.write(join(env.DEV_MEMORY_HOME, "config.toml"), '[memory]\nrepo = "/somewhere/memory"\n');
+  const { stdout } = await runHook("session-start.ts", { session_id: "s", source: "startup", cwd: "/repo" }, env);
+
+  const context = JSON.parse(stdout).hookSpecificOutput.additionalContext as string;
+  expect(context).toContain("wiki-ingest");
+  expect(context).not.toContain("Personal mode");
+});
+
 test("hooks survive garbage on stdin and never fail the session", async () => {
   const { env } = await workspace();
   expect((await runHook("stop.ts", "not json", env)).code).toBe(0);

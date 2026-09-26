@@ -78,12 +78,12 @@ export async function setMemoryRepo(repo: string, branch?: string): Promise<void
 
 function checkMemoryRepo(repo: string | null): Check[] {
   if (!repo) {
+    // Not an error: without a team repo the memory is personal, and everything but submitting works.
     return [
       {
         name: "memory repo",
-        ok: false,
-        detail: "還沒設定",
-        fix: "先 clone 團隊的記憶 repo，再跑 dev-memory setup --repo <clone 的路徑>",
+        ok: true,
+        detail: "沒設定：個人模式，對話跟紀錄只存在本機\n            要分享給團隊時再跑 dev-memory setup --repo <clone 的路徑>",
       },
     ];
   }
@@ -116,6 +116,10 @@ function checkMemoryRepo(repo: string | null): Check[] {
 
 export async function runSetup(options: SetupOptions = {}): Promise<SetupResult> {
   const checks: Check[] = [];
+  await ensureConfig();
+  if (options.repo) await setMemoryRepo(options.repo, options.branch);
+  const config = await loadConfig();
+  const repo = config.memory.repo;
 
   // 1. environment
   const bun = Bun.which("bun");
@@ -129,17 +133,18 @@ export async function runSetup(options: SetupOptions = {}): Promise<SetupResult>
   const git = Bun.which("git");
   checks.push({ name: "git", ok: git !== null, detail: git ?? "找不到 git", fix: git ? undefined : "xcode-select --install" });
 
+  // gh only opens PRs, so personal mode does not need it.
   const gh = Bun.which("gh");
   const ghAuth = gh ? run("gh", ["auth", "status"]) : { ok: false, out: "" };
+  const ghReady = gh !== null && ghAuth.ok;
   checks.push({
     name: "gh",
-    ok: gh !== null && ghAuth.ok,
-    detail: !gh ? "找不到 gh" : ghAuth.ok ? "已登入" : "裝好了但還沒登入",
-    fix: !gh ? "brew install gh && gh auth login" : ghAuth.ok ? undefined : "gh auth login",
+    ok: ghReady || !repo,
+    detail: (!gh ? "找不到 gh" : ghAuth.ok ? "已登入" : "裝好了但還沒登入") + (!ghReady && !repo ? "（個人模式用不到）" : ""),
+    fix: ghReady || !repo ? undefined : !gh ? "brew install gh && gh auth login" : "gh auth login",
   });
 
   // 2. local index
-  await ensureConfig();
   const db = openDb();
   const fts5 = hasFts5(db);
   checks.push({
@@ -150,9 +155,6 @@ export async function runSetup(options: SetupOptions = {}): Promise<SetupResult>
   });
 
   // 3. memory repo
-  if (options.repo) await setMemoryRepo(options.repo, options.branch);
-  const config = await loadConfig();
-  const repo = config.memory.repo;
   checks.push(...checkMemoryRepo(repo));
 
   // 4. fill the index
@@ -190,7 +192,7 @@ export function formatSetup(result: SetupResult): string {
   lines.push("");
   lines.push(
     blocking.length === 0
-      ? "都好了。做完一個決定時跟 AI 說「把這個決定存起來」就會開始記。"
+      ? `都好了${result.repo ? "" : "（個人模式）"}。做完一個決定時跟 AI 說「把這個決定存起來」就會開始記。`
       : `還有 ${blocking.length} 件事要處理，照上面的 → 做完再跑一次 dev-memory setup。`,
   );
   return lines.join("\n");

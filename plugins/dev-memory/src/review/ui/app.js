@@ -293,31 +293,40 @@ function renderChecks(checks) {
   }
 }
 
+// Documents have no frontmatter, so the sources are the cards this ingest submits, plus any other
+// card the page cites by id in its text.
 async function renderSources(content) {
   const target = el("sources");
   target.innerHTML = "";
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
-  const ids = match ? [...match[1].matchAll(/([0-9A-HJKMNP-TV-Z]{26})/g)].map((m) => m[1]) : [];
+  const { body: submitted } = await api("/api/cards");
+  const cards = submitted.cards ?? [];
+  const carried = new Set(cards.map((card) => card.id));
+  const cited = [...new Set([...content.matchAll(/\b([0-9A-HJKMNP-TV-Z]{26})\b/g)].map((m) => m[1]))].filter((id) => !carried.has(id));
 
-  if (ids.length === 0) {
-    target.textContent = "這頁沒有列出來源紀錄。";
+  if (cards.length === 0 && cited.length === 0) {
+    target.textContent = "這次沒有帶卡片，這頁也沒有引用任何卡片。";
     return;
   }
-  for (const id of ids) {
+  for (const card of cards) target.append(sourceBlock(card.id, card));
+  for (const id of cited) {
     const { status, body } = await api(`/api/source?id=${encodeURIComponent(id)}`);
-    const block = document.createElement("div");
-    block.className = "source";
-    if (status !== 200) {
-      block.innerHTML = `<code></code><p>找不到這筆紀錄</p>`;
-      block.querySelector("code").textContent = id;
-    } else {
-      block.innerHTML = `<code></code><strong></strong><p></p>`;
-      block.querySelector("code").textContent = `${id} · ${body.author ?? ""} · ${body.created_at ?? ""}`;
-      block.querySelector("strong").textContent = body.title ?? "";
-      block.querySelector("p").textContent = body.body ?? "";
-    }
-    target.append(block);
+    target.append(sourceBlock(id, status === 200 ? body : null));
   }
+}
+
+function sourceBlock(id, card) {
+  const block = document.createElement("div");
+  block.className = "source";
+  if (!card) {
+    block.innerHTML = `<code></code><p>找不到這筆紀錄</p>`;
+    block.querySelector("code").textContent = id;
+    return block;
+  }
+  block.innerHTML = `<code></code><strong></strong><p></p>`;
+  block.querySelector("code").textContent = `${id} · ${card.author ?? ""} · ${card.created_at ?? ""}`;
+  block.querySelector("strong").textContent = card.title ?? "";
+  block.querySelector("p").textContent = card.body ?? "";
+  return block;
 }
 
 // ---------- actions ----------

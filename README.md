@@ -11,6 +11,21 @@ Claude Code 與 Codex CLI 共用同一個 plugin、同一份記憶（Codex 那�
 
 背景還有一條路一直在跑，跟你做不做上面的事無關：**每講完一回合，對話自動進本機索引**。
 
+**兩種用法**，差別只在有沒有設定文件庫：
+
+| | 個人模式 | 團隊模式 |
+|---|---|---|
+| 設定 | `dm setup` | `dm setup --repo <文件庫的 clone>` |
+| 對話自動進本機索引、中文搜尋、存卡片 | ✓ | ✓ |
+| 卡片去哪 | 只在本機 `~/.dev-memory/memory.db` | 寫文件時跟著 PR 送出，**只送在文件庫 `repos.yaml` 列的 code repo 裡存的卡片** |
+| 寫文件、審核頁、PR | — | ✓ |
+| 需要 `gh` | 不用 | 要 |
+
+個人模式之後隨時可以轉成團隊模式，再跑一次 `dm setup --repo <clone>` 就好。之前在其他專案存的卡片會留在本機，不會整批送出去。
+
+> **備份**：`~/.dev-memory/memory.db` 是舊對話（Claude Code 預設 30 天就刪掉原始對話檔）跟個人模式卡片**唯一的一份**。
+> 請納入 Time Machine，或定期跑 `sqlite3 ~/.dev-memory/memory.db ".backup <備份路徑>"`。不要為了重建索引刪掉它。
+
 圖解（一頁看完全部）：[docs/eli5.html](docs/eli5.html)　·　完整規劃：[docs/PLAN.md](docs/PLAN.md)　·　進度與決策：[docs/HANDOFF.md](docs/HANDOFF.md)
 
 **目前狀態**：可以用了。蒐集、中文搜尋、讀程式碼寫文件、本機審核頁、PR 提交、lint 與過時偵測都完成，端對端跑過兩次真實的 PR。第一版**不含語意搜尋**，所以不用裝任何模型。
@@ -25,7 +40,7 @@ Claude Code 與 Codex CLI 共用同一個 plugin、同一份記憶（Codex 那�
 |---|---|---|
 | [Bun](https://bun.sh) | `brew install bun` | hook 跟 MCP server 都是用 `bun` 啟動；**必須在 PATH 裡** |
 | git | 通常已經有 | — |
-| [gh](https://cli.github.com) 並登入 | `brew install gh && gh auth login` | 提交記憶、開 PR、偵測文件過時 |
+| [gh](https://cli.github.com) 並登入 | `brew install gh && gh auth login` | 提交記憶、開 PR、偵測文件過時。**個人模式不用** |
 
 ### 2. 安裝 plugin（Claude Code）
 
@@ -69,7 +84,7 @@ claude plugin marketplace add ~/project-plugin
 
 **Codex CLI**：plugin 那一半（`plugin.json`、`mcp.json`、hook）已經做好了，但**安裝語法還沒實測過**，等驗證後再補。
 
-### 3. clone 團隊的文件庫
+### 3. clone 團隊的文件庫（個人模式跳過）
 
 ```bash
 git clone <團隊文件 repo> ~/project-other/<名稱>
@@ -88,7 +103,8 @@ dm() { bun "$(ls -d ~/.claude/plugins/cache/104mis-plugins/dev-memory/*/src/cli.
 然後：
 
 ```bash
-dm setup --repo ~/project-other/<名稱>
+dm setup --repo ~/project-other/<名稱>   # 團隊模式
+dm setup                                 # 個人模式：不帶 --repo
 ```
 
 也可以在對話裡說「**幫我設定 dev-memory**」，走 `mem-setup` skill。

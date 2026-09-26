@@ -97,6 +97,7 @@
   - plugin 不會自己安裝軟體，要使用者同意。
   - 向量一律存在 SQLite、統一 1024 維，不放進 repo，所以每個人可以選不同模型。
   - 放在 Phase 4 實作並實測；團隊推廣順延到 Phase 5，中央 PG 等選配項目改為 Phase 6。
+  - **2026-09-26 改**：Phase 4 改成「產品化」，語意搜尋移到 Phase 6 選配（觸發條件：30 題評測集顯示關鍵字不夠）。
 - **不用 Chroma**：它只負責存向量、找相近向量，SQLite 就做得到。它預設的 all-MiniLM-L6-v2 是英文模型，而且要另外開一個 Python 程序。
 - **本機審核頁（Bill 已確認要做，取代 Apps Script）**：
   - **流程**：`/wiki-ingest` 有三個確認點（候選紀錄 → 整理計畫 → 審核頁），**不會直接開 PR**；使用者自己按「送出 PR」才會 push。
@@ -338,3 +339,83 @@
 - 中文 `git user.name` 會讓卡片檔名變成 `-.jsonl`（分支名稱反而保留中文）。公司如果都用 `firstname.lastname` 就不影響。
 - 同一個人同時開兩個都帶新卡片的 PR，會在卡片檔衝突。不做結構性修法，PR 當下兩邊都保留就好。
   依序 ingest（前一個 merge 後才開下一個）實測不會衝突，因為 `ingest-start` 會先 fetch `origin/main`。
+
+
+## 2026-09-26：個人模式 × 團隊模式，Phase 4 改為產品化，0.7.0（M1）
+
+### Goal
+
+Bill 問：「沒設定文件 repo 時，能不能把 plugin 當 claude-mem 那樣的中文記憶用？」接著把目標擴大成
+**個人模式跟團隊模式都要做到正式產品的水準**。完整的差距分析跟 M1–M4 在 `docs/PLAN.md` 的 Phase 4。
+
+### 結論
+
+本來就不強綁文件庫：收對話、中文搜尋、`mem-save` 都不讀 `memory.repo`。缺的只是它沒被當成正式模式：
+- `setup` 把「沒設定」算 ✗
+- hook 會把 AI 引導到必失敗的 wiki-ingest
+- skill 說卡片「等提交」
+
+跟 claude-mem 比，中文搜尋這塊本來就比較強。真正少的只有兩樣：session 開頭自動帶入最近的記憶、記得做過哪些操作。
+
+### Current Status
+
+- plugin **0.7.0**，`bun test` **172 pass / 0 fail**。M1 跟 eli5 review 一起 commit 在 `master`（Bill 指示直接 commit、不開分支、不 push）。
+- M1 完成：
+  - `setup`：個人模式算 ✓，這時也不需要 `gh`
+  - SessionStart：觸發句放寬；個人模式不提 wiki-ingest
+  - 新增 `mem-search` skill
+  - `export` 範圍：只帶 `repos.yaml` 列的 code repo 裡存的卡片；例外用 `--id`
+  - `db.ts` 註解改成實話、補備份說明、README 加兩種用法
+- 隔離的 `DEV_MEMORY_HOME` 實跑過：setup 全 ✓；`record` 印出本機路徑；搜得到；沒設定文件庫時 `sync` 仍 exit 2。
+- `dist/mcp-server.js` 重新打包後內容不變，不用更新；`dist/review-ui/app.js` 因為下面的審核頁修正重新打包了。
+- **審核頁「來源紀錄」分頁原本永遠是空的**（eli5 review 時發現）：它只去 frontmatter 找卡片 id，但 `schema.md`
+  規定文件不能有 frontmatter。現在改成列出這次 ingest 一起送出的卡片（新的 `/api/cards`，直接讀 worktree 裡
+  records 檔這個分支新增的行），再加上文件內文引用到的其他卡片 id。
+- **eli5 兩份完整 review 過**，照現在的程式碼跟決定修了約 40 處，主要是：
+  - 對話紀錄「預設 14 天」→ Claude Code 預設是 **30 天**（官方 data-usage 文件；14 天是 Bill 自己的 `cleanupPeriodDays`）
+  - 「本機資料庫隨時可刪、重建就好」→ 要備份
+  - 已經不存在的東西：`index.md`、「已取代的頁面」、每張資料表一頁、wiki-ingest 起草卡片、舊的三個確認點
+  - 審核頁「每句話的來源」、檢查會擋「缺來源」（沒有這個檢查）
+  - 常駐 token：`claude plugin details` 算的是五個 skill 的說明（0.7.0 約 326），不是 session 開頭那段
+  - 數字更新：對話 3,807 筆、測試 172 個、審核頁約 92 KB；加上個人模式、mem-search、產品化進度
+
+### Key Decisions Made
+
+- **模式只看 `memory.repo` 有沒有值**，不另加 `mode` 設定，免得兩邊對不上。
+- **只有一個文件庫**：不做「一個人接多個文件庫」（Bill：太複雜）。`DOC_DIRS` 改成可設定也一起拿掉，
+  它只有另一個產品的文件庫才用得到。
+- **export 範圍看 `repos.yaml`（code repo），不看 product 欄位、也不在每次 ingest 時勾選**：
+  - 原本 `export` 會把所有 `local` 卡片送進 PR，連別的專案、非 git 目錄存的筆記都會進去。只有一個文件庫也會發生，所以要修。
+  - 文件庫沒有 `repos.yaml` 時一張都不送，寧可少送也不誤送。
+  - 在非 git 目錄存的卡片要用 `export --id` 才送得出去，或存的時候直接指定 `repos`。
+- **讓 AI 主動搜尋**：放寬 SessionStart 那句 ＋ `mem-search` skill。
+  - 不在 session 開頭注入最近的紀錄標題。
+  - 不用 UserPromptSubmit 每則訊息自動搜（token 成本高、雜訊多）。
+- **備份只寫文件，不加指令**：`memory.db` 是舊對話跟個人模式卡片唯一的一份。團隊模式其實也一樣：
+  turn 從來不提交，而 Claude Code 的 transcript 預設 30 天就被刪（Codex 的不會自己刪）。
+- **隱私（M2）**：只做排除目錄、收錄前遮蔽密鑰。`forget` 跟 `<private>` 沒選。
+- **Phase 排序**：Phase 4 = 產品化（M1–M4，做完 1.0.0），Phase 5 推廣不動，語意搜尋移到 Phase 6 選配。
+
+### What Didn't Work / 被否決
+
+- 把 AI 自動壓縮成 observation 當作「像 claude-mem」的做法：這正是當初否決 claude-mem 的理由。
+
+### Next Steps
+
+1. M2 共用底座 → M3 團隊模式補強，一路做完，每一輪 commit（Bill 指示）。
+2. M4 由 Bill 驗收：Codex 實測、評測集補到 30 題。
+3. eli5 的 commit 也包含 Bill 在這次開始前就有的修改（`eli5-simple` 的「AI 搜的字」表、`eli5` 對應的段落），review 過沒有錯。
+
+### Gotchas Found This Session
+
+- **只看功能能不能跑，會漏掉「預設行為」的外洩**：`export` 沒帶 ids 時選 `status = 'local'` 全部，
+  所以在 dev-memory 這個 repo 自己存的卡片，下次寫 billing 文件也會一起送出。要從「誰會收到這筆資料」去想，才看得到。
+- **測試夾具要跟真的文件庫一樣有 `repos.yaml`**：export 開始讀它之後，舊夾具沒有這個檔會變成一張都不送。
+- **改版面時，UI 也會漏**：frontmatter 拿掉之後，lint、stale、entities 都在 0.6.x 修過，只有審核頁的來源分頁
+  沒人發現——它的測試夾具還是帶 frontmatter 的頁面，所以一直是綠的。
+- **Codex 不會自己刪 rollout**：本機最舊的一份是 2025-09 的。只有 Claude Code 會照 `cleanupPeriodDays` 刪。
+- **Claude Code plugin 可以放 `bin/`**：裡面的執行檔會進 **Bash tool** 的 PATH（排在使用者 PATH 之後），
+  但不會進使用者自己的終端機。另外 claude.ai／Cowork 不裝有頂層 `bin/` 的 plugin。M2 的 CLI 入口要考慮這兩點。
+- **`claude plugin details` 可以在隔離環境量**：`CLAUDE_CONFIG_DIR=<暫存目錄>` 之後 `marketplace add ./`、`install`、
+  `details`，不會碰到 `~/.claude`。同一個 plugin 在不同模型下估出來的 token 會差一點。
+

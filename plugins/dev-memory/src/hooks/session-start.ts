@@ -18,14 +18,17 @@ try {
     const records = (db.query("select count(*) as n from record").get() as { n: number }).n;
     const cwd = typeof payload.cwd === "string" ? payload.cwd : process.cwd();
     const repo = repoIdFromDir(cwd);
-    const { provider } = (await loadConfig()).embedding;
+    const config = await loadConfig();
+    const { provider } = config.embedding;
 
     line = [
       `dev-memory: ${turns} turns, ${records} records indexed${inserted ? ` (+${inserted} just now)` : ""}.`,
       `Repo: ${repo ?? "not a git repo — nothing will be submitted from here"}. Search mode: ${provider === "none" ? "keyword only" : provider}.`,
-      "Before answering questions about past decisions in this codebase, search the development memory first (memory_search, or `dev-memory search <words>`).",
+      "When the user refers to something discussed before (上次、之前、那個…), asks about a past decision, or needs background on this project, search the development memory first (memory_search, or `dev-memory search <words>`); the mem-search skill says how.",
       "When a decision is made — the reason, what was decided, what was rejected — offer to save it with the mem-save skill.",
-      "If you answered a question by piecing together records or raw conversation, and no document already says it, offer to save the answer as a note with the mem-save skill. Documents are written one per subject, when the subject is finished, with the wiki-ingest skill; never offer a document per answer.",
+      config.memory.repo
+        ? "If you answered a question by piecing together records or raw conversation, and no document already says it, offer to save the answer as a note with the mem-save skill. Documents are written one per subject, when the subject is finished, with the wiki-ingest skill; never offer a document per answer."
+        : "Personal mode: no team repo is configured, so records stay on this machine and there are no documents to write. If you answered a question by piecing together records or raw conversation, offer to save the answer as a note with the mem-save skill.",
     ].join("\n");
   } finally {
     db.close();

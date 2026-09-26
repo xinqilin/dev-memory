@@ -81,6 +81,7 @@ test("the CLI reads a record from stdin and refuses to save it twice", async () 
   expect(first.code).toBe(0);
   expect(first.stdout).toContain("saved ");
   expect(first.stdout).toContain("匯出報表改成單筆失敗不中斷");
+  expect(first.stdout).toContain(`personal mode: stored only in ${join(dir, "memory.db")}`); // no team repo configured
 
   const second = await run();
   expect(second.stdout).toStartWith("already saved as ");

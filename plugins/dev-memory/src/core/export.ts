@@ -7,11 +7,14 @@
 import type { Database } from "bun:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { readReposYaml } from "./repos";
 
 export interface ExportResult {
   files: string[];
   written: number;
   alreadyThere: number;
+  /** Local cards left on this machine because none of their repos is listed in repos.yaml. */
+  outOfScope: number;
 }
 
 interface Row {
@@ -60,17 +63,35 @@ function toJson(row: Row): string {
 }
 
 export interface ExportOptions {
-  /** Which ids to export; defaults to everything still local. */
+  /** Exactly these ids, whatever their repos; defaults to every local card that belongs to this repo. */
   ids?: string[];
   markSubmitted?: boolean;
 }
 
+/**
+ * The code repos this memory repo covers, read from the branch being written to. A card belongs here
+ * only if it was saved in one of them: a note from another project, or from a directory that is not
+ * a repo at all, must never ride along into this team's PR.
+ */
+async function reposInScope(worktree: string): Promise<Set<string>> {
+  const ids = new Set<string>();
+  for (const entries of (await readReposYaml(worktree)).values()) {
+    for (const entry of entries) ids.add(entry.id.toLowerCase()); // GitHub names are case-insensitive
+  }
+  return ids;
+}
+
 export async function exportRecords(db: Database, worktree: string, options: ExportOptions = {}): Promise<ExportResult> {
-  const rows = (
-    options.ids?.length
-      ? db.query(`select * from record where id in (${options.ids.map(() => "?").join(", ")})`).all(...options.ids)
-      : db.query("select * from record where status = 'local' order by created_at").all()
-  ) as Row[];
+  let rows: Row[];
+  let outOfScope = 0;
+  if (options.ids?.length) {
+    rows = db.query(`select * from record where id in (${options.ids.map(() => "?").join(", ")})`).all(...options.ids) as Row[];
+  } else {
+    const local = db.query("select * from record where status = 'local' order by created_at").all() as Row[];
+    const scope = await reposInScope(worktree);
+    rows = local.filter((row) => (JSON.parse(row.repos) as unknown[]).some((repo) => scope.has(String(repo).toLowerCase())));
+    outOfScope = local.length - rows.length;
+  }
 
   const byFile = new Map<string, Row[]>();
   for (const row of rows) {
@@ -78,7 +99,7 @@ export async function exportRecords(db: Database, worktree: string, options: Exp
     byFile.set(path, [...(byFile.get(path) ?? []), row]);
   }
 
-  const result: ExportResult = { files: [], written: 0, alreadyThere: 0 };
+  const result: ExportResult = { files: [], written: 0, alreadyThere: 0, outOfScope };
 
   for (const [relative, records] of byFile) {
     const full = join(worktree, relative);

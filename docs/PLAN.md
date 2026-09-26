@@ -90,7 +90,7 @@ Codex CLI  ──┴───────> dev-memory CLI（核心） ──> ~/
 
 ### 可選的模式
 
-下載大小已查過 Ollama library。RAM 建議只是起始值，Phase 4 實測後修正。
+下載大小已查過 Ollama library。RAM 建議只是起始值，做語意搜尋時實測後修正。
 
 | 模式 | 下載大小 | 起始建議 |
 |---|---|---|
@@ -126,7 +126,7 @@ endpoint = "http://127.0.0.1:11434"
 
 - **什麼時候算向量**：寫入紀錄或頁面、sync 匯入、查詢時才算。hook 存原始對話時**不算**。
 - **批次送出**：`/api/embed` 的 `input` 可以放陣列，一次送多筆。
-- **統一用 1024 維**：請求帶 `dimensions: 1024`。qwen3-embedding-0.6B 原生就是 1024 維（MRL 可設 32–1024）；4b/8b 用 MRL 降到 1024；bge-m3 原生 1024 維。好處是換模型時儲存格式不變，一萬筆約 41MB。Phase 4 要驗證 Ollama 對每個模型都有照這個參數輸出。
+- **統一用 1024 維**：請求帶 `dimensions: 1024`。qwen3-embedding-0.6B 原生就是 1024 維（MRL 可設 32–1024）；4b/8b 用 MRL 降到 1024；bge-m3 原生 1024 維。好處是換模型時儲存格式不變，一萬筆約 41MB。做語意搜尋時要驗證 Ollama 對每個模型都有照這個參數輸出。
 - **查詢要加前綴**：Qwen3-Embedding 查詢時要用 `Instruct: {task}\nQuery: {query}`，文件本身不用加；不加前綴準確度會掉 1–5%。bge-m3 不需要。由 provider 依模型處理。
 - **用完就釋放記憶體**：每次請求帶 `keep_alive: "30s"`（Ollama 預設是 5 分鐘）。
 - **相似度計算**：Ollama 回傳的向量已經 L2 正規化，所以 cosine 就等於內積，逐筆算即可。
@@ -330,7 +330,7 @@ updated: 2026-09-04
 | 6. `search.ts` + MCP `memory_search` / `memory_get` + CLI `dev-memory search` | 在 Codex 的 billing-api session，用 `scope=product` 找得到 Claude Code 在 billing-batch 記下的內容 |
 | 7. `/mem-save` skill | 兩個工具都能用；存下來的紀錄是中文，有原因、決定、放棄的方案 |
 | 8. 回填磁碟上現有的 Claude transcript 跟 Codex rollout | 匯入筆數跟檔案數對得上 |
-| 9. 評測集 `eval/queries.yaml`（30 題，部分故意用跟紀錄不同的說法問）加上 `dev-memory eval` | 輸出「只用關鍵字」跟「AI 改寫查詢多試幾次」兩種的 Recall@5，當作 Phase 4 的基準線 |
+| 9. 評測集 `eval/queries.yaml`（30 題，部分故意用跟紀錄不同的說法問）加上 `dev-memory eval` | 輸出「只用關鍵字」跟「AI 改寫查詢多試幾次」兩種的 Recall@5，當作語意搜尋的基準線 |
 
 **Phase 1 結果（2026-09-18）**：步驟 1–8 完成，`bun test` 77 pass / 0 fail。
 - `core/{db,config,archive,search,record,git-files,eval}.ts`、`adapters/{claude-code,codex}.ts`、`hooks/{session-start,stop}.ts`、`cli.ts`、`mcp-server.ts`（SDK 打包成 `dist/mcp-server.js`）、`skills/mem-save`。
@@ -338,7 +338,7 @@ updated: 2026-09-04
 - **查出兩個缺陷並修掉**：
   1. 查詢全部 AND 串起來 → 中文問句是一整個連續段，永遠對不上，Recall 0%。改成 `buildSearchQuery`（整段 phrase 加上各個 bigram 一起 OR），`buildMatchQuery` 保留精準子字串語意。
   2. `relevance()` 把 bm25 的正負號弄反，越差的結果排越前面。
-- **基準線**：`eval/queries.example.yaml` 5 題，Recall@5 從 0% → 40%，MRR 0.267。語意型問題（「那個一直維持某個狀態的欄位叫什麼」）關鍵字搜尋本來就打不到，是 Phase 4 向量搜尋要解的。
+- **基準線**：`eval/queries.example.yaml` 5 題，Recall@5 從 0% → 40%，MRR 0.267。語意型問題（「那個一直維持某個狀態的欄位叫什麼」）關鍵字搜尋本來就打不到，是語意搜尋（Phase 6 選配）要解的。
 - **步驟 9 待補**：正式的 30 題評測集要由記得那些決策的人來寫，我只附了 5 題範例跟 runner。
 
 ### Phase 2：Memory repo、提交、wiki ingest、本機審核頁（取代 n8n + Apps Script，約 2–2.5 週）
@@ -379,7 +379,50 @@ updated: 2026-09-04
 - **來源檢查**：除了 id 存不存在，另外比對頁面標題跟來源紀錄有沒有共同用字，沒有就出警告（標明是提示、要人工確認）。
 - **評測集**：`dev-memory eval --suggest` 從現有記憶生候選題目（標題當種子、識別字跟數字當判斷關鍵詞），但明講「query 要改寫成你自己的問法」——50 題的正式評測集仍然要人來寫。
 
-### Phase 4：語意搜尋選配（Ollama + 使用者選模型，約 1 週）
+### Phase 4：產品化（個人模式 × 團隊模式，2026-09-26 決定）
+
+> 目標：兩種用法都做到正式產品的水準。做完是 1.0.0，接著進 Phase 5 推廣。
+> - 模式只看 `config.memory.repo` 有沒有值，不另外加旗標。
+> - **只有一個文件庫**：不支援一個人接多個文件庫（太複雜，不做），`DOC_DIRS` 維持寫死 billing 的七個資料夾。
+> - 語意搜尋原本排在 Phase 4，現在移到 Phase 6 選配。評測集只有 5 題，還證明不了關鍵字搜尋不夠用。
+
+| | 個人模式（沒設定文件庫） | 團隊模式 |
+|---|---|---|
+| 對話自動進本機索引、中文搜尋、存卡片 | ✓ | ✓ |
+| 卡片去哪 | 只在本機 `memory.db` | 寫文件時跟著 PR 送出，只送在 `repos.yaml` 列的 code repo 裡存的卡片 |
+| 寫文件、審核頁、lint、stale、sync | 不適用（CLI 清楚報錯、exit 2） | ✓ |
+| 需要 `gh` | 否 | 是 |
+
+| 里程碑 | 步驟 | 驗證 |
+|---|---|---|
+| **M1 個人模式正式化**（0.7.0） | 1. `setup`：沒設定文件庫算 ✓（個人模式），這時 `gh` 也不算缺<br>2. SessionStart：觸發句放寬到「上次、之前、那個…、過去的決策、專案背景」；個人模式不提 wiki-ingest<br>3. 新增 `mem-search` skill：用 description 觸發，body 寫中文搜尋策略<br>4. `export` 只帶 `repos.yaml` 列的 code repo 裡存的卡片，其他留在本機；要例外就用 `--id`<br>5. `db.ts` 註解改成實話，README／`mem-setup` 補備份說明<br>6. README 加兩種用法<br>7. 審核頁「來源紀錄」改成列出這次送出的卡片（原本只讀 frontmatter，新文件永遠是空的）<br>8. eli5 兩份完整 review，照現況修正 | `bun test` 全過；隔離的 `DEV_MEMORY_HOME` 跑 setup 全 ✓；`record` 印出本機路徑；別的專案存的卡片不會被 export；沒設定文件庫時 `sync` 仍 exit 2 |
+| **M2 共用底座**（0.8.0） | 1. `[capture] exclude`：列出的目錄底下的 session 不收<br>2. 收錄前遮蔽密鑰：跟 `review/checks.ts` 共用同一組 pattern<br>3. CLI 入口 `~/.dev-memory/bin/dm` 由 SessionStart 維護（先查 plugin 能不能用 `bin/`）<br>4. hook 錯誤寫進 `~/.dev-memory/hook.log`，`setup` 顯示最後一次錯誤<br>5. plugin repo 加 CI：`bun test`，並檢查 `dist/` 有沒有過期<br>6. 小項：`mcp-server` 版本改讀 package.json、claude-mem 測試改用 `immutable=1` 開、描述涵蓋兩種模式 | 排除的目錄不入庫；對話裡的假 token 入庫後只剩 `[REDACTED:…]`；hook 故意失敗時 `setup` 顯示錯誤；CI 綠燈 |
+| **M3 團隊模式補強**（0.9.0） | 1. PR 在 GitHub 上關掉沒 merge：`sync` 時用 `gh` 查到，卡片退回 `local`<br>2. 分支名稱跟分檔月份改用本地時區（`created_at` 維持 UTC） | 在 `xinqilin/dev-memory-test` 開 PR 再關掉，`sync` 後卡片回到 local；台灣早上 7 點建的分支是當天日期 |
+| **M4 驗收（Bill 執行）**（1.0.0） | 1. Codex 在真實 session 實測 hook、MCP、skill<br>2. 評測集補到 30 題 | Codex 的 context 出現 dev-memory 那段；30 題的 Recall@5 基準線 |
+
+**刻意不做**：
+- AI 自動把對話壓縮成 observation（claude-mem 的做法）：成本高，英文摘要會漏掉決策。
+- session 開頭注入最近的紀錄標題、每則訊息都自動搜尋：已經改用放寬觸發句加 `mem-search` skill。
+- `forget` 指令、`<private>` 標籤：這次沒選。
+
+### Phase 5：團隊推廣（約 1 週，加上試用期）
+| 步驟 | 驗證 |
+|---|---|
+| 0. `dev-memory setup`（已完成，0.3.0）：一個指令設定 memory repo、建索引、sweep、sync，並檢查 bun／git／gh／FTS5／repo 結構 | 新機器照 README 跑一次就能用，缺什麼會直接說 |
+| 1. README：<br>- 前置需求：bun、`gh auth login`、clone memory repo、`dev-memory init`<br>- 用 `/mem-setup` 選搜尋模式，附硬體建議表<br>- Claude Code 跟 Codex 的安裝方式（Codex 要加信任 hook 的步驟） | 兩個工具都能從私有 repo 安裝 |
+| 2. 找 1–2 位隊友試用，至少一位主要用 Codex、一位選 `none` | 記錄安裝到第一個 PR merge 花多久（目標 30 分鐘內）、卡在哪裡 |
+| 3. 退場舊工具（由 Bill 決定）：<br>- 停用 claude-mem（改 `settings.json` 前先讀 `governance/maintenance.md`）<br>- 停掉 n8n workflow 跟 Apps Script<br>- 移除 `skills/n8n-doc-sync` 跟 `sync-to-n8n.sh` | 不會同時有兩套系統在蒐集 |
+
+### Phase 6：選配（有觸發條件才做）
+| 選項 | 觸發條件 | 做法 |
+|---|---|---|
+| 語意搜尋（Ollama + 使用者選模型，原 Phase 4，步驟見下） | 評測集補到 30 題後，數字顯示關鍵字搜尋不夠 | 見下方〈語意搜尋選配〉 |
+| sqlite-vec | 向量超過約 10 萬筆（推測） | 需要 Homebrew 版 SQLite + `setCustomSQLite` |
+| Bedrock embedding provider | 有人不能或不想在本機跑模型 | 多寫一個 provider（Cohere Embed v4）；每個使用者需要 AWS 權限 |
+| 中央 RDS PG + pgvector + pg_bigm | 不用 CLI 的人（例如 PM）需要網頁搜尋 | 由 CI 從 memory repo 建索引 |
+| ingest 改在 CI 集中執行 | 每週因為 wiki 衝突要 rebase 的 PR 超過 2–3 個 | 紀錄 merge 後由 Action 跑 ingest |
+
+#### 語意搜尋選配（原 Phase 4，2026-09-26 移到 Phase 6；約 1 週）
 
 > **v1 不含這個階段（2026-09-18 決定）**。第一版只用關鍵字搜尋，`provider = "none"`，隊友什麼都不用裝。
 > 理由：關鍵字搜尋已經可用（中文逐字比對全中，問句式 Recall@5 40%），而語意搜尋要每個人本機多跑一個模型服務，
@@ -394,22 +437,6 @@ updated: 2026-09-04
 | 4. `/mem-setup` skill + `dev-memory setup`（互動與非互動兩種） | 在沒裝 Ollama 的機器上只列指令、不會自己安裝；使用者裝好後健康檢查通過 |
 | 5. 在 Bill 的 M2 16GB 實測 `none`、`qwen3-embedding:0.6b`、`bge-m3`、`qwen3-embedding:4b`：下載大小、`ollama ps` 記憶體、冷啟動時間、每秒處理幾筆、Recall@5 / MRR | 產出 `docs/embedding-benchmark.md`，依結果修正 RAM 建議表跟預設建議；確認每個模型實際輸出 1024 維 |
 | 6. 關掉 Ollama 服務後再搜尋 | 自動降級成只用關鍵字，並附提醒，不報錯 |
-
-### Phase 5：團隊推廣（約 1 週，加上試用期）
-| 步驟 | 驗證 |
-|---|---|
-| 0. `dev-memory setup`（已完成，0.3.0）：一個指令設定 memory repo、建索引、sweep、sync，並檢查 bun／git／gh／FTS5／repo 結構 | 新機器照 README 跑一次就能用，缺什麼會直接說 |
-| 1. README：<br>- 前置需求：bun、`gh auth login`、clone memory repo、`dev-memory init`<br>- 用 `/mem-setup` 選搜尋模式，附硬體建議表<br>- Claude Code 跟 Codex 的安裝方式（Codex 要加信任 hook 的步驟） | 兩個工具都能從私有 repo 安裝 |
-| 2. 找 1–2 位隊友試用，至少一位主要用 Codex、一位選 `none` | 記錄安裝到第一個 PR merge 花多久（目標 30 分鐘內）、卡在哪裡 |
-| 3. 退場舊工具（由 Bill 決定）：<br>- 停用 claude-mem（改 `settings.json` 前先讀 `governance/maintenance.md`）<br>- 停掉 n8n workflow 跟 Apps Script<br>- 移除 `skills/n8n-doc-sync` 跟 `sync-to-n8n.sh` | 不會同時有兩套系統在蒐集 |
-
-### Phase 6：選配（有觸發條件才做）
-| 選項 | 觸發條件 | 做法 |
-|---|---|---|
-| sqlite-vec | 向量超過約 10 萬筆（推測） | 需要 Homebrew 版 SQLite + `setCustomSQLite` |
-| Bedrock embedding provider | 有人不能或不想在本機跑模型 | 多寫一個 provider（Cohere Embed v4）；每個使用者需要 AWS 權限 |
-| 中央 RDS PG + pgvector + pg_bigm | 不用 CLI 的人（例如 PM）需要網頁搜尋 | 由 CI 從 memory repo 建索引 |
-| ingest 改在 CI 集中執行 | 每週因為 wiki 衝突要 rebase 的 PR 超過 2–3 個 | 紀錄 merge 後由 Action 跑 ingest |
 
 ## 風險 / Gotchas
 - **transcript 格式不是穩定介面**：兩個 adapter 都要用 fixture 測試、寬鬆解析；解析失敗只記 log，不能影響 session。

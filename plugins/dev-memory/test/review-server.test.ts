@@ -144,6 +144,24 @@ test("discard removes a new page and restores an edited one", async () => {
   expect(existsSync(join(worktree, "wiki", "new.md"))).toBe(false);
 });
 
+test("the 來源紀錄 tab gets the cards this ingest adds, not the ones already on main", async () => {
+  const { api, root, clone, worktree } = await scenario();
+  const file = "records/billing/2026-09/t.jsonl";
+  const onMain = '{"id":"01JBCARDMAIN00000000000000","title":"已經在 main 上"}';
+  const added = { id: "01JBCARDNEW000000000000000", title: "這次帶上的卡片", body: "原因：…" };
+
+  const remote = join(root, "remote");
+  await Bun.write(join(remote, file), `${onMain}\n`);
+  git(remote, "add", ".");
+  git(remote, "commit", "-q", "-m", "records");
+  git(clone, "fetch", "-q", "origin");
+  await Bun.write(join(worktree, file), `${onMain}\n${JSON.stringify(added)}\nnot json\n`);
+
+  const response = await api("/api/cards");
+  expect(response.status).toBe(200);
+  expect((await response.json()).cards).toEqual([added]);
+});
+
 test("discarding the records file hands its cards back to the next ingest", async () => {
   const originalHome = process.env.DEV_MEMORY_HOME;
   process.env.DEV_MEMORY_HOME = mkdtempSync(join(tmpdir(), "dev-memory-review-home-"));

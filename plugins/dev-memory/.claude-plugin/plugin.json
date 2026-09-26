@@ -1,6 +1,6 @@
 {
   "name": "dev-memory",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Team development memory and LLM-maintained wiki for Claude Code and Codex CLI",
   "author": {
     "name": "bill.lin"

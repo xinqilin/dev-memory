@@ -103,6 +103,9 @@ CLI ingest-start <slug>     # 印出分支與 worktree 路徑，作者的 clone 
 CLI export --branch <branch>
 ```
 
+只會帶上「在 `repos.yaml` 列出的 code repo 裡存的卡片」；其他專案或非 git 目錄存的卡片留在本機，
+指令會印出有幾張。作者想把其中某張也放進這個 PR，就跑 `CLI export --branch <branch> --id <id>`。
+
 **一定要更新 `README.md` 索引**，沒有被索引到的文件等於不存在。
 
 ## 4. 審核頁 — **確認點 ②**

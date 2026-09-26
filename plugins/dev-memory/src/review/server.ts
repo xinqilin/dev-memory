@@ -214,7 +214,27 @@ export function startReviewServer(options: ReviewOptions): ReviewServer {
         }
       }
 
-      // The "來源紀錄" tab: the records a page says it came from, read from the local index.
+      // The "來源紀錄" tab, first half: the cards this ingest submits, read from the worktree's
+      // records files — exactly what the PR carries, and what a page's 設計考量 should trace back to.
+      if (url.pathname === "/api/cards") {
+        const cards: unknown[] = [];
+        for (const page of changedPages(worktree, base)) {
+          if (page.status === "deleted" || !isRecordsPath(page.path)) continue;
+          const current = await Bun.file(join(worktree, page.path)).text();
+          const added = new Set(addedRecordIds(current, baseVersion(worktree, page.path, base)));
+          for (const line of current.split("\n")) {
+            try {
+              const card = JSON.parse(line);
+              if (added.has(String(card.id))) cards.push(card);
+            } catch {
+              // a broken line is what the checks report, not this tab
+            }
+          }
+        }
+        return json({ cards });
+      }
+
+      // Second half: any other card a page cites by id, read from the local index.
       if (url.pathname === "/api/source") {
         const id = url.searchParams.get("id");
         if (!id) return json({ error: "id is required" }, 400);

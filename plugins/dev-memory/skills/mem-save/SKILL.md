@@ -49,9 +49,14 @@ JSON
 
 `type`, `title` and `body` are required; everything else is optional. `author`, `repos`, `branch` and the timestamp are filled in automatically. Saving the same title and body twice is a no-op, so it is safe to retry.
 
+`repos` also decides whether the card can ever reach the team repo: only cards saved in a code repo that
+the team repo's `repos.yaml` lists are submitted. When saving from somewhere else a card that belongs to
+that team, set `repos` explicitly.
+
 ## 4. Confirm
 
-Show the returned id and tell the user the record is local until it is submitted to the memory repo.
+Show the returned id, and tell the user where the record lives in the words the CLI's last line uses:
+local until it is submitted to the memory repo, or, in personal mode, only on this machine.
 
 ## Filing an answer back
 

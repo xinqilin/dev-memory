@@ -1,5 +1,7 @@
-// The local database is only an index: the memory repo is the source of truth,
-// so deleting memory.db and rebuilding is always a valid recovery.
+// Pages are copies of the memory repo and can always be synced again. Nothing else is:
+// turns outlive the transcripts they came from (Claude Code deletes its own after 30 days by default), and
+// records exist only here until they are submitted, which in personal mode is never.
+// Back this file up; deleting it is not a recovery step.
 import { Database } from "bun:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
