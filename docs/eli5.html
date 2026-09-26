@@ -346,7 +346,7 @@
 <div class="wrap">
 
   <header>
-    <div class="kicker">dev-memory · 團隊開發文件 · 2026-09-21</div>
+    <div class="kicker">dev-memory · 團隊開發文件 · 2026-09-26</div>
     <h1>程式碼跟對話，<br>怎麼變成全隊的文件</h1>
     <p class="lead">AI 讀程式碼寫出規格文件，用開發紀錄補上「當初為什麼」，你審核後送 PR。已經走完兩次真實的 PR。</p>
     <div class="route" aria-label="整條路線">
@@ -374,11 +374,11 @@
             <td>卡片</td>
             <td>一個決定濃縮成三行：<strong>原因、決定、放棄了什麼</strong>。是原料，不是文件</td>
             <td>AI 起草，你確認</td>
-            <td>團隊 repo，只新增不修改</td>
+            <td>團隊 repo，只新增不修改（個人模式只留在本機）</td>
           </tr>
           <tr>
             <td>頁面</td>
-            <td>一篇給人讀的文件，把好幾張卡片整理成一個主題</td>
+            <td>一篇給人讀的文件，一個主題一頁：事實讀程式碼，卡片只補「當初為什麼」</td>
             <td>AI 寫，你在審核頁核准</td>
             <td>團隊 repo 的文件</td>
           </tr>
@@ -393,7 +393,7 @@
     <div class="ideas">
       <div class="idea">
         <div class="pic">
-          <svg viewBox="0 0 320 170" role="img" aria-label="對話紀錄 14 天後被刪掉">
+          <svg viewBox="0 0 320 170" role="img" aria-label="對話紀錄預設 30 天後被刪掉">
             <rect class="f-paper s-ink" x="24" y="30" width="116" height="92" rx="6"/>
             <line class="s-line" x1="38" y1="52" x2="126" y2="52"/>
             <line class="s-line" x1="38" y1="70" x2="126" y2="70"/>
@@ -401,7 +401,7 @@
             <text class="t t-muted" x="82" y="146" text-anchor="middle" font-size="14">今天的對話</text>
             <path class="f-none s-warn dash" d="M154 76 H196"/>
             <polygon class="f-none s-warn" points="192,68 204,76 192,84"/>
-            <text class="t t-warn" x="176" y="62" text-anchor="middle" font-size="13">14 天</text>
+            <text class="t t-warn" x="176" y="62" text-anchor="middle" font-size="13">30 天</text>
             <rect class="f-none s-line dash" x="218" y="30" width="80" height="92" rx="6"/>
             <line class="s-warn" x1="234" y1="58" x2="282" y2="94"/>
             <line class="s-warn" x1="282" y1="58" x2="234" y2="94"/>
@@ -409,7 +409,7 @@
           </svg>
         </div>
         <h3>記憶會蒸發</h3>
-        <p>對話紀錄預設 14 天就清掉。半年後想問「當初為什麼這樣決定」，沒有人答得出來，只能重新踩一次坑。</p>
+        <p>Claude Code 的對話紀錄預設 30 天就清掉。半年後想問「當初為什麼這樣決定」，沒有人答得出來，只能重新踩一次坑。</p>
       </div>
 
       <div class="idea">
@@ -540,20 +540,20 @@
               <text class="t t-card" x="192" y="71" text-anchor="middle" font-size="18">放棄</text>
             </g>
             <circle class="f-accent" cx="88" cy="130" r="16"/>
-            <text class="t t-paper" x="88" y="137" text-anchor="middle" font-size="20" font-weight="700">1</text>
+            <text class="t t-paper" x="88" y="137" text-anchor="middle" font-size="20" font-weight="700">✓</text>
             <text class="t" x="112" y="136" font-size="16">你刪改</text>
           </svg>
         </div>
         <div class="say">
-          <div class="num">第 3 步<em>確認點 ①</em></div>
+          <div class="num">第 3 步<em>你點頭才存</em></div>
           <h3>挑出重點卡片</h3>
-          <p>叫 <code>/mem-save</code> 或 <code>/wiki-ingest</code>，AI 把對話濃縮成<strong>卡片</strong>——一張卡片就是一個決定，只寫三件事：為什麼、決定什麼、放棄了什麼。你刪改後才留下。</p>
+          <p>做出決定時 AI 會主動提議（也可以自己叫 <code>/mem-save</code>），把對話濃縮成<strong>卡片</strong>——一張卡片就是一個決定，只寫三件事：為什麼、決定什麼、放棄了什麼。你看過、改過才存。</p>
         </div>
       </div>
 
       <div class="step">
         <div class="pic">
-          <svg viewBox="0 0 240 160" role="img" aria-label="整理計畫清單：新增、更新、取代，由你確認">
+          <svg viewBox="0 0 240 160" role="img" aria-label="文件骨架：新增、更新、補一節，由你確認">
             <rect class="f-paper s-ink" x="50" y="20" width="130" height="124" rx="8"/>
             <rect class="f-line s-ink" x="91" y="12" width="48" height="16" rx="4"/>
             <rect class="f-none s-ok" x="62" y="44" width="40" height="20" rx="10"/>
@@ -562,11 +562,11 @@
             <rect class="f-none s-accent" x="62" y="76" width="40" height="20" rx="10"/>
             <text class="t t-accent" x="82" y="91" text-anchor="middle" font-size="12">更新</text>
             <line class="s-line" x1="112" y1="86" x2="160" y2="86"/>
-            <rect class="f-none s-warn" x="62" y="108" width="40" height="20" rx="10"/>
-            <text class="t t-warn" x="82" y="123" text-anchor="middle" font-size="12">取代</text>
+            <rect class="f-none s-accent" x="62" y="108" width="40" height="20" rx="10"/>
+            <text class="t t-accent" x="82" y="123" text-anchor="middle" font-size="12">補一節</text>
             <line class="s-line" x1="112" y1="118" x2="150" y2="118"/>
             <circle class="f-accent" cx="206" cy="128" r="16"/>
-            <text class="t t-paper" x="206" y="135" text-anchor="middle" font-size="20" font-weight="700">2</text>
+            <text class="t t-paper" x="206" y="135" text-anchor="middle" font-size="20" font-weight="700">1</text>
           </svg>
         </div>
         <div class="say">
@@ -596,7 +596,7 @@
             <rect class="f-line" x="132" y="80" width="72" height="7" rx="3.5"/>
             <rect class="f-line" x="132" y="94" width="80" height="7" rx="3.5"/>
             <circle class="f-accent" cx="212" cy="126" r="16"/>
-            <text class="t t-paper" x="212" y="133" text-anchor="middle" font-size="20" font-weight="700">3</text>
+            <text class="t t-paper" x="212" y="133" text-anchor="middle" font-size="20" font-weight="700">2</text>
             <text class="t t-muted" x="66" y="156" text-anchor="middle" font-size="12">左邊改</text>
             <text class="t t-muted" x="170" y="156" text-anchor="middle" font-size="12">右邊看</text>
           </svg>
@@ -604,7 +604,7 @@
         <div class="say">
           <div class="num">第 5 步<em>確認點 ②</em></div>
           <h3>在審核頁改到滿意</h3>
-          <p>瀏覽器自動打開本機審核頁。一次看全部檔案、跟 main 比、看每句話的來源紀錄。你改、叫 AI 改、用 IDE 改都行。</p>
+          <p>瀏覽器自動打開本機審核頁。一次看全部檔案、跟 main 比、看這次一起送出的卡片。你改、叫 AI 改、用 IDE 改都行。</p>
         </div>
       </div>
 
@@ -629,7 +629,7 @@
         <div class="say">
           <div class="num">第 6 步</div>
           <h3>你自己按送出</h3>
-          <p>在審核頁按「送出 PR」，或自己打 <code>dev-memory publish</code>。PR 作者是你本人。AI 從頭到尾不會替你 push。</p>
+          <p>在審核頁按「送出 PR」，或自己打 <code>dm publish</code>。PR 作者是你本人。AI 從頭到尾不會替你 push。</p>
         </div>
       </div>
 
@@ -772,13 +772,13 @@
             <td>對話存檔</td>
             <td><strong>完全自動</strong>（Stop hook，每講完一回合）</td>
             <td><strong>什麼都不用做</strong></td>
-            <td>只存在你電腦裡，不可逆也無害。索引裡那兩千多筆對話，你一次都沒開口過</td>
+            <td>只存在你電腦裡，不可逆也無害。索引裡那幾千筆對話，你一次都沒開口過</td>
           </tr>
           <tr>
             <td>卡片</td>
             <td><strong>AI 會主動提議</strong>，但要你點頭</td>
             <td>說一句「好」，或改一改再存</td>
-            <td>卡片會進團隊 repo、只增不改，而且會變成未來文件的「設計考量」——<strong>錯的卡片比沒有卡片更糟</strong></td>
+            <td>卡片會進團隊 repo（個人模式只留在本機）、只增不改，而且會變成未來文件的「設計考量」——<strong>錯的卡片比沒有卡片更糟</strong></td>
           </tr>
           <tr>
             <td>寫文件</td>
@@ -794,7 +794,7 @@
 
     <h3>你會講的話</h3>
     <p>下面五句裡，<strong>真正要你主動開口的只有第三句</strong>（寫文件）。第一句是回應 AI 的提議，第二句就是平常問問題，最後兩句很少用。用平常講話的方式講就好，對應的 skill 自己會被叫起來。</p>
-    <p class="note"><strong>想要確定叫到它，就打斜線指令</strong>：<code>/dev-memory:wiki-ingest</code>。格式是 <code>/plugin名:skill名</code>，四個都可以叫：<code>mem-save</code>、<code>mem-setup</code>、<code>wiki-ingest</code>、<code>wiki-lint</code>。用講的比較自然，但關鍵字沒對上時斜線指令是確定的。</p>
+    <p class="note"><strong>想要確定叫到它，就打斜線指令</strong>：<code>/dev-memory:wiki-ingest</code>。格式是 <code>/plugin名:skill名</code>，五個都可以叫：<code>mem-save</code>、<code>mem-search</code>、<code>mem-setup</code>、<code>wiki-ingest</code>、<code>wiki-lint</code>。用講的比較自然，但關鍵字沒對上時斜線指令是確定的。</p>
 
     <div class="says">
       <div class="say-this">
@@ -809,7 +809,7 @@
         <span class="when">想查以前怎麼決定的</span>
         <div>
           <q>我們之前為什麼改成不中斷？</q>
-          <small>這句不用特別交代，直接問就好。它會先翻記憶（文件 → 紀錄 → 原始對話），翻不到才去讀程式碼。答完如果還沒有對應的文件，它會問你要不要順手寫一份。</small>
+          <small>這句不用特別交代，直接問就好，<code>mem-search</code> 會自己被叫起來。它會先翻記憶（文件 → 紀錄 → 原始對話），翻不到才去讀程式碼。答案如果是從好幾筆紀錄或原始對話拼出來的，它會問你要不要存成一張卡片；文件還是一個主題寫一份。</small>
         </div>
       </div>
 
@@ -825,7 +825,7 @@
         <span class="when rare">文件放一陣子了</span>
         <div>
           <q>幫我檢查文件</q>
-          <small><code>wiki-lint</code>：壞連結、沒人連過去的孤兒頁、沒寫來源的內容、程式碼改了但文件沒跟上。一個月跑一次就夠。</small>
+          <small><code>wiki-lint</code>：壞連結、沒被 README 索引的文件、重複的標題、程式碼改了但文件沒跟上。一個月跑一次就夠。</small>
         </div>
       </div>
 
@@ -833,7 +833,7 @@
         <span class="when rare">裝好了，或壞掉了</span>
         <div>
           <q>幫我設定 dev-memory</q>
-          <small><code>mem-setup</code>：檢查 bun／git／gh／索引／團隊 repo，缺什麼直接告訴你要跑哪一行。裝完跑一次，之後只有出問題才用得到。</small>
+          <small><code>mem-setup</code>：檢查 bun／git／gh／索引／團隊 repo（沒設定團隊 repo 就是個人模式），缺什麼直接告訴你要跑哪一行。裝完跑一次，之後只有出問題才用得到。</small>
         </div>
       </div>
     </div>
@@ -858,9 +858,9 @@
             <td>程式碼剛定案，寫出來的規格最準，而且能跟程式的 PR 一起被 review</td>
           </tr>
           <tr>
-            <td>一週沒整理</td>
-            <td>週五花 10 分鐘</td>
-            <td>卡片堆太多會變成苦差事；一次三到五張最好挑</td>
+            <td>卡片存了一堆</td>
+            <td>不用整理</td>
+            <td>卡片是原料，不是文件；寫到那個主題時，AI 會自己翻出來用</td>
           </tr>
           <tr>
             <td>只是查資料</td>
@@ -1024,8 +1024,6 @@
         <rect class="f-bg s-line" x="436" y="98" width="196" height="214" rx="6"/>
         <circle class="f-accent" cx="450" cy="112" r="9"/>
         <text class="t t-paper" x="450" y="116" text-anchor="middle" font-size="11">4</text>
-        <rect class="f-soft" x="446" y="128" width="176" height="26" rx="5"/>
-        <text class="t t-mono t-muted" x="453" y="145" font-size="8.5">status: active · billing</text>
         <rect class="f-ink" x="446" y="164" width="104" height="9" rx="4.5"/>
         <rect class="f-line" x="446" y="184" width="176" height="7" rx="3.5"/>
         <rect class="f-line" x="446" y="198" width="150" height="7" rx="3.5"/>
@@ -1041,7 +1039,7 @@
       </div>
       <div class="callout">
         <b>2</b>
-        <span>四個分頁，<strong>至少看前兩個</strong>。<small>「編輯 / 預覽」讀內容；「跟 main 比較」看到底動了什麼，更新既有頁面時最有用；「來源紀錄」是這頁每句話的出處，想確認不是它自己編的就翻這裡；「檢查結果」平常是空的。</small></span>
+        <span>四個分頁，<strong>至少看前兩個</strong>。<small>「編輯 / 預覽」讀內容；「跟 main 比較」看到底動了什麼，更新既有頁面時最有用；「來源紀錄」列出這次一起送出的卡片原文，拿來對照「設計考量」寫的是不是真的有人說過；「檢查結果」平常是空的。</small></span>
       </div>
       <div class="callout">
         <b>3</b>
@@ -1049,11 +1047,11 @@
       </div>
       <div class="callout">
         <b>4</b>
-        <span>右半邊是<strong>隊友會看到的樣子</strong>。<small>即時跟著左邊變，就是 GitHub 上的樣子。上面那排小標籤是這個檔案的摘要（文件字數、紀錄筆數之類），<strong>不會進檔案</strong>，只是給你看的。</small></span>
+        <span>右半邊是<strong>隊友會看到的樣子</strong>。<small>即時跟著左邊變，就是 GitHub 上的樣子。</small></span>
       </div>
       <div class="callout">
         <b>5</b>
-        <span><strong>核准並 commit</strong>——commit 在本機，還沒上 GitHub。<small>按不下去代表有檢查沒過，去「檢查結果」分頁，點檔名就跳過去修。金鑰、個資、缺來源都會在這裡被擋下來。</small></span>
+        <span><strong>核准並 commit</strong>——commit 在本機，還沒上 GitHub。<small>按不下去代表有檢查沒過，去「檢查結果」分頁，點檔名就跳過去修。疑似金鑰、壞掉的卡片檔、沒有標題的文件會在這裡被擋下來；疑似個資、殘留的 frontmatter 只提醒不擋。</small></span>
       </div>
       <div class="callout">
         <b>6</b>
@@ -1061,7 +1059,7 @@
       </div>
     </div>
 
-    <p class="note">PR 合併之後還有最後一步：跑 <code>dev-memory sync</code>（或跟 AI 說「PR 合併了，幫我跑 dev-memory sync」），合併的內容才會進你的本機索引。<strong>這一步不會自己發生</strong>——開 session 時自動做的是「補收漏掉的對話」，不是「拉團隊的新文件」。隊友也一樣，各自 sync 各自的。</p>
+    <p class="note">PR 合併之後還有最後一步：跑 <code>dm sync</code>（或跟 AI 說「PR 合併了，幫我跑 sync」），合併的內容才會進你的本機索引。<strong>這一步不會自己發生</strong>——開 session 時自動做的是「補收漏掉的對話」，不是「拉團隊的新文件」。隊友也一樣，各自 sync 各自的。</p>
   </section>
 
   <section>
@@ -1278,7 +1276,7 @@
 
             <rect class="f-soft s-ink" x="70" y="70" width="180" height="34" rx="4"/>
             <text class="t t-mono" x="160" y="92" text-anchor="middle" font-size="11">~/.claude · ~/.codex 的檔案</text>
-            <text class="t t-muted" x="286" y="92" text-anchor="middle" font-size="11">14 天</text>
+            <text class="t t-muted" x="286" y="92" text-anchor="middle" font-size="11">30 天</text>
             <path class="f-none s-accent" d="M160 104 V120"/><polygon class="f-accent" points="154,118 160,130 166,118"/>
             <text class="t t-accent" x="196" y="118" text-anchor="middle" font-size="12">每回合</text>
 
@@ -1347,7 +1345,7 @@
           </svg>
         </div>
         <h3>③ 回流：檔案 → 資料庫</h3>
-        <p>PR 合併後，<code>sync</code> 直接讀 main 上的版本（不是讀別人硬碟上的工作檔），寫回本機的卡片跟頁面，再切一次詞進索引。被取代的頁面留著，但不會出現在搜尋結果。</p>
+        <p>PR 合併後，<code>sync</code> 直接讀 main 上的版本（不是讀別人硬碟上的工作檔），寫回本機的卡片跟頁面，再切一次詞進索引。文件是就地更新的，舊版本留在 git 歷史。</p>
       </div>
     </div>
 
@@ -1374,12 +1372,12 @@
           </tr>
           <tr>
             <td>寫文件</td>
-            <td>搜尋結果（卡片＋對話）＋ repo 裡的 <code>schema.md</code> 規則</td>
-            <td>worktree 裡的 <code>spec/*.md</code>；紀錄匯出成 <code>records/*.jsonl</code>，狀態轉 <code>submitted</code></td>
+            <td>程式碼（<code>git show</code>）＋ 搜尋結果（卡片＋對話）＋ repo 裡的 <code>schema.md</code> 規則</td>
+            <td>worktree 裡的 <code>spec/*.md</code>；紀錄匯出成 <code>records/*.jsonl</code>（只帶 <code>repos.yaml</code> 列的 repo 裡存的卡片），狀態轉 <code>submitted</code></td>
           </tr>
           <tr>
             <td>審核頁</td>
-            <td><strong>worktree 的檔案</strong>；「跟 main 比較」來自 git 上的版本；「來源紀錄」才去本機資料庫撈卡片</td>
+            <td><strong>worktree 的檔案</strong>；「跟 main 比較」來自 git 上的版本；「來源紀錄」讀 worktree 裡這次新增的卡片，文件引用的其他卡片才去本機資料庫撈</td>
             <td>直接寫回檔案（停止打字 800ms 自動存）</td>
           </tr>
           <tr>
@@ -1403,12 +1401,55 @@
 
     <p class="note"><strong>切詞做兩次，而且只做在索引跟查詢上。</strong> 存進資料庫的永遠是原文；另外存一份切過詞的給搜尋比對用。查詢時把問句用同樣方式切一次，兩邊才對得起來。所以你看到的搜尋片段是人看得懂的原文，不是「拋例 例外 外要」那種切碎的東西。</p>
 
-    <p class="note"><strong>本機資料庫隨時可以刪。</strong> 正本在團隊 repo，原始對話還在你自己的硬碟上。刪掉重建就好，這也是為什麼不把資料庫檔案提交上去。</p>
+    <p class="note"><strong>本機資料庫不要刪。</strong> 團隊 repo 只有卡片跟文件的正本；原始對話檔 Claude Code 預設 30 天就清掉，之後只剩資料庫裡這一份，個人模式的卡片也只存在這裡——所以要備份（Time Machine，或 <code>sqlite3 ~/.dev-memory/memory.db ".backup &lt;路徑&gt;"</code>）。不把它提交上去，是因為裡面是每個人自己的原始對話。</p>
   </section>
 
   <section>
     <h2>憑什麼找得到</h2>
     <p class="lead">搜尋不是模糊比對，是三條明確的規則。</p>
+
+    <h3>你什麼時候會用到它</h3>
+    <p>你平常<strong>不會自己打搜尋</strong>。用到它的是 AI，在兩個時機：你問「我們之前為什麼改成不中斷？」，它去翻你的開發記憶；你叫它寫文件，它搜記憶找「設計考量」要用的「為什麼」。兩個時機都是丟一串字去搜，<strong>這一節講的就是這串字怎麼在你的紀錄裡對上</strong>。</p>
+
+    <h3>中文為什麼要特別處理</h3>
+    <p>搜尋像書後面的<strong>索引頁</strong>：先把每個詞登記起來，查的時候翻索引。英文有空白，一看就知道詞在哪裡切；<strong>中文沒有空白</strong>，搜尋引擎不知道「更新中介表的狀態」要從哪裡切，只好整句登記成一個詞。</p>
+
+    <div class="pic">
+      <div class="blocks" role="img" aria-label="同一句話三種登記方式：整句一個詞查不到；兩字一塊查得到中介表；再加單字，只查表也找得到">
+        <div class="brow">
+          <span class="brow-label">不處理：整句登記成一個詞</span>
+          <span class="blk long">更新中介表的狀態</span>
+          <span class="verdict no">✕ 查「中介表」對不上</span>
+        </div>
+        <div class="brow">
+          <span class="brow-label">bigram：每兩個相鄰的字都登記一次，不用字典</span>
+          <span class="blk">更新</span><span class="blk">新中</span><span class="blk hit">中介</span><span class="blk hit">介表</span><span class="blk">表的</span><span class="blk">的狀</span><span class="blk">狀態</span>
+          <span class="verdict yes">✓ 查「中介表」→ 中介、介表都在</span>
+        </div>
+        <div class="brow">
+          <span class="brow-label">unigram：每個單字也登記一次</span>
+          <span class="blk">更</span><span class="blk">新</span><span class="blk">中</span><span class="blk">介</span><span class="blk hit">表</span><span class="blk">的</span><span class="blk">狀</span><span class="blk">態</span>
+          <span class="verdict yes">✓ 只查「表」也找得到</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>用你的情境走一遍</h3>
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead><tr><th>AI 搜的字</th><th>會拆成</th><th>結果</th></tr></thead>
+        <tbody>
+          <tr><td>中介表</td><td>中介、介表</td><td>找到所有提到中介表的紀錄</td></tr>
+          <tr><td>測評點數為什麼不中斷</td><td>測評、評點、點數……中斷</td><td><strong>對上越多塊的排越前面</strong>；「什麼」這種到處都有的塊幾乎不加分</td></tr>
+          <tr><td>表</td><td>表</td><td>要靠單字那一份，才找得到「中介表」「排程表」</td></tr>
+          <tr><td>status</td><td>status</td><td>找得到寫著 <code>sapStatus</code> 的紀錄</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note"><strong>兩件事分開看</strong>：bigram／unigram 負責「<strong>找得到</strong>」；找到一堆之後，bm25 負責排順序，對上的塊越多、越少見的詞，排越前面。兩者都只看字面：<strong>字不一樣就找不到</strong>，紀錄寫「中斷」、你問「停住」就對不上，所以 AI 會自己換幾個說法多搜幾次。</p>
+
+    <h3>細節：存進去跟查詢時各做了什麼</h3>
 
     <div class="ideas">
       <div class="idea">
@@ -1471,9 +1512,9 @@
             <td>你現在在哪個專案，那個專案的決定更可能是你要找的</td>
           </tr>
           <tr>
-            <td>已被取代的</td>
-            <td>完全不列出</td>
-            <td>頁面留著可追溯，但不該再誤導任何人</td>
+            <td>被取代的卡片</td>
+            <td>照樣列出</td>
+            <td>新卡片會標明取代哪一張；AI 以新的為準，並說明決定改過</td>
           </tr>
         </tbody>
       </table>
@@ -1649,14 +1690,14 @@
             <td>花。就是你原本的對話</td>
           </tr>
           <tr>
-            <td>讀程式碼＋出骨架（確認點 ①）</td>
-            <td>AI 從對話萃取原因／決定／放棄</td>
+            <td>存卡片</td>
+            <td>AI 從對話起草原因／決定／放棄</td>
             <td>花。一次約 1.1k token</td>
           </tr>
           <tr>
-            <td>整理計畫（確認點 ②）</td>
-            <td>AI 比對現有頁面，決定新增或更新</td>
-            <td rowspan="2">花。整個 ingest 約 1.3k token 加上寫頁面的內容</td>
+            <td>讀程式碼＋出骨架（確認點 ①）</td>
+            <td>AI 讀程式碼、搜記憶、比對既有文件，列出大綱</td>
+            <td rowspan="2">花，<strong>最花的一段</strong>：讀多少程式碼、寫多長的文件就花多少</td>
           </tr>
           <tr>
             <td>寫頁面</td>
@@ -1674,8 +1715,8 @@
           </tr>
           <tr>
             <td>檢查文件的矛盾</td>
-            <td>壞連結、孤兒頁是程式查；語意上的矛盾要 AI 讀過</td>
-            <td>部分。一次約 850 token</td>
+            <td>壞連結、沒被索引的文件是程式查；語意上的矛盾要 AI 讀過</td>
+            <td>部分：只有讀文件找矛盾的那一半花</td>
           </tr>
         </tbody>
       </table>
@@ -1683,9 +1724,9 @@
 
     <div class="ideas">
       <div class="idea">
-        <h3>常駐成本：每個 session 約 295 token</h3>
-        <p>裝了這個 plugin 之後，每次開 session 會多出一段簡短的說明（記憶裡有多少筆、目前在哪個 repo、要先查記憶再回答）。四個 skill 的說明書<strong>只有被叫到才載入</strong>，平常不佔位置。</p>
-        <p class="legend">這是 <code>claude plugin details dev-memory</code> 報的實際數字，不是估的。</p>
+        <h3>常駐成本：每個 session 約 300 多 token</h3>
+        <p>五個 skill 各有一兩行說明，讓 AI 知道什麼時候該叫它，這部分每個 session 都在；完整的說明書<strong>只有被叫到才載入</strong>。另外 session 開頭會多一段簡短的說明（記憶裡有多少筆、目前在哪個 repo、要先查記憶再回答）。</p>
+        <p class="legend">skill 那部分是 <code>claude plugin details dev-memory</code> 的估計：0.7.0 約 326 token，依模型不同會差一點。開頭那段說明不在這個數字裡。</p>
       </div>
       <div class="idea">
         <h3>沒有背景程序在燒 token</h3>
@@ -1782,7 +1823,7 @@
           <tr>
             <td>卡片進 repo</td>
             <td><strong>自動</strong>　寫文件時一起</td>
-            <td>JSONL，路徑 <code>records/&lt;產品&gt;/&lt;年月&gt;/&lt;作者&gt;.jsonl</code></td>
+            <td>JSONL，路徑 <code>records/&lt;產品&gt;/&lt;年月&gt;/&lt;作者&gt;.jsonl</code>；只帶 <code>repos.yaml</code> 列的 repo 裡存的卡片</td>
             <td><strong>一人一月一檔、只在尾巴 append</strong> —— 兩個人同月提交也不會 merge 衝突。同一個人同時開兩個都有新卡片的 PR 會撞，<strong>兩邊都保留</strong>就好</td>
           </tr>
           <tr>
@@ -1805,7 +1846,7 @@
     <div class="ideas">
       <div class="idea">
         <h3>為什麼用 SQLite 不用 PostgreSQL</h3>
-        <p>資料是<strong>每個人自己的</strong>，沒有共享需求——共享的部分走 git。SQLite 是一個檔案，刪掉重建就好，而且 FTS5 內建全文檢索。用 PG 等於要每個隊友裝一個資料庫服務，為了一個可丟棄的索引，不划算。</p>
+        <p>資料是<strong>每個人自己的</strong>，沒有共享需求——共享的部分走 git。SQLite 就是一個檔案，FTS5 還內建全文檢索。用 PG 等於要每個隊友多裝一個資料庫服務，只為了存自己一個人的資料，不划算。但這個檔案<strong>要備份</strong>：舊對話（Claude Code 預設 30 天就刪掉原始對話檔）跟個人模式的卡片只存在這裡，不是刪掉重建就好。</p>
       </div>
       <div class="idea">
         <h3>為什麼用 git worktree</h3>
@@ -1959,7 +2000,7 @@
       </div>
       <div class="idea">
         <div class="pic">
-          <svg viewBox="0 0 320 190" role="img" aria-label="新紀錄進來時，LLM 更新相關頁面並標記被取代的舊決定">
+          <svg viewBox="0 0 320 190" role="img" aria-label="寫文件時，LLM 更新既有頁面、新增一頁或補一節，再更新 README 索引">
             <rect class="f-card s-edge" x="16" y="70" width="70" height="50" rx="4"/>
             <text class="t t-card" x="51" y="100" text-anchor="middle" font-size="15">新紀錄</text>
             <path class="f-none s-accent dash" d="M92 95 H126"/>
@@ -1968,16 +2009,15 @@
             <text class="t" x="178" y="47" text-anchor="middle" font-size="14">更新這頁</text>
             <rect class="f-paper s-ink" x="140" y="74" width="76" height="44" rx="4"/>
             <text class="t" x="178" y="101" text-anchor="middle" font-size="14">新增一頁</text>
-            <rect class="f-paper s-line" x="140" y="128" width="76" height="44" rx="4"/>
-            <text class="t t-muted" x="178" y="155" text-anchor="middle" font-size="14">舊的取代</text>
-            <line class="s-warn" x1="146" y1="168" x2="210" y2="134"/>
+            <rect class="f-paper s-ink" x="140" y="128" width="76" height="44" rx="4"/>
+            <text class="t" x="178" y="155" text-anchor="middle" font-size="14">補一節</text>
             <path class="f-none s-line" d="M228 42 C258 42 258 96 228 96"/>
             <path class="f-none s-line" d="M228 96 C258 96 258 150 228 150"/>
-            <text class="t t-muted" x="276" y="100" text-anchor="middle" font-size="13">index.md</text>
+            <text class="t t-muted" x="276" y="100" text-anchor="middle" font-size="13">README.md</text>
           </svg>
         </div>
-        <h3>互相連結，舊的會被標掉</h3>
-        <p>每次 ingest 會同時更新總目錄跟相關頁面；被推翻的決定不刪掉，標成「已被取代」，搜尋時不會再跳出來誤導人。</p>
+        <h3>互相連結，同一件事只寫一處</h3>
+        <p>每次 ingest 會同時更新 README 索引跟相關頁面。頁面就地改寫，舊版本留在 git 歷史；被推翻的決定寫成一張新卡片，標明取代了哪一張。</p>
       </div>
     </div>
   </section>
@@ -2017,7 +2057,7 @@
 
             <text class="t" x="78" y="54" text-anchor="middle" font-size="14">問題</text>
             <path class="f-none s-accent" d="M78 62 V78"/><polygon class="f-accent" points="72,76 78,88 84,76"/>
-            <text class="t" x="78" y="106" text-anchor="middle" font-size="14">index.md</text>
+            <text class="t" x="78" y="106" text-anchor="middle" font-size="14">README.md</text>
             <path class="f-none s-accent" d="M78 114 V130"/><polygon class="f-accent" points="72,128 78,140 84,128"/>
             <text class="t" x="78" y="158" text-anchor="middle" font-size="14">主題頁</text>
             <path class="f-none s-accent" d="M78 166 V182"/><polygon class="f-accent" points="72,180 78,192 84,180"/>
@@ -2033,7 +2073,7 @@
             <path class="f-none s-ok" d="M242 190 V174"/><polygon class="f-ok" points="236,176 242,164 248,176"/>
             <text class="t" x="242" y="156" text-anchor="middle" font-size="14">主題頁</text>
             <path class="f-none s-ok" d="M242 146 V130"/><polygon class="f-ok" points="236,132 242,120 248,132"/>
-            <text class="t" x="242" y="112" text-anchor="middle" font-size="14">index.md</text>
+            <text class="t" x="242" y="112" text-anchor="middle" font-size="14">README.md</text>
           </svg>
         </div>
         <h3>兩個方向</h3>
@@ -2061,7 +2101,7 @@
             <td><code>README.md</code> 唯一索引、<code>spec/</code> 主題文件、<code>maintenance/</code> SOP</td>
             <td>AI 寫，人在審核頁核准</td>
             <td><strong>兩邊都用</strong>：寫入時產出，查東西時第一個被讀（搜尋權重 ×3）</td>
-            <td>可以改寫。被推翻的頁面標成「已取代」而不是刪掉，搜尋不再列出</td>
+            <td>可以改寫：就地更新，舊版本留在 git 歷史</td>
           </tr>
           <tr>
             <td>原始層</td>
@@ -2145,7 +2185,7 @@
       </div>
     </div>
 
-    <p class="note"><strong>規則層是這個設計最容易被低估的部分。</strong> 「頁面要寫原因跟放棄的方案」「不能寫密碼跟個資」「決策被推翻要標記不要刪」——這些都寫在 <code>schema.md</code> 裡，是純文字。團隊想調整 AI 的產出風格，改那份檔案就好，不需要工程師改程式、不需要重新發版、所有人下一次整理就會照新規則做。</p>
+    <p class="note"><strong>規則層是這個設計最容易被低估的部分。</strong> 「程式碼跟卡片衝突時以程式碼為準」「API 文件一定要附完整 payload」「不能寫密碼跟個資」——這些都寫在 <code>schema.md</code> 裡，是純文字。團隊想調整 AI 的產出風格，改那份檔案就好，不需要工程師改程式、不需要重新發版、所有人下一次整理就會照新規則做。</p>
   </section>
 
   <section>
@@ -2211,7 +2251,7 @@
           <tr>
             <td>Lint</td>
             <td>壞掉的連結、孤兒頁、矛盾</td>
-            <td>一樣。壞連結跟孤兒頁是程式查，語意矛盾要 AI 讀</td>
+            <td>一樣。壞連結跟孤兒頁（沒被 README 索引到的文件）是程式查，語意矛盾要 AI 讀</td>
           </tr>
           <tr>
             <td>問答回填</td>
@@ -2256,8 +2296,8 @@
           <tr>
             <td>entity 頁</td>
             <td>人物、概念各自一頁</td>
-            <td>改成資料表、API、queue、外部系統——<strong>還沒做</strong></td>
-            <td>跨 repo 最需要這個，但素材不足時會寫出兩行的空頁</td>
+            <td>改成資料表、API、queue、外部系統，而且<strong>不另開頁</strong>：<code>dm entities</code> 從卡片列出誰讀誰寫，還沒有文件寫到的，就在用到它的流程文件裡補一節</td>
+            <td>一張表一頁的話，素材不足時會寫出兩行的空頁</td>
           </tr>
           <tr>
             <td><code>log.md</code> 變更紀錄</td>
@@ -2310,7 +2350,7 @@
 
       <div class="idea">
         <div class="pic">
-          <svg viewBox="0 0 320 180" role="img" aria-label="團隊圖書館是正本，你電腦裡的卡片盒只是索引，壞了可以重建">
+          <svg viewBox="0 0 320 180" role="img" aria-label="團隊圖書館是文件跟卡片的正本；你電腦裡的資料庫還存著只有你有的舊對話，要備份">
             <polygon class="f-soft s-ink" points="16,64 90,26 164,64"/>
             <rect class="f-paper s-ink" x="30" y="68" width="12" height="56"/>
             <rect class="f-paper s-ink" x="56" y="68" width="12" height="56"/>
@@ -2321,15 +2361,15 @@
             <text class="t" x="90" y="164" text-anchor="middle" font-size="20" font-weight="700">正本</text>
             <path class="f-none s-accent dash" d="M170 44 C214 22 256 30 262 70"/>
             <polygon class="f-accent" points="254,66 263,80 272,66"/>
-            <text class="t t-muted" x="222" y="22" text-anchor="middle" font-size="13">壞了？重建一份</text>
+            <text class="t t-muted" x="222" y="22" text-anchor="middle" font-size="13">文件跟卡片同步回來</text>
             <rect class="f-card s-edge" x="226" y="82" width="64" height="30" rx="3"/>
             <rect class="f-card s-edge" x="218" y="92" width="80" height="30" rx="3"/>
             <rect class="f-paper s-ink" x="208" y="104" width="100" height="42" rx="4"/>
-            <text class="t" x="258" y="172" text-anchor="middle" font-size="20" font-weight="700">索引</text>
+            <text class="t" x="258" y="172" text-anchor="middle" font-size="20" font-weight="700">索引＋日記</text>
           </svg>
         </div>
-        <h3>圖書館才是正本</h3>
-        <p>GitHub 上的團隊 repo 是正本。你電腦裡的資料庫只是索引，壞了或換電腦，重建一份就好。</p>
+        <h3>圖書館是正本，日記要自己備份</h3>
+        <p>GitHub 上的團隊 repo 是文件跟卡片的正本，換電腦時同步一次就回來。但你電腦裡的資料庫還存著舊對話——Claude Code 預設 30 天就刪掉原始對話檔，之後只剩這一份；個人模式的卡片也只在這裡。所以要備份，不能當成隨時可刪的索引。</p>
       </div>
 
       <div class="idea">
@@ -2358,7 +2398,7 @@
             <line class="s-line" x1="122" y1="119" x2="198" y2="119"/>
             <line class="s-line" x1="147" y1="93" x2="147" y2="131"/>
             <line class="s-line" x1="174" y1="93" x2="174" y2="131"/>
-            <text class="t" x="160" y="154" text-anchor="middle" font-size="15" font-weight="700">資料表頁</text>
+            <text class="t" x="160" y="154" text-anchor="middle" font-size="15" font-weight="700">資料表</text>
 
             <polygon class="f-soft s-ink" points="12,100 44,76 76,100"/>
             <rect class="f-paper s-ink" x="18" y="100" width="52" height="36"/>
@@ -2386,7 +2426,7 @@
           </svg>
         </div>
         <h3>跨 repo：資料表是十字路口</h3>
-        <p>每張資料表、每支 API 都有自己的一頁，寫著哪些 repo 在讀、哪些在寫，一看就知道改了會影響誰。圖上的關係只是範例。</p>
+        <p>卡片裡提到的資料表、API，<code>dm entities</code> 會整理出哪些 repo 在讀、哪些在寫，一看就知道改了會影響誰。還沒有文件寫到的，就在用到它的流程文件裡補一節，不另開一頁。圖上的關係只是範例。</p>
       </div>
 
       <div class="idea">
@@ -2468,7 +2508,7 @@
         <span class="when">1　裝 bun</span>
         <div>
           <q>brew install bun</q>
-          <small>hook 跟 MCP server 都用 <code>bun</code> 啟動，<strong>必須在 PATH 裡</strong>。gh 也要登入（提交與開 PR 用）。</small>
+          <small>hook 跟 MCP server 都用 <code>bun</code> 啟動，<strong>必須在 PATH 裡</strong>。gh 也要登入（提交與開 PR 用，個人模式不用）。</small>
         </div>
       </div>
       <div class="say-this">
@@ -2479,7 +2519,7 @@
         </div>
       </div>
       <div class="say-this">
-        <span class="when">3　clone 文件庫</span>
+        <span class="when">3　clone 文件庫（個人模式跳過）</span>
         <div>
           <q>git clone …/104mis-billing-doc-test ~/project-other/…</q>
           <small>這是團隊共用的那一份。clone 到哪都可以，下一步會告訴 plugin。</small>
@@ -2489,7 +2529,7 @@
         <span class="when">4　跑一次 setup</span>
         <div>
           <q>dm setup --repo ~/project-other/104mis-billing-doc-test</q>
-          <small><strong>這一步做完就能用了。</strong>它會建 <code>~/.dev-memory</code>、建空的 <code>memory.db</code>、把既有對話灌進索引、從 <code>main</code> 同步隊友的文件，最後逐項檢查環境。</small>
+          <small><strong>這一步做完就能用了。</strong>它會建 <code>~/.dev-memory</code>、建空的 <code>memory.db</code>、把既有對話灌進索引、從 <code>main</code> 同步隊友的文件，最後逐項檢查環境。只想自己用就跑 <code>dm setup</code>（不帶 <code>--repo</code>），這是<strong>個人模式</strong>：一樣收對話、能搜尋、能存卡片，只是不寫文件、不送 PR。</small>
         </div>
       </div>
       <div class="say-this">
@@ -2510,15 +2550,16 @@
         <p class="note">
           原始對話逐字稿<br>
           搜尋索引<br>
+          還沒送出的卡片（個人模式永遠不送）<br>
           <code>config.toml</code>（含你的 repo 路徑）
         </p>
-        <p><strong>不會進 git，也不會離開你的電腦。</strong>本機資料庫隨時可以刪——正本在文件庫，對話逐字稿還在硬碟上，重跑 <code>setup</code> 就重建。</p>
+        <p><strong>不會進 git，也不會離開你的電腦。</strong>本機資料庫要備份：原始對話檔 Claude Code 預設 30 天就刪掉，之後只剩資料庫這一份。</p>
       </div>
       <div class="idea">
         <h3>會給全隊看到的</h3>
         <p class="note">
           <code>spec/</code> 的文件<br>
-          <code>records/</code> 的紀錄<br>
+          <code>records/</code> 的紀錄（只帶這個產品的 repo 裡存的）<br>
           都要先過<strong>你的審核頁</strong>與 <strong>PR</strong>
         </p>
         <p>而且 <code>repos.yaml</code> 裡<strong>沒有任何人的本機路徑</strong>——那是每個人自己 <code>config.toml</code> 的事，所以這份設定可以安心共用。</p>
@@ -2597,7 +2638,7 @@
         <div class="tool">
           <svg viewBox="0 0 48 48" aria-hidden="true"><rect class="f-card s-edge" x="12" y="10" width="24" height="14" rx="2"/><rect class="f-paper s-ink" x="6" y="20" width="36" height="20" rx="3"/><line class="s-ink" x1="18" y1="30" x2="30" y2="30"/></svg>
           <b>SQLite</b>
-          <span>抽屜裡的索引卡盒。整個資料庫只是一個檔案（<code>~/.dev-memory/memory.db</code>），不用開伺服器；刪掉可以從正本重建。</span>
+          <span>抽屜裡的索引卡盒。整個資料庫只是一個檔案（<code>~/.dev-memory/memory.db</code>），不用開伺服器；舊對話只存在這裡，要備份。</span>
           <em class="tag builtin">Bun 內建，不用裝</em>
         </div>
         <div class="tool">
@@ -2639,7 +2680,7 @@
         <div class="tool later">
           <svg viewBox="0 0 48 48" aria-hidden="true"><circle class="f-none s-accent" cx="20" cy="20" r="11"/><line class="s-accent" x1="28" y1="28" x2="40" y2="40"/><path class="f-accent" d="M20 13 L22 18 L27 20 L22 22 L20 27 L18 22 L13 20 L18 18 Z"/></svg>
           <b>向量搜尋</b>
-          <span>自己裝 Ollama，選 qwen3-embedding 或 bge-m3，讓搜尋也能比對「意思相近」的內容。用 <code>/mem-setup</code> 選，預設不裝。</span>
+          <span>自己裝 Ollama，選 qwen3-embedding 或 bge-m3，讓搜尋也能比對「意思相近」的內容。要做的話會放進 <code>/mem-setup</code> 讓每個人自己選，預設不裝。</span>
           <em class="tag later">使用者自己選要不要裝</em>
         </div>
         <div class="tool later">
@@ -2724,7 +2765,7 @@
       </table>
     </div>
 
-    <p class="note"><strong>什麼時候會改變主意：</strong>累積到 50 題以上的評測集，而且實測關鍵字的 Recall 卡住上不去；或是開始出現大量「我知道討論過但想不起來當初用什麼詞」的情況。到那時做法也不是二選一，而是 <strong>hybrid search</strong>——關鍵字一份排名、向量一份排名，兩份融合。</p>
+    <p class="note"><strong>什麼時候會改變主意：</strong>評測集補到 30 題，而且實測關鍵字的 Recall 卡住上不去；或是開始出現大量「我知道討論過但想不起來當初用什麼詞」的情況。到那時做法也不是二選一，而是 <strong>hybrid search</strong>——關鍵字一份排名、向量一份排名，兩份融合。</p>
 
     <h3>要說服別人時，這六個理由依強度排序</h3>
     <p>上面那張表講的是「現在為什麼不需要」。真的被追問「為什麼不套 embedding」，<strong>「本機跑不動」是最弱的理由</strong>——它聽起來像做不到。下面才是設計理由，最強的在最前面。</p>
@@ -2789,7 +2830,7 @@
     <div class="checks">
       <div class="check">
         <span>灌進索引的對話<small>兩種工具的格式都吃，增量讀取、重跑不會重複</small></span>
-        <b class="chip done">2,972 筆</b>
+        <b class="chip done">3,807 筆</b>
       </div>
       <div class="check">
         <span>中文搜尋<small>切成小積木之後，逐字比對找得到的每一筆都找得到</small></span>
@@ -2801,7 +2842,7 @@
       </div>
       <div class="check">
         <span>自動測試<small>每個功能都有測試，包含真的開 git worktree、真的合併兩個 branch</small></span>
-        <b class="chip done">166 個</b>
+        <b class="chip done">172 個</b>
       </div>
       <div class="check">
         <span>文件過時偵測<small>讀文件最後的「程式碼位置」表，用本機 clone 比對。測試裡改過跟被刪掉的檔都抓得到；真實文件的 6 個路徑都查得到，目前沒有過時</small></span>
@@ -2813,7 +2854,7 @@
       </div>
       <div class="check">
         <span>審核頁的離線大小<small>編輯器、預覽、比對都打包進去，公司網路擋 CDN 也能用</small></span>
-        <b class="chip done">89 KB</b>
+        <b class="chip done">約 92 KB</b>
       </div>
       <div class="check">
         <span>端對端走完<small>讀程式碼 → 確認骨架 → 產生文件 → 本機審核 → PR → merge → sync</small></span>
@@ -2847,7 +2888,7 @@
         <b class="chip done">可用</b>
       </div>
       <div class="check">
-        <span>第 7 步：隊友同步<small>sync 從 main 匯入紀錄跟頁面；已被取代的頁面不會出現在搜尋結果</small></span>
+        <span>第 7 步：隊友同步<small>sync 從 main 匯入紀錄跟文件，隊友就搜得到</small></span>
         <b class="chip done">可用</b>
       </div>
       <div class="check">
@@ -2871,7 +2912,7 @@
         <b class="chip done">已驗證</b>
       </div>
       <div class="check">
-        <span>維護工具<small>資料表誰讀誰寫、壞掉的連結、沒有來源的頁面、程式碼改了但文件沒跟上</small></span>
+        <span>維護工具<small>資料表誰讀誰寫、壞掉的連結、沒被 README 索引的文件、程式碼改了但文件沒跟上</small></span>
         <b class="chip done">可用</b>
       </div>
       <div class="check">
@@ -2879,7 +2920,11 @@
         <b class="chip wait">Codex 待測</b>
       </div>
       <div class="check">
-        <span>一個指令上手<small>setup：設定、建索引、同步、檢查環境，缺什麼直接告訴你要跑哪一行</small></span>
+        <span>一個指令上手<small>setup：設定、建索引、同步、檢查環境，缺什麼直接告訴你要跑哪一行；沒設定文件庫就是個人模式</small></span>
+        <b class="chip done">可用</b>
+      </div>
+      <div class="check">
+        <span>個人模式<small>沒設定文件庫也能用：收對話、中文搜尋、存卡片，只是不寫文件、不送 PR；之後轉成團隊模式，別的專案存的卡片也不會被整批送出</small></span>
         <b class="chip done">可用</b>
       </div>
       <div class="check">
@@ -2891,13 +2936,17 @@
         <b class="chip wait">第一版不做</b>
       </div>
       <div class="check">
+        <span>產品化<small>個人模式跟團隊模式都做到正式產品的水準：隱私、CLI 入口、錯誤看得到、CI、PR 關掉的卡片退回、Codex 實測</small></span>
+        <b class="chip wait">進行中</b>
+      </div>
+      <div class="check">
         <span>正式上線<small>切到正式的 104mis-billing-doc、找隊友試用、停掉舊工具</small></span>
         <b class="chip wait">下一階段</b>
       </div>
     </div>
   </section>
 
-  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-21 · 第一版功能完整：147 個測試通過，已跑完一次真實的 PR 流程；產出改成從程式碼寫規格文件</footer>
+  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-26 · 172 個測試通過，已跑完兩次真實的 PR 流程；文件從程式碼寫，對話只補「為什麼」</footer>
 
 </div>
 </body>

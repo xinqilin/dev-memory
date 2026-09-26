@@ -298,9 +298,9 @@
     <h2>為什麼要做</h2>
     <div class="pains">
       <div class="pain">
-        <div class="big">14 天</div>
+        <div class="big">30 天</div>
         <b>記憶會蒸發</b>
-        <p>對話紀錄預設 14 天就清掉。半年後問「當初為什麼這樣決定」，沒人答得出來。</p>
+        <p>Claude Code 的對話紀錄預設 30 天就清掉。半年後問「當初為什麼這樣決定」，沒人答得出來。</p>
       </div>
       <div class="pain">
         <div class="big">沒人寫</div>
@@ -380,7 +380,7 @@
             <td>卡片</td>
             <td>一個決定濃縮成三行：<strong>原因、決定、放棄了什麼</strong></td>
             <td>AI 起草，你確認</td>
-            <td>團隊 repo，只新增不修改</td>
+            <td>團隊 repo，只新增不修改（個人模式只留在本機）</td>
           </tr>
           <tr>
             <td>頁面</td>
@@ -479,7 +479,7 @@
         </div>
         <div class="tag">② 審核頁</div>
         <h3>在瀏覽器改到滿意</h3>
-        <p>自動打開本機審核頁：左邊改、右邊預覽、跟 main 比、看每句話的來源。檢查沒過就按不下「核准並 commit」。</p>
+        <p>自動打開本機審核頁：左邊改、右邊預覽、跟 main 比、看這次一起送出的卡片。檢查沒過就按不下「核准並 commit」。</p>
       </div>
 
       <div class="moment">
@@ -502,11 +502,11 @@
         </div>
         <div class="tag you">你按送出</div>
         <h3>PR 作者是你本人</h3>
-        <p>按「送出 PR」才會 push。合併後跑 <code>dev-memory sync</code>，隊友 sync 之後也搜得到。</p>
+        <p>按「送出 PR」才會 push。合併後跑 <code>dm sync</code>，隊友 sync 之後也搜得到。</p>
       </div>
     </div>
 
-    <p class="note"><strong>文件的事實來自程式碼，不是對話。</strong>欄位、必填、狀態值、cron 都從 <code>dev</code> 分支讀（<code>git show</code>，不切你的分支）；對話紀錄只拿來寫「設計考量」與 Known Issue。</p>
+    <p class="note"><strong>文件的事實來自程式碼，不是對話。</strong>欄位、必填、狀態值、cron 都從程式碼 repo 讀（每個 repo 讀哪支分支寫在 <code>repos.yaml</code>；用 <code>git show</code>，不切你的分支）；對話紀錄只拿來寫「設計考量」與 Known Issue。</p>
   </section>
 
   <section>
@@ -555,7 +555,7 @@
             <td>文件層</td>
             <td><code>README.md</code> 唯一索引、<code>spec/</code> 主題文件</td>
             <td>AI 寫，人在審核頁核准</td>
-            <td>可以改寫。被推翻的頁面標成「已取代」而不是刪掉</td>
+            <td>可以改寫：就地更新，舊版本留在 git 歷史</td>
           </tr>
           <tr>
             <td>原始層</td>
@@ -590,6 +590,19 @@
           <span class="blk mono">sapstatus</span><span class="blk mono">sap</span><span class="blk mono">status</span>
         </div>
       </div>
+    </div>
+
+    <p>你平常不會自己打搜尋：你問 AI「之前為什麼⋯⋯」，或叫它寫文件的時候，是它在背後搜。下面是它實際會搜的字：</p>
+    <div class="flow-wrap">
+      <table class="flow">
+        <thead><tr><th>AI 搜的字</th><th>會拆成</th><th>結果</th></tr></thead>
+        <tbody>
+          <tr><td>中介表</td><td>中介、介表</td><td>找到所有提到中介表的紀錄</td></tr>
+          <tr><td>測評點數為什麼不中斷</td><td>測評、評點、點數……中斷</td><td><strong>對上越多塊的排越前面</strong>；「什麼」這種到處都有的塊幾乎不加分</td></tr>
+          <tr><td>表</td><td>表</td><td>要靠單字那一份，才找得到「中介表」「排程表」</td></tr>
+          <tr><td>status</td><td>status</td><td>找得到寫著 <code>sapStatus</code> 的紀錄</td></tr>
+        </tbody>
+      </table>
     </div>
 
     <div class="duo">
@@ -629,10 +642,10 @@
   <section>
     <h2>可以放心的地方</h2>
     <div class="safe">
-      <div><b>原始對話不離開你的電腦</b><span>放在 <code>~/.dev-memory/</code>，不進 git。會給全隊看的只有卡片跟文件，而且都要過審核頁與 PR。</span></div>
+      <div><b>原始對話不離開你的電腦</b><span>放在 <code>~/.dev-memory/</code>，不進 git。會給全隊看的只有卡片跟文件（卡片只送在這個產品的 repo 裡存的），而且都要過審核頁與 PR。</span></div>
       <div><b>AI 碰不到送出</b><span>push 跟開 PR 只有你能按，AI 從頭到尾不會替你 push。</span></div>
       <div><b>背景收集零成本</b><span>每回合存對話是純程式在搬檔案，不呼叫模型，也沒有常駐程序。</span></div>
-      <div><b>壞掉不會拖垮你</b><span>記憶的錯誤全部吞掉只留 log，不會讓你的對話中斷。本機索引隨時可刪，重跑 <code>dm setup</code> 就重建。</span></div>
+      <div><b>壞掉不會拖垮你</b><span>記憶的錯誤全部吞掉只留 log，不會讓你的對話中斷。但本機資料庫不要刪：原始對話檔 Claude Code 預設 30 天就清掉，之後只剩這一份，要備份。</span></div>
       <div><b>不要了也不會掉卡片</b><span>整份文件不要了，跟 AI 說「這份不要了」。它會先把卡片退回本機，下次寫文件再帶上，然後才清掉工作區。</span></div>
       <div><b>卡片檔衝突：兩邊都保留</b><span>同一個人同時開兩個都有新卡片的 PR，後 merge 的會在卡片檔衝突。行的順序沒有意義，兩邊都留就對了；少留一邊，卡片會悄悄消失。</span></div>
     </div>
@@ -643,7 +656,7 @@
     <div class="says">
       <div class="say-this">
         <span class="when">1　裝工具</span>
-        <div><code class="cmd">brew install bun gh &amp;&amp; gh auth login</code></div>
+        <div><code class="cmd">brew install bun gh &amp;&amp; gh auth login</code><small>個人模式只要 bun，不用 gh。</small></div>
       </div>
       <div class="say-this">
         <span class="when">2　裝 plugin</span>
@@ -655,12 +668,13 @@ claude plugin install dev-memory@104mis-plugins</code>
       </div>
       <div class="say-this">
         <span class="when">3　clone 文件庫</span>
-        <div><small>團隊共用的文件 repo，clone 到哪都可以。</small></div>
+        <div><small>團隊共用的文件 repo，clone 到哪都可以。<strong>只想自己用就跳過。</strong></small></div>
       </div>
       <div class="say-this">
         <span class="when go">4　跑一次 setup</span>
         <div>
-          <code class="cmd">dm setup --repo ~/project-other/&lt;文件庫&gt;</code>
+          <code class="cmd">dm setup --repo ~/project-other/&lt;文件庫&gt;   # 團隊模式
+dm setup                                   # 個人模式：只收對話、搜尋、存卡片</code>
           <small>建索引、灌既有對話、同步隊友的文件、逐項檢查環境。<strong>做完就能用了。</strong>缺什麼它會直接說要跑哪一行。</small>
         </div>
       </div>
@@ -669,7 +683,7 @@ claude plugin install dev-memory@104mis-plugins</code>
 
   <footer>
     <a class="more" href="eli5.html">完整版：bm25 與語意搜尋的比較、九個步驟、借了 LLM Wiki 哪些又改了哪些、每個技術選擇的理由 →</a>
-    <span>摘自 docs/eli5.html · 2026-09-21</span>
+    <span>摘自 docs/eli5.html · 2026-09-26</span>
   </footer>
 
 </div>
