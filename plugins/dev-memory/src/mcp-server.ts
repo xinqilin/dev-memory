@@ -4,13 +4,14 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { version } from "../package.json";
 import { openDb } from "./core/db";
 import { repoIdFromDir } from "./core/repo-id";
 import { type Kind, get, search } from "./core/search";
 
 const KINDS = ["page", "record", "turn"] as const;
 
-const server = new McpServer({ name: "dev-memory", version: "0.3.0" });
+const server = new McpServer({ name: "dev-memory", version });
 
 server.registerTool(
   "memory_search",

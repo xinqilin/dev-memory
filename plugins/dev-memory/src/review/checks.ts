@@ -1,24 +1,15 @@
 // What must be true before an ingest can be approved. The CI in the memory repo checks the same
 // things, but finding a leaked key here means it never reaches GitHub at all.
 //
-// Different files have different rules: a wiki page needs frontmatter, a records file must be
-// valid JSONL, and everything else (repos.yaml, .gitattributes) only gets the secret scan.
+// Different files have different rules: a document needs a title and no frontmatter, a records file
+// must be valid JSONL, and everything else (repos.yaml, .gitattributes) only gets the secret scan.
+
+import { SECRET_PATTERNS } from "../core/secrets";
 
 export interface Check {
   level: "error" | "warning";
   message: string;
 }
-
-const SECRET_PATTERNS: [RegExp, string][] = [
-  [/AKIA[0-9A-Z]{16}/, "AWS access key id"],
-  [/aws_secret_access_key\s*[:=]\s*\S+/i, "AWS secret access key"],
-  [/gh[pousr]_[A-Za-z0-9]{16,}/, "GitHub token"],
-  [/github_pat_[A-Za-z0-9_]{20,}/, "GitHub fine-grained token"],
-  [/-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/, "private key"],
-  [/xox[baprs]-[A-Za-z0-9-]{10,}/, "Slack token"],
-  [/(password|passwd|secret|token)\s*[:=]\s*["'][^"'\s]{8,}["']/i, "hard-coded credential"],
-  [/[a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^/\s:@]+:[^/\s:@]+@/, "credentials inside a URL"],
-];
 
 // Taiwan ID and phone numbers: the most likely personal data to slip in from a support case.
 const PII_PATTERNS: [RegExp, string][] = [

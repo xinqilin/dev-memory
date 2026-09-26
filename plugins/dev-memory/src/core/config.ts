@@ -24,12 +24,17 @@ export interface Config {
    * clones somewhere different. Filled by `dev-memory setup`, editable by hand.
    */
   repos: Record<string, string>;
+  /** Sessions whose working directory is under one of these are never collected. */
+  capture: {
+    exclude: string[];
+  };
 }
 
 export const DEFAULT_CONFIG: Config = {
   embedding: { provider: "none", model: null, endpoint: "http://127.0.0.1:11434" },
   memory: { repo: null, branch: "main" },
   repos: {},
+  capture: { exclude: [] },
 };
 
 // Bun parses TOML but cannot serialize it (1.3.4), so the default file is a template.
@@ -49,6 +54,11 @@ branch = "main"
 # \`dev-memory setup\` fills this in by scanning the usual places; add anything it missed.
 [repos]
 # "104corp/example-service" = "~/project-backend/example-service"
+
+# Conversations in these directories are never collected: a private project, a customer's code.
+# Only affects what is collected from now on.
+[capture]
+exclude = []                          # e.g. ["~/personal", "~/project-other/customer-x"]
 `;
 
 export function homeDir(): string {
@@ -86,6 +96,7 @@ export async function loadConfig(): Promise<Config> {
     embedding: Partial<Config["embedding"]>;
     memory: Partial<Config["memory"]>;
     repos: Record<string, unknown>;
+    capture: Partial<{ exclude: unknown }>;
   }>;
   const embedding = parsed.embedding ?? {};
   const memory = parsed.memory ?? {};
@@ -104,6 +115,11 @@ export async function loadConfig(): Promise<Config> {
       branch: memory.branch ? String(memory.branch) : DEFAULT_CONFIG.memory.branch,
     },
     repos,
+    capture: {
+      exclude: Array.isArray(parsed.capture?.exclude)
+        ? parsed.capture.exclude.filter((dir): dir is string => typeof dir === "string" && dir.trim() !== "").map((dir) => expandHome(dir.trim()))
+        : [],
+    },
   };
 }
 

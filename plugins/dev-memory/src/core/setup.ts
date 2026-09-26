@@ -9,6 +9,8 @@ import { join } from "node:path";
 import { sweep, totals } from "./archive";
 import { configPath, ensureConfig, homeDir, loadConfig } from "./config";
 import { hasFts5, openDb, schemaVersion, sqliteVersion } from "./db";
+import { hookLogPath, lastHookError } from "./hook-log";
+import { binDir, binDirOnPath, writeShims } from "./shim";
 import { sync } from "./sync";
 
 export interface Check {
@@ -31,6 +33,8 @@ export interface SetupOptions {
   sweep?: boolean;
   sync?: boolean;
 }
+
+const RECENT_FAILURE_MS = 7 * 24 * 60 * 60 * 1000;
 
 function run(command: string, args: string[], cwd?: string): { ok: boolean; out: string } {
   const result = spawnSync(command, args, { encoding: "utf8", cwd });
@@ -157,10 +161,29 @@ export async function runSetup(options: SetupOptions = {}): Promise<SetupResult>
   // 3. memory repo
   checks.push(...checkMemoryRepo(repo));
 
-  // 4. fill the index
+  // 4. the hooks, whose errors are otherwise invisible
+  const failure = lastHookError();
+  const recent = failure !== null && Date.now() - failure.at.getTime() < RECENT_FAILURE_MS;
+  checks.push({
+    name: "hook",
+    ok: !recent,
+    detail: recent ? `最近一次失敗 ${failure.at.toLocaleString("zh-TW", { hour12: false })}：${failure.message}` : "最近 7 天沒有失敗",
+    fix: recent ? `完整紀錄在 ${hookLogPath()}` : undefined,
+  });
+
+  // 5. the command, for people who want to run it themselves
+  writeShims();
+  checks.push({
+    name: "dm 指令",
+    ok: true,
+    detail: `${binDir()}/dm${binDirOnPath() ? "" : "（還不在 PATH，想自己下指令才需要）"}`,
+    fix: binDirOnPath() ? undefined : `echo 'export PATH="${binDir()}:$PATH"' >> ~/.zshrc，再開一個新的終端機`,
+  });
+
+  // 6. fill the index
   let swept = 0;
   if (options.sweep !== false) {
-    swept = totals(await sweep(db)).inserted;
+    swept = totals(await sweep(db, { exclude: config.capture.exclude })).inserted;
   }
 
   let synced: SetupResult["synced"] = null;

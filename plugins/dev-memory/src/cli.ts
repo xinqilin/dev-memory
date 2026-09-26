@@ -467,16 +467,18 @@ async function archive(args: string[]): Promise<number> {
     return 2;
   }
 
+  const { exclude } = (await loadConfig()).capture;
   const db = openDb();
-  const result = await archiveFile(db, path, (values.host as Host) ?? hostFromPath(path));
+  const result = await archiveFile(db, path, (values.host as Host) ?? hostFromPath(path), exclude);
   db.close();
   console.log(`${result.inserted} new turns, ${result.duplicates} already stored (${result.bytes} bytes read)`);
   return 0;
 }
 
 async function sweepAll(): Promise<number> {
+  const { exclude } = (await loadConfig()).capture;
   const db = openDb();
-  const results = await sweep(db);
+  const results = await sweep(db, { exclude });
   const stored = (db.query("select count(*) as n from turn").get() as { n: number }).n;
   db.close();
 

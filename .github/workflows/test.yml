@@ -1,0 +1,31 @@
+name: test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/dev-memory
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.4 # the version dist/ is built with
+      - run: bun install --frozen-lockfile
+      # The review-page tests commit in a real git worktree.
+      - run: git config --global user.name ci && git config --global user.email ci@example.com
+      # Those tests also build git repos, which can outlast the 5s default on a busy runner.
+      - run: bun test --timeout 20000
+      # dist/ is committed so a git install needs no node_modules; it must match the source.
+      - name: dist/ is up to date
+        run: |
+          bun run build
+          git diff --exit-code -- dist/

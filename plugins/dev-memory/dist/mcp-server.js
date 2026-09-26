@@ -34700,6 +34700,8 @@ class StdioServerTransport {
     });
   }
 }
+// package.json
+var version2 = "0.8.0";
 
 // src/core/db.ts
 import { Database } from "bun:sqlite";
@@ -34886,15 +34888,15 @@ function schemaVersion(db) {
   return db.query("pragma user_version").get().user_version;
 }
 function migrate(db) {
-  for (let version2 = schemaVersion(db);version2 < MIGRATIONS.length; version2++) {
+  for (let version3 = schemaVersion(db);version3 < MIGRATIONS.length; version3++) {
     db.transaction(() => {
-      for (const step of MIGRATIONS[version2]) {
+      for (const step of MIGRATIONS[version3]) {
         if (typeof step === "string")
           db.run(step);
         else
           step(db);
       }
-      db.run(`pragma user_version = ${version2 + 1}`);
+      db.run(`pragma user_version = ${version3 + 1}`);
     })();
   }
   return schemaVersion(db);
@@ -35013,7 +35015,7 @@ function get(db, kind, ref) {
 
 // src/mcp-server.ts
 var KINDS = ["page", "record", "turn"];
-var server = new McpServer({ name: "dev-memory", version: "0.3.0" });
+var server = new McpServer({ name: "dev-memory", version: version2 });
 server.registerTool("memory_search", {
   title: "Search development memory",
   description: "Search the team's development memory: wiki pages, saved records and raw conversation turns. " + "Works with Chinese and with code identifiers. Ask in the words you would use with a teammate, " + "and try a second wording if the first one returns nothing.",

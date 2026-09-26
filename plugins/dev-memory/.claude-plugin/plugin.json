@@ -1,7 +1,7 @@
 {
   "name": "dev-memory",
-  "version": "0.7.0",
-  "description": "Team development memory and LLM-maintained wiki for Claude Code and Codex CLI",
+  "version": "0.8.0",
+  "description": "Development memory with Chinese search for Claude Code and Codex CLI: personal on its own, or shared with a team through a reviewed doc repo",
   "author": {
     "name": "bill.lin"
   }

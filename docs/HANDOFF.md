@@ -419,3 +419,39 @@ Bill 問：「沒設定文件 repo 時，能不能把 plugin 當 claude-mem 那�
 - **`claude plugin details` 可以在隔離環境量**：`CLAUDE_CONFIG_DIR=<暫存目錄>` 之後 `marketplace add ./`、`install`、
   `details`，不會碰到 `~/.claude`。同一個 plugin 在不同模型下估出來的 token 會差一點。
 
+### M2 共用底座，0.8.0（2026-09-26）
+
+- `bun test` **188 pass / 0 fail**。
+- **排除目錄**：`config.toml` 的 `[capture] exclude`。排除清單由呼叫端傳給 archive（hook、setup、CLI 都有傳），
+  archive 自己不讀設定，這樣測試永遠不會讀到真實的 `~/.dev-memory/config.toml`。被排除的行一樣會被讀過去
+  （游標照樣前進），所以之後拿掉排除也不會補收。路徑照字面比對，大小寫要跟實際一樣，也不展開 symlink。
+- **遮蔽密鑰**：`core/secrets.ts` 的 pattern 由審核頁跟 archive 共用，turn 存進去之前換成 `[REDACTED:種類]`，
+  私鑰整塊遮掉，不是只遮標頭。**Bill 決定只遮之後收的**，已經收進來的不動。
+  - 決定前先唯讀掃過真實的 `memory.db`，只印數字：3,807 筆對話裡，AWS key 3 筆，全都是這個 repo 測試檔裡
+    的假 key；`password/token = "..."` 在 2 筆對話裡共 5 個字串，看不出真假；URL 帳密 1 筆，是範例；卡片 0 筆。
+  - 這不是「外洩到團隊」的洞：卡片跟文件進 PR 前，審核頁跟 CI 的 gitleaks 各擋一次。遮蔽處理的是本機這一份：
+    它比 Claude Code 的原始對話活得久，也會進備份。
+- **設定壞掉時停收**：Stop 跟 SessionStart 都先讀設定。讀不到就寫進 hook.log、這次不收，
+  讓排除清單的承諾不會默默失效。游標沒動，修好之後下一次會補齊。
+- **`dm` 指令**：SessionStart 每次把 `~/.dev-memory/bin/dm` 跟 `dev-memory` 重寫成指向目前這一版的
+  `src/cli.ts`（內容一樣就不寫）。不用 plugin 的 `bin/`，原因有三：它只進 Claude Code 的 Bash tool，
+  不進使用者的終端機，也不支援 Codex；而且 claude.ai／Cowork 不裝有頂層 `bin/` 的 plugin。
+  README 的 `dm()` 函式拿掉了。
+- **hook.log**：兩個 hook 的錯誤寫進 `~/.dev-memory/hook.log`，保留最後 200 行。`setup` 多了 `hook` 那一行：
+  最近 7 天有失敗就是 ✗。
+- **CI**：`.github/workflows/test.yml`，bun 固定 1.3.4（`dist/` 就是用這版打包的）。步驟是
+  `bun test --timeout 20000`，再 `bun run build` + `git diff --exit-code dist/`。
+  另外設好 git 使用者名稱，因為審核頁的核准測試會真的 commit。**還沒真的跑過，要 push 之後才會跑。**
+  - 有個測試原本要求 setup 全部 ✓，包含 gh 登入。這取決於機器，不是 setup 的結果，所以改成不看 gh；CI 也就不用 token。
+- **小項**：
+  - MCP server 的版本號改讀 `package.json`。現在 bump 版本之後一定要重新打包。
+  - claude-mem 測試改用 `immutable=1` 開，claude-mem 沒在跑也能跑。
+  - plugin 跟 marketplace 的描述改成涵蓋兩種模式。
+- **順手修的文件漂移**：
+  - README 還有「想重來就刪 memory.db」「本機資料庫隨時可以刪」兩句，M1 漏改了。
+  - `mem-setup` 的 repo 結構檢查還寫著 `wiki/`。
+  - `checks.ts` 開頭的註解還說文件要有 frontmatter。
+
+**Gotcha**：完整測試偶爾有一個審核頁測試卡在 5 秒逾時，單跑 3/3 過、重跑完整 2/2 過。那些測試會建 git repo，
+機器忙的時候就慢，所以 CI 把逾時放寬到 20 秒。
+

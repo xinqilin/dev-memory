@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { parseClaudeTranscript } from "../adapters/claude-code";
 import { type CodexSessionContext, parseCodexRollout } from "../adapters/codex";
 import type { Host, Turn } from "../adapters/types";
+import { redactSecrets } from "./secrets";
 import { tokenizeForIndex } from "./tokenize";
 
 export interface ArchiveResult {
@@ -36,6 +37,15 @@ async function codexContext(path: string): Promise<Partial<CodexSessionContext>>
   return parseCodexRollout(firstLine).context;
 }
 
+/** A session run under an excluded directory (config.toml [capture]) is skipped, never stored. */
+function isExcluded(cwd: string | null, exclude: string[]): boolean {
+  if (!cwd) return false;
+  return exclude.some((dir) => {
+    const root = dir.replace(/\/+$/, "");
+    return cwd === root || cwd.startsWith(`${root}/`);
+  });
+}
+
 export function storeTurns(db: Database, turns: Turn[]): { inserted: number; duplicates: number } {
   const insertTurn = db.prepare(
     `insert or ignore into turn (id, host, session_id, line_no, ts, role, text, cwd, repo_id, branch)
@@ -47,6 +57,8 @@ export function storeTurns(db: Database, turns: Turn[]): { inserted: number; dup
   let duplicates = 0;
   db.transaction(() => {
     for (const turn of turns) {
+      // A token pasted into a prompt would otherwise outlive the transcript it came from.
+      const text = redactSecrets(turn.text);
       const { changes } = insertTurn.run(
         turn.id,
         turn.host,
@@ -54,7 +66,7 @@ export function storeTurns(db: Database, turns: Turn[]): { inserted: number; dup
         turn.lineNo,
         turn.ts,
         turn.role,
-        turn.text,
+        text,
         turn.cwd,
         turn.repoId,
         turn.branch,
@@ -63,14 +75,15 @@ export function storeTurns(db: Database, turns: Turn[]): { inserted: number; dup
         duplicates++;
         continue; // already archived: never index it twice
       }
-      insertFts.run(tokenizeForIndex(turn.text), turn.id);
+      insertFts.run(tokenizeForIndex(text), turn.id);
       inserted++;
     }
   })();
   return { inserted, duplicates };
 }
 
-export async function archiveFile(db: Database, path: string, host: Host): Promise<ArchiveResult> {
+/** `exclude` is config.capture.exclude; the caller passes it so this module never reads the real config. */
+export async function archiveFile(db: Database, path: string, host: Host, exclude: string[] = []): Promise<ArchiveResult> {
   const file = Bun.file(path);
   const size = file.size;
   let { byteOffset, lineNo } = readCursor(db, path);
@@ -95,7 +108,8 @@ export async function archiveFile(db: Database, path: string, host: Host): Promi
           context: byteOffset === 0 ? undefined : await codexContext(path),
         }).turns;
 
-  const { inserted, duplicates } = storeTurns(db, turns);
+  // Excluded lines are still consumed, so they are skipped for good rather than read again later.
+  const { inserted, duplicates } = storeTurns(db, turns.filter((turn) => !isExcluded(turn.cwd, exclude)));
   db.run(
     `insert into archive_cursor (path, byte_offset, line_no, updated_at) values (?, ?, ?, datetime('now'))
      on conflict(path) do update set byte_offset = excluded.byte_offset, line_no = excluded.line_no, updated_at = excluded.updated_at`,
@@ -108,6 +122,7 @@ export async function archiveFile(db: Database, path: string, host: Host): Promi
 export interface SweepOptions {
   claudeRoot?: string;
   codexRoot?: string;
+  exclude?: string[];
 }
 
 /** Scans both tools' transcript directories. Used by SessionStart to catch anything Stop missed. */
@@ -123,7 +138,7 @@ export async function sweep(db: Database, options: SweepOptions = {}): Promise<A
   ] as const) {
     for await (const path of new Glob(pattern).scan({ cwd: root, absolute: true })) {
       try {
-        results.push(await archiveFile(db, path, host));
+        results.push(await archiveFile(db, path, host, options.exclude));
       } catch (error) {
         // A single unreadable transcript must never stop the sweep or the session.
         console.error(`dev-memory: skipped ${path}: ${error}`);

@@ -94,10 +94,11 @@ clone 到哪都行，下一步會告訴 plugin。
 
 ### 4. 跑一次 setup ← **做完這步就能用了**
 
-把這個函式加進 `~/.zshrc`（之後會一直用到）：
+裝好 plugin、重開一次 Claude Code（或 Codex）之後，`~/.dev-memory/bin/dm` 就會出現。每次開 session 都會重寫它，
+讓它指向目前裝的版本，所以 plugin 更新之後不用改任何東西。把它加進 PATH（只要一次）：
 
 ```bash
-dm() { bun "$(ls -d ~/.claude/plugins/cache/104mis-plugins/dev-memory/*/src/cli.ts | sort -V | tail -1)" "$@"; }
+echo 'export PATH="$HOME/.dev-memory/bin:$PATH"' >> ~/.zshrc   # 然後開一個新的終端機
 ```
 
 然後：
@@ -124,9 +125,11 @@ dm setup                                 # 個人模式：不帶 --repo
 ✓ bun        1.3.4  /Users/you/.bun/bin/bun
 ✓ git        /opt/homebrew/bin/git
 ✓ gh         已登入
-✓ 本機索引     ~/.dev-memory  (schema v2, SQLite 3.51.0)
+✓ 本機索引     ~/.dev-memory  (schema v3, SQLite 3.51.0)
 ✓ memory repo ~/project-other/<名稱>
 ✓ repo 結構    schema.md、spec/、records/ 都在
+✓ hook       最近 7 天沒有失敗
+✓ dm 指令     /Users/you/.dev-memory/bin/dm
 ```
 
 可以重複跑，**不會覆蓋你手改過的 `config.toml`**。
@@ -167,7 +170,7 @@ dm repos --save
 
 | 你想做什麼 | 你說 | 背後發生什麼 |
 |---|---|---|
-| **查以前怎麼做的** | 「測評點數怎麼拋到 ERP？」 | AI 自動搜記憶（文件 → 紀錄 → 原始對話），答不出來才翻程式碼 |
+| **查以前怎麼做的** | 「測評點數怎麼拋到 ERP？」「上次那個中介表怎麼決定的？」 | `mem-search`：AI 自動搜記憶（文件 → 紀錄 → 原始對話），答不出來才翻程式碼 |
 | **存一個決定** | AI 問你就點頭，或自己說「把這個決定存起來」 | `mem-save` 起草卡片（原因／決定／放棄），**你看過才存** |
 | **寫文件** | 「幫我寫一份 sap-create-bu-data 的文件」 | `wiki-ingest`：讀程式碼 → 給你骨架確認 → 寫文件 → 開審核頁 |
 
@@ -221,12 +224,13 @@ dm repos --save
 | 寫文件時說找不到程式碼 | `config.toml` 的 `[repos]` 沒有那個 repo | `dm repos --save`；它掃不到的會印出要貼的那一行 |
 | 文件寫出來跟實際行為不符 | 讀到的分支不對 | `dm repos` 看 `refs` 順序。有的 repo `dev` 比 `master` 新，有的相反 |
 | merge 了卻搜不到新文件 | `sync` 沒跑 | `dm sync`。開 session 自動做的是補收對話，不是拉團隊文件 |
-| `dm` 跑出來的行為跟文件不符 | cache 裡留著好幾個版本，`*` 會展開成多個路徑，`bun a b` 只會跑第一個（最舊的） | 用上面那個 `dm()` 函式，不要用 `alias dm='bun .../*/src/cli.ts'`；`dm --help` 的第一行會印版本 |
+| 找不到 `dm` | 還沒開過 session（`dm` 是 SessionStart 寫出來的），或 `~/.dev-memory/bin` 不在 PATH | 開一次 Claude Code／Codex，再照〈4. 跑一次 setup〉把它加進 PATH |
+| 記錄有時斷掉 | hook 出錯被吞掉了（它不能讓你的對話中斷） | `dm setup` 的 `hook` 那行會列出最近 7 天的失敗；完整紀錄在 `~/.dev-memory/hook.log` |
 | 審核頁沒有樣式、清單空白 | 用到舊版的 plugin | 更新 plugin 後重開；網址要含 `?token=` |
 | 審核頁「核准」按不下去 | 有檢查沒過 | 看「檢查結果」分頁，點檔名跳過去修 |
 | 「送出 PR」是灰的 | 還沒 commit | 先按「核准並 commit」 |
 | `stale` 說查不到 | 那個 code repo 沒 clone 在這台機器，或本機沒有表上寫的分支 | `dm repos` 看要補哪一行；分支沒有就先 `git fetch` |
-| 想重來 | 本機索引是可丟棄的 | 刪掉 `~/.dev-memory/memory.db`，再跑 `dm setup` |
+| 想重來 | `memory.db` **不是**可丟棄的：Claude Code 已經刪掉的舊對話、個人模式的卡片都只剩這一份 | 先備份（`sqlite3 ~/.dev-memory/memory.db ".backup <路徑>"`）。刪掉之後文件庫的卡片跟文件 `dm sync` 會回來，其他的回不來 |
 
 ---
 
@@ -234,7 +238,7 @@ dm repos --save
 
 | 東西 | 放哪 | 誰看得到 |
 |---|---|---|
-| 原始對話 | `~/.dev-memory/memory.db`（你自己的電腦） | **只有你**，不會提交 |
+| 原始對話 | `~/.dev-memory/memory.db`（你自己的電腦） | **只有你**，不會提交。看起來像金鑰的字串收進來之前就遮掉 |
 | 你的設定與程式碼路徑 | `~/.dev-memory/config.toml`（你自己的電腦） | **只有你**，不進 git |
 | 卡片（紀錄） | 團隊文件庫的 `records/` | 有 repo 權限的人 |
 | 文件 | 團隊文件庫的 `spec/`、`maintenance/` | 有 repo 權限的人 |
@@ -242,7 +246,22 @@ dm repos --save
 
 三道防線擋機密：本機審核頁掃到疑似金鑰／個資就不給核准、CI 跑 gitleaks 掃全 repo、`schema.md` 明文寫哪些東西不能寫進去。
 
-本機資料庫隨時可以刪：正本在 repo，原始對話還在你硬碟上，重建就好。
+**plugin 本身不用任何帳密**：`config.toml` 只有路徑跟搜尋模式，GitHub 用你原本的 `gh` 或 SSH 登入。
+要小心的是**對話內容**：你貼過的 token、連線字串會跟著對話存進 `memory.db`。所以：
+
+- **收進來之前先遮掉**：AWS key、GitHub／Slack token、私鑰、`password = "..."`、URL 裡的帳密，存進去的是 `[REDACTED:種類]`。
+  只對之後收的對話有效；會有誤遮，寧可多遮。
+- **整個目錄不收**：客戶的程式、私人專案，寫進 `config.toml`：
+
+  ```toml
+  [capture]
+  exclude = ["~/personal", "~/project-other/customer-x"]   # 寫實際的路徑，大小寫要一樣
+  ```
+
+  只影響之後的對話；已經收進來的不會刪，拿掉排除之後，中間跳過的也不會補收。
+- 收的只有你打的字跟 AI 回的文字，工具的輸出跟 AI 的 thinking 本來就不收。
+
+`memory.db` **要備份**：Claude Code 預設 30 天就刪掉原始對話檔，之後舊對話只剩這一份；個人模式的卡片也只存在這裡。
 
 ---
 
@@ -250,8 +269,8 @@ dm repos --save
 
 ```bash
 cd plugins/dev-memory
-bun test          # 166 個測試
-bun run build     # 改完 src/ 要重新打包 dist/
+bun test          # 188 個測試；CI（.github/workflows/test.yml）每次 push 也會跑
+bun run build     # 改完 src/ 要重新打包 dist/；CI 會檢查 dist/ 有沒有跟上
 ```
 
 ```
@@ -260,7 +279,7 @@ plugins/dev-memory/
 ├── plugin.json                  # Codex 讀這份（Agent Plugins 1.0.0）
 ├── .mcp.json / mcp.json         # Claude Code 只讀前者，Codex 只讀後者，兩份都要留
 ├── hooks/hooks.json             # 兩邊共用：SessionStart 補掃、Stop 增量存檔
-├── skills/{mem-setup,mem-save,wiki-ingest,wiki-lint}/SKILL.md
+├── skills/{mem-setup,mem-save,mem-search,wiki-ingest,wiki-lint}/SKILL.md
 ├── src/
 │   ├── cli.ts                   # 所有功能的入口
 │   ├── mcp-server.ts            # memory_search / memory_get
@@ -274,7 +293,7 @@ plugins/dev-memory/
 templates/memory-repo/           # init-repo 會複製到文件庫的骨架（schema.md 是規則書）
 ```
 
-**發版流程**：改完 → `bun test` → `bun run build` → 把 `plugin.json`、`.claude-plugin/plugin.json`、`package.json` 三個版本號一起 bump → commit → push。**沒 bump 版本號，隊友 `plugin update` 不會拉到新版。**
+**發版流程**：改完 → 把 `plugin.json`、`.claude-plugin/plugin.json`、`package.json` 三個版本號一起 bump → `bun run build`（MCP server 會帶版本號，所以要在 bump 之後）→ `bun test` → commit → push。**沒 bump 版本號，隊友 `plugin update` 不會拉到新版。**
 
 **幾條不能違反的規則**：
 

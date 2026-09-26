@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { archiveFile, sweep, totals } from "../src/core/archive";
 import { openDb } from "../src/core/db";
+import { search } from "../src/core/search";
 
 const FIXTURES = join(import.meta.dir, "fixtures");
 const dirs: string[] = [];
@@ -137,5 +138,42 @@ test("sweep walks both tools' directories", async () => {
 
   const hosts = (db.query("select distinct host from turn order by host").all() as { host: string }[]).map((r) => r.host);
   expect(hosts).toEqual(["claude-code", "codex"]);
+  db.close();
+});
+
+const userLine = (uuid: string, cwd: string | null, text: string) =>
+  JSON.stringify({ type: "user", uuid, sessionId: "s1", timestamp: "2026-09-26T01:00:00.000Z", cwd, message: { role: "user", content: text } });
+
+test("a session under an excluded directory is skipped for good", async () => {
+  const { dir, db } = workspace();
+  const path = join(dir, "session.jsonl");
+  await Bun.write(
+    path,
+    [
+      userLine("a", "/work/customer-x/api", "客戶的程式，不該被收"),
+      userLine("b", "/work/customer-x-2", "名字相近但不在排除的目錄底下"),
+      userLine("c", "/work/other", "一般的專案"),
+    ].join("\n") + "\n",
+  );
+
+  expect((await archiveFile(db, path, "claude-code", ["/work/customer-x/"])).inserted).toBe(2);
+  const texts = (db.query("select text from turn order by line_no").all() as { text: string }[]).map((row) => row.text);
+  expect(texts).toEqual(["名字相近但不在排除的目錄底下", "一般的專案"]);
+
+  // Dropping the exclusion later does not bring the skipped line back: it was consumed, not deferred.
+  expect((await archiveFile(db, path, "claude-code")).inserted).toBe(0);
+  db.close();
+});
+
+test("a token in a turn is masked before it is stored and indexed", async () => {
+  const { dir, db } = workspace();
+  const path = join(dir, "session.jsonl");
+  await Bun.write(path, userLine("a", null, "用這個 token：ghp_abcdefghijklmnopqrstuvwxyz123456 重跑一次") + "\n");
+
+  await archiveFile(db, path, "claude-code");
+
+  expect((db.query("select text from turn").get() as { text: string }).text).toBe("用這個 token：[REDACTED:GitHub token] 重跑一次");
+  expect(search(db, "ghp_abcdefghijklmnopqrstuvwxyz123456")).toEqual([]);
+  expect(search(db, "重跑")).toHaveLength(1);
   db.close();
 });

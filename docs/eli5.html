@@ -749,7 +749,7 @@
       </div>
       <div class="idea">
         <h3>壞掉也不會拖垮你</h3>
-        <p>Stop hook 裡所有錯誤都被吞掉、只留一行 log，最後一定 <code>exit 0</code>。<strong>記憶壞掉不該讓你的對話中斷</strong>——它只是個旁邊的東西，不是主線。</p>
+        <p>Stop hook 裡所有錯誤都被吞掉、只寫一行進 <code>~/.dev-memory/hook.log</code>，最後一定 <code>exit 0</code>；<code>dm setup</code> 會列出最近 7 天的失敗。<strong>記憶壞掉不該讓你的對話中斷</strong>——它只是個旁邊的東西，不是主線。</p>
       </div>
       <div class="idea">
         <h3>為什麼是 Stop 不是 SessionEnd</h3>
@@ -1755,6 +1755,12 @@
             <td>不用你記得；只讀新增的行，跑幾次都不會重複</td>
           </tr>
           <tr>
+            <td>遮掉金鑰</td>
+            <td><strong>自動</strong>　存進去之前</td>
+            <td>跟審核頁同一組 pattern，換成 <code>[REDACTED:種類]</code>；<code>config.toml</code> 列的目錄整個不收</td>
+            <td>對話裡貼過的 token 不該比原始對話檔活得更久；寧可多遮</td>
+          </tr>
+          <tr>
             <td>補漏</td>
             <td><strong>自動</strong>　每次開 session</td>
             <td><code>SessionStart</code> hook 掃兩個工具的逐字稿目錄</td>
@@ -2553,7 +2559,7 @@
           還沒送出的卡片（個人模式永遠不送）<br>
           <code>config.toml</code>（含你的 repo 路徑）
         </p>
-        <p><strong>不會進 git，也不會離開你的電腦。</strong>本機資料庫要備份：原始對話檔 Claude Code 預設 30 天就刪掉，之後只剩資料庫這一份。</p>
+        <p><strong>不會進 git，也不會離開你的電腦。</strong>看起來像金鑰的字串收進來之前就遮掉；客戶的程式、私人專案可以在 <code>config.toml</code> 列成整個不收。本機資料庫要備份：原始對話檔 Claude Code 預設 30 天就刪掉，之後只剩資料庫這一份。</p>
       </div>
       <div class="idea">
         <h3>會給全隊看到的</h3>
@@ -2603,11 +2609,11 @@
     </div>
 
     <h3>再加一行 <code>dm</code></h3>
-    <p>平常用不到——這些事講一句話就會發生。但除錯、想自己下指令的時候會需要它。加進 <code>~/.zshrc</code>：</p>
+    <p>平常用不到——這些事講一句話就會發生。但除錯、想自己下指令的時候會需要它。裝好 plugin、開過一次 session，<code>~/.dev-memory/bin/dm</code> 就在了，把它加進 PATH（只要一次）：</p>
     <div class="note">
-      <code class="cmd">dm() { bun "$(ls -d ~/.claude/plugins/cache/104mis-plugins/dev-memory/*/src/cli.ts | sort -V | tail -1)" "$@"; }</code>
+      <code class="cmd">echo 'export PATH="$HOME/.dev-memory/bin:$PATH"' &gt;&gt; ~/.zshrc</code>
     </div>
-    <p class="note">寫成函式不是為了好看。cache 裡會同時留著好幾個版本，寫成 <code>alias dm='bun …/*/src/cli.ts'</code> 的話 <code>*</code> 會展開成多個路徑，<code>bun a b</code> 只跑第一個——也就是<strong>最舊的那版</strong>，而且不會有任何錯誤訊息。上面那行用 <code>sort -V | tail -1</code> 明確挑最新版。</p>
+    <p class="note">為什麼不直接指到 plugin 的安裝位置：兩個工具都把 plugin 裝在<strong>帶版本號的資料夾</strong>，每次更新路徑就變，寫死的路徑很快就指到舊版。所以每次開 session，hook 都會把 <code>dm</code> 重寫成指向目前這一版；Claude Code 跟 Codex 都一樣，你的終端機也能用。</p>
     <p>裝好之後跑 <code>dm setup</code>，它會逐項檢查缺什麼，缺的直接告訴你要跑哪一行。</p>
   </section>
 
@@ -2842,7 +2848,7 @@
       </div>
       <div class="check">
         <span>自動測試<small>每個功能都有測試，包含真的開 git worktree、真的合併兩個 branch</small></span>
-        <b class="chip done">172 個</b>
+        <b class="chip done">188 個</b>
       </div>
       <div class="check">
         <span>文件過時偵測<small>讀文件最後的「程式碼位置」表，用本機 clone 比對。測試裡改過跟被刪掉的檔都抓得到；真實文件的 6 個路徑都查得到，目前沒有過時</small></span>
@@ -2946,7 +2952,7 @@
     </div>
   </section>
 
-  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-26 · 172 個測試通過，已跑完兩次真實的 PR 流程；文件從程式碼寫，對話只補「為什麼」</footer>
+  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-26 · 188 個測試通過，已跑完兩次真實的 PR 流程；文件從程式碼寫，對話只補「為什麼」</footer>
 
 </div>
 </body>

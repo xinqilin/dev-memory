@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Database } from "bun:sqlite";
@@ -84,6 +84,17 @@ test("the session-start hook sweeps and reports what it found", async () => {
   expect(context).toContain("Search mode: keyword only");
   expect(context).toContain("search the development memory first");
   expect(turnCount(env.DEV_MEMORY_HOME)).toBe(5);
+  expect(existsSync(join(env.DEV_MEMORY_HOME, "bin", "dm"))).toBe(true); // the command follows the installed version
+});
+
+test("both hooks skip the directories config.toml excludes", async () => {
+  const { env, transcript } = await workspace();
+  mkdirSync(env.DEV_MEMORY_HOME, { recursive: true });
+  await Bun.write(join(env.DEV_MEMORY_HOME, "config.toml"), '[capture]\nexclude = ["/Users/demo/project-alpha"]\n');
+
+  expect((await runHook("stop.ts", { session_id: "s", transcript_path: transcript, cwd: "/repo" }, env)).code).toBe(0);
+  expect((await runHook("session-start.ts", { session_id: "s", source: "startup", cwd: "/repo" }, env)).code).toBe(0);
+  expect(turnCount(env.DEV_MEMORY_HOME)).toBe(0); // every fixture turn ran in that directory
 });
 
 test("without a team repo the session-start hook says personal mode and never points at wiki-ingest", async () => {

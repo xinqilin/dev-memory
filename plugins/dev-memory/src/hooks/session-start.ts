@@ -4,21 +4,30 @@
 import { sweep, totals } from "../core/archive";
 import { loadConfig } from "../core/config";
 import { openDb } from "../core/db";
+import { logHookError } from "../core/hook-log";
 import { repoIdFromDir } from "../core/repo-id";
+import { writeShims } from "../core/shim";
 import { emitContext, readHookPayload } from "./shared";
 
 const payload = await readHookPayload();
 
 try {
+  // Loaded first on purpose: when the exclusion list cannot be read, nothing is collected until it
+  // can be. The cursors do not move, so the next run catches up and nothing is lost.
+  const config = await loadConfig();
+  try {
+    writeShims();
+  } catch (error) {
+    logHookError("session-start", error); // a convenience; never worth skipping the sweep for
+  }
   const db = openDb();
   let line: string;
   try {
-    const { inserted } = totals(await sweep(db));
+    const { inserted } = totals(await sweep(db, { exclude: config.capture.exclude }));
     const turns = (db.query("select count(*) as n from turn").get() as { n: number }).n;
     const records = (db.query("select count(*) as n from record").get() as { n: number }).n;
     const cwd = typeof payload.cwd === "string" ? payload.cwd : process.cwd();
     const repo = repoIdFromDir(cwd);
-    const config = await loadConfig();
     const { provider } = config.embedding;
 
     line = [
@@ -35,7 +44,7 @@ try {
   }
   emitContext(line);
 } catch (error) {
-  console.error(`dev-memory session-start hook: ${error}`);
+  logHookError("session-start", error);
 }
 
 process.exit(0);

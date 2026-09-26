@@ -4,13 +4,13 @@
     "name": "bill.lin"
   },
   "metadata": {
-    "description": "Team development memory plugins"
+    "description": "Development memory plugins"
   },
   "plugins": [
     {
       "name": "dev-memory",
       "source": "./plugins/dev-memory",
-      "description": "Team development memory and LLM-maintained wiki for Claude Code and Codex CLI"
+      "description": "Development memory with Chinese search for Claude Code and Codex CLI: personal on its own, or shared with a team through a reviewed doc repo"
     }
   ]
 }

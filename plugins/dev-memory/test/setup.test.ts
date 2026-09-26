@@ -1,9 +1,10 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect, spyOn, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ensureConfig, configPath, loadConfig } from "../src/core/config";
+import { hookLogPath, logHookError } from "../src/core/hook-log";
 import { formatSetup, runSetup, setMemoryRepo } from "../src/core/setup";
 
 const dirs: string[] = [];
@@ -93,8 +94,8 @@ test("pointing it at a clone configures it and reports a clean setup", async () 
   const result = await runSetup({ repo, sweep: false, sync: false });
 
   expect(result.repo).toBe(repo);
-  expect(result.checks.every((check) => check.ok)).toBe(true);
-  expect(formatSetup(result)).toContain("都好了");
+  // gh is this machine's login, not something setup configures; team mode reports it on its own.
+  expect(result.checks.filter((check) => check.name !== "gh").every((check) => check.ok)).toBe(true);
   expect((await loadConfig()).memory.repo).toBe(repo);
 });
 
@@ -117,4 +118,24 @@ test("a path that is not a git repo is caught before anything else runs", async 
   const check = result.checks.find((c) => c.name === "memory repo")!;
   expect(check.ok).toBe(false);
   expect(check.detail).toContain("不是 git repo");
+});
+
+test("a hook that failed this week is reported, with where to read the rest", async () => {
+  home();
+  const silence = spyOn(console, "error").mockImplementation(() => {});
+  logHookError("stop", "database is locked");
+  silence.mockRestore();
+
+  const hook = (await runSetup({ sweep: false, sync: false })).checks.find((check) => check.name === "hook")!;
+  expect(hook.ok).toBe(false);
+  expect(hook.detail).toContain("stop: database is locked");
+  expect(hook.fix).toContain(hookLogPath());
+});
+
+test("an old hook failure no longer counts", async () => {
+  home();
+  await Bun.write(hookLogPath(), "2026-01-02T03:04:05.000Z stop: database is locked\n");
+
+  const hook = (await runSetup({ sweep: false, sync: false })).checks.find((check) => check.name === "hook")!;
+  expect(hook.ok).toBe(true);
 });

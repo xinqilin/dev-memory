@@ -11,7 +11,10 @@ const SOURCE = process.env.CLAUDE_MEM_DB ?? join(homedir(), ".claude-mem", "clau
 const FIELDS = ["title", "subtitle", "narrative", "text", "facts", "concepts"] as const;
 
 test.skipIf(!existsSync(SOURCE))("bigram FTS5 matches LIKE on claude-mem observations", () => {
-  const src = new Database(SOURCE, { readonly: true });
+  // immutable: the file is in WAL mode, and a plain read-only open fails once claude-mem has stopped
+  // and taken its -shm file with it. The test compares two counts over one snapshot, so skipping
+  // whatever is still in the WAL changes nothing.
+  const src = new Database(`file:${SOURCE}?immutable=1`, { readonly: true });
   const rows = src.query(`select id, ${FIELDS.join(", ")} from observations`).all() as Record<string, any>[];
 
   const likeCount = (needle: string) => {
