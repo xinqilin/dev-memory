@@ -1,6 +1,6 @@
 {
   "name": "dev-memory",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Development memory with Chinese search for Claude Code and Codex CLI: personal on its own, or shared with a team through a reviewed doc repo",
   "author": {
     "name": "bill.lin"

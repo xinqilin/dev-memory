@@ -215,7 +215,7 @@ export function formatSetup(result: SetupResult): string {
   lines.push("");
   lines.push(
     blocking.length === 0
-      ? `都好了${result.repo ? "" : "（個人模式）"}。做完一個決定時跟 AI 說「把這個決定存起來」就會開始記。`
+      ? `都好了${result.repo ? "" : "（個人模式）"}。對話會自動存；做出決定時 AI 會提議存成卡片，你點頭才存。`
       : `還有 ${blocking.length} 件事要處理，照上面的 → 做完再跑一次 dev-memory setup。`,
   );
   return lines.join("\n");

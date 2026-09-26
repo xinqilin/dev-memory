@@ -58,8 +58,10 @@ index, and syncs whatever is already on `main`.
 CLI search <一個他最近討論過的詞>
 ```
 
-Hits mean the collection worked. Then tell them the only habit that matters: when a decision is
-made, say so, and the mem-save skill records it.
+Hits mean the collection worked. Then tell them there is nothing to remember to do: conversations
+are stored on their own, and when a decision is made the AI offers to save it as a card with the
+mem-save skill, which is kept only if they say yes. Asking for it themselves is only for a decision
+the AI did not notice.
 
 ## Back up the database
 
