@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openDb } from "../src/core/db";
-import { exportRecords } from "../src/core/export";
+import { exportRecords, localMonth } from "../src/core/export";
 
 const dirs: string[] = [];
 // The code repos a memory repo covers. Mixed case on purpose: GitHub names are case-insensitive.
@@ -160,4 +160,10 @@ test("a card named by id goes in even when its repo is not in repos.yaml", async
   expect(result).toMatchObject({ written: 1, outOfScope: 0 });
   expect(statusOf(db, note.id)).toBe("submitted");
   db.close();
+});
+
+test("a card files under the month on the author's own calendar, not UTC's", () => {
+  // Built from local time, so the expectation holds in any time zone the tests run in.
+  expect(localMonth(new Date(2026, 9, 1, 1, 30).toISOString())).toBe("2026-10");
+  expect(localMonth(new Date(2026, 8, 30, 23, 30).toISOString())).toBe("2026-09");
 });

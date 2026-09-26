@@ -2,7 +2,7 @@
 //
 // Everything is read through git plumbing against origin/<branch>, never from the working
 // tree: the author may be in the middle of an ingest, and a half-written page must not become
-// a search hit. The local index is disposable, so sync is always safe to re-run.
+// a search hit. Sync only adds rows and marks cards merged, so it is always safe to re-run.
 import type { Database } from "bun:sqlite";
 import { spawnSync } from "node:child_process";
 import { DOC_DIRS } from "./lint";

@@ -205,7 +205,7 @@ dm repos --save
 | `eval <file.yaml>` | 用評測集量搜尋準不準（`--suggest` 生候選題目） |
 | `review --branch <b>` | 開本機審核頁 |
 | `publish --branch <b>` | push 並開 PR（**只有你自己能跑**） |
-| `ingest-discard --branch <b>` | 整份 ingest 不要了：卡片退回本機、刪工作區跟本機分支。已送出 PR 的不動 |
+| `ingest-discard --branch <b>` | 整份 ingest 不要了：卡片退回本機、刪工作區跟本機分支。PR 還開著的不動，已關閉的可以清 |
 | `init-repo <dir>` | 把文件庫的骨架加進既有 repo，不覆蓋任何現有檔案 |
 | `index-docs` | 把 repo 原本就有的人工文件補進 README 索引（接手既有文件庫時用） |
 | `archive <file>` · `init` · `record` · `export` · `ingest-start` | hook 跟 skill 內部用的 |
@@ -224,6 +224,7 @@ dm repos --save
 | 寫文件時說找不到程式碼 | `config.toml` 的 `[repos]` 沒有那個 repo | `dm repos --save`；它掃不到的會印出要貼的那一行 |
 | 文件寫出來跟實際行為不符 | 讀到的分支不對 | `dm repos` 看 `refs` 順序。有的 repo `dev` 比 `master` 新，有的相反 |
 | merge 了卻搜不到新文件 | `sync` 沒跑 | `dm sync`。開 session 自動做的是補收對話，不是拉團隊文件 |
+| PR 在 GitHub 上關掉、沒有 merge | 那次送出的卡片原本會一直停在「已送出」 | `dm sync` 會發現 PR 已關閉，把卡片退回本機，下次寫文件再帶上；工作區用 `dm ingest-discard --branch <b>` 清掉 |
 | 找不到 `dm` | 還沒開過 session（`dm` 是 SessionStart 寫出來的），或 `~/.dev-memory/bin` 不在 PATH | 開一次 Claude Code／Codex，再照〈4. 跑一次 setup〉把它加進 PATH |
 | 記錄有時斷掉 | hook 出錯被吞掉了（它不能讓你的對話中斷） | `dm setup` 的 `hook` 那行會列出最近 7 天的失敗；完整紀錄在 `~/.dev-memory/hook.log` |
 | 審核頁沒有樣式、清單空白 | 用到舊版的 plugin | 更新 plugin 後重開；網址要含 `?token=` |
@@ -269,7 +270,7 @@ dm repos --save
 
 ```bash
 cd plugins/dev-memory
-bun test          # 188 個測試；CI（.github/workflows/test.yml）每次 push 也會跑
+bun test          # 191 個測試；CI（.github/workflows/test.yml）每次 push 也會跑
 bun run build     # 改完 src/ 要重新打包 dist/；CI 會檢查 dist/ 有沒有跟上
 ```
 

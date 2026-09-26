@@ -455,3 +455,17 @@ Bill 問：「沒設定文件 repo 時，能不能把 plugin 當 claude-mem 那�
 **Gotcha**：完整測試偶爾有一個審核頁測試卡在 5 秒逾時，單跑 3/3 過、重跑完整 2/2 過。那些測試會建 git repo，
 機器忙的時候就慢，所以 CI 把逾時放寬到 20 秒。
 
+### M3 團隊模式補強，0.9.0（2026-09-26）
+
+- **PR 關掉沒 merge**：
+  - `dm sync`（沒帶 `--skip-fetch` 時）會列出本機的 `mem/` 分支，只挑已 push、而且還有 `submitted` 卡片的分支，
+    用 `gh pr view --json state` 問狀態；是 CLOSED 就把卡片退回 `local`。
+  - 卡片 id 是用 git plumbing 從分支的 commit 讀出來的，就是 PR 實際帶的那些，不用開 worktree。
+  - 平常 sync 沒有卡住的卡片，所以完全不連網。
+  - worktree 留著，由作者自己用 `ingest-discard` 清。`ingest-discard` 原本一律拒絕已 push 的分支，
+    現在 PR 已關閉就放行。gh 查不到狀態時當作還開著，照樣拒絕。
+  - 測試一律注入 PR 狀態，不會真的呼叫 gh。
+- **本地時區**：分支名稱的日期（`localDate`）、卡片檔的月份（`localMonth`）改用作者自己的時區；`created_at` 維持 ISO UTC。
+  CI 的 lint 只檢查路徑格式，不比對月份。測試的日期用本地時間建，放到任何時區跑結果都一樣。
+- `sync.ts` 開頭註解原本寫「本機索引可以丟掉」，改成實話。
+

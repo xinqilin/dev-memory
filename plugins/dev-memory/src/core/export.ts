@@ -35,9 +35,15 @@ interface Row {
   created_at: string;
 }
 
+/** YYYY-MM on the author's own calendar: in UTC, a card saved on the 1st before 08:00 Taipei time would file under the previous month. */
+export function localMonth(iso: string): string {
+  const at = new Date(iso);
+  return `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}`;
+}
+
 function recordPath(row: Row): string {
   const product = row.product?.trim() || "unsorted";
-  const month = row.created_at.slice(0, 7); // YYYY-MM
+  const month = localMonth(row.created_at);
   const author = row.author.replace(/[^A-Za-z0-9._-]+/g, "-");
   return join("records", product, month, `${author}.jsonl`);
 }

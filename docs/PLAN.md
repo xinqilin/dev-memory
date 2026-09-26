@@ -397,7 +397,7 @@ updated: 2026-09-04
 |---|---|---|
 | **M1 個人模式正式化**（0.7.0，已完成） | 1. `setup`：沒設定文件庫算 ✓（個人模式），這時 `gh` 也不算缺<br>2. SessionStart：觸發句放寬到「上次、之前、那個…、過去的決策、專案背景」；個人模式不提 wiki-ingest<br>3. 新增 `mem-search` skill：用 description 觸發，body 寫中文搜尋策略<br>4. `export` 只帶 `repos.yaml` 列的 code repo 裡存的卡片，其他留在本機；要例外就用 `--id`<br>5. `db.ts` 註解改成實話，README／`mem-setup` 補備份說明<br>6. README 加兩種用法<br>7. 審核頁「來源紀錄」改成列出這次送出的卡片（原本只讀 frontmatter，新文件永遠是空的）<br>8. eli5 兩份完整 review，照現況修正 | `bun test` 全過；隔離的 `DEV_MEMORY_HOME` 跑 setup 全 ✓；`record` 印出本機路徑；別的專案存的卡片不會被 export；沒設定文件庫時 `sync` 仍 exit 2 |
 | **M2 共用底座**（0.8.0，已完成） | 1. `[capture] exclude`：列出的目錄底下的 session 不收<br>2. 收錄前遮蔽密鑰（只對之後收的對話）：跟審核頁共用 `core/secrets.ts` 的 pattern<br>3. CLI 入口 `~/.dev-memory/bin/{dm,dev-memory}` 由 SessionStart 維護（plugin 的 `bin/` 只進 Claude Code 的 Bash tool，不採用）<br>4. hook 錯誤寫進 `~/.dev-memory/hook.log`，`setup` 顯示最後一次錯誤<br>5. plugin repo 加 CI：`bun test`，並檢查 `dist/` 有沒有過期<br>6. 小項：`mcp-server` 版本改讀 package.json、claude-mem 測試改用 `immutable=1` 開、描述涵蓋兩種模式 | 排除的目錄不入庫；對話裡的假 token 入庫後只剩 `[REDACTED:…]`；hook 故意失敗時 `setup` 顯示錯誤；CI 綠燈 |
-| **M3 團隊模式補強**（0.9.0） | 1. PR 在 GitHub 上關掉沒 merge：`sync` 時用 `gh` 查到，卡片退回 `local`<br>2. 分支名稱跟分檔月份改用本地時區（`created_at` 維持 UTC） | 在 `xinqilin/dev-memory-test` 開 PR 再關掉，`sync` 後卡片回到 local；台灣早上 7 點建的分支是當天日期 |
+| **M3 團隊模式補強**（0.9.0，已完成） | 1. PR 在 GitHub 上關掉沒 merge：`sync` 時用 `gh` 查到，卡片退回 `local`（只問還有卡住卡片的分支）；`ingest-discard` 可以清已關閉 PR 的工作區<br>2. 分支名稱跟分檔月份改用本地時區（`created_at` 維持 UTC） | 在 `xinqilin/dev-memory-test` 開 PR 再關掉，`sync` 後卡片回到 local；台灣早上 7 點建的分支是當天日期 |
 | **M4 驗收（Bill 執行）**（1.0.0） | 1. Codex 在真實 session 實測 hook、MCP、skill<br>2. 評測集補到 30 題 | Codex 的 context 出現 dev-memory 那段；30 題的 Recall@5 基準線 |
 
 **刻意不做**：

@@ -35,9 +35,13 @@ export function slugify(text: string): string {
   return slug || "memory";
 }
 
+/** The author's own calendar day: in UTC, a Taipei morning before 08:00 would be named after yesterday. */
+export function localDate(now: Date): string {
+  return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("");
+}
+
 export function branchName(author: string, slug: string, now = new Date()): string {
-  const date = now.toISOString().slice(0, 10).replace(/-/g, "");
-  return `mem/${slugify(author)}/${date}-${slugify(slug)}`;
+  return `mem/${slugify(author)}/${localDate(now)}-${slugify(slug)}`;
 }
 
 /** Worktrees live next to the repo, so a stray directory is obvious and easy to delete. */
@@ -70,6 +74,19 @@ export function removeWorktree(repoPath: string, branch: string): void {
   git(repoPath, ["worktree", "remove", "--force", path]);
 }
 
+export type PrState = "OPEN" | "CLOSED" | "MERGED";
+export type PrStateOf = (repoPath: string, branch: string) => PrState | null;
+
+/** What GitHub says about this branch's PR; null when gh cannot tell (offline, logged out, no PR). */
+export function prState(repoPath: string, branch: string): PrState | null {
+  const result = spawnSync("gh", ["pr", "view", branch, "--json", "state", "--jq", ".state"], { cwd: repoPath, encoding: "utf8" });
+  const state = result.status === 0 ? result.stdout.trim() : "";
+  return state === "OPEN" || state === "CLOSED" || state === "MERGED" ? state : null;
+}
+
+const isPushed = (repoPath: string, branch: string) =>
+  tryGit(repoPath, ["rev-parse", "--verify", `refs/remotes/origin/${branch}`]) !== null;
+
 export interface DiscardResult {
   status: "discarded" | "pushed" | "missing";
   /** Cards moved back to local, so the next ingest carries them. */
@@ -77,13 +94,14 @@ export interface DiscardResult {
 }
 
 /** Throw an ingest away: hand its cards back, then remove the worktree and the local branch. */
-export function discardIngest(repoPath: string, branch: string, db: Database, base = "origin/main"): DiscardResult {
+export function discardIngest(repoPath: string, branch: string, db: Database, base = "origin/main", stateOf: PrStateOf = prState): DiscardResult {
   const hasBranch = tryGit(repoPath, ["rev-parse", "--verify", `refs/heads/${branch}`]) !== null;
   if (!hasBranch && !existsSync(join(worktreePath(repoPath, branch), ".git"))) return { status: "missing", returned: 0 };
 
   // Pushed means its cards are in a PR. Handing them back would export them a second time, and
-  // if that PR were merged later the same id would land in the repo twice.
-  if (tryGit(repoPath, ["rev-parse", "--verify", `refs/remotes/origin/${branch}`]) !== null) return { status: "pushed", returned: 0 };
+  // if that PR were merged later the same id would land in the repo twice. A PR closed without
+  // merging is the exception: nothing will ever merge it, so its cards are free again.
+  if (isPushed(repoPath, branch) && stateOf(repoPath, branch) !== "CLOSED") return { status: "pushed", returned: 0 };
 
   // A worktree deleted by hand is recreated from its branch, so its cards can still be counted.
   const { path } = ensureWorktree(repoPath, branch, { base, fetch: false });
@@ -95,6 +113,30 @@ export function discardIngest(repoPath: string, branch: string, db: Database, ba
   removeWorktree(repoPath, branch);
   git(repoPath, ["branch", "-D", branch]);
   return { status: "discarded", returned };
+}
+
+/** Cards a branch added to records/, read from its commits: exactly what its PR carries. */
+function cardsOnBranch(repoPath: string, branch: string, base: string): string[] {
+  const files = (tryGit(repoPath, ["diff", "--name-only", `${base}...${branch}`, "--", "records/"]) ?? "").split("\n").filter(isRecordsPath);
+  return files.flatMap((file) => addedRecordIds(tryGit(repoPath, ["show", `${branch}:${file}`]) ?? "", tryGit(repoPath, ["show", `${base}:${file}`])));
+}
+
+/**
+ * A PR closed on GitHub without merging leaves its cards marked submitted forever, and no later
+ * ingest would carry them. Found at sync time: only branches that still hold submitted cards are
+ * asked about, so a normal sync makes no network call. The worktree is left for ingest-discard.
+ */
+export function returnClosedIngests(repoPath: string, db: Database, base = "origin/main", stateOf: PrStateOf = prState): { branch: string; returned: number }[] {
+  const submitted = db.prepare("select 1 from record where id = ? and status = 'submitted'");
+  const branches = (tryGit(repoPath, ["for-each-ref", "--format=%(refname:short)", "refs/heads/mem/"]) ?? "").split("\n").filter(Boolean);
+  const returned: { branch: string; returned: number }[] = [];
+  for (const branch of branches) {
+    if (!isPushed(repoPath, branch)) continue; // never sent: ingest-discard handles it
+    const stuck = cardsOnBranch(repoPath, branch, base).filter((id) => submitted.get(id) !== null);
+    if (stuck.length === 0 || stateOf(repoPath, branch) !== "CLOSED") continue;
+    returned.push({ branch, returned: returnToLocal(db, stuck) });
+  }
+  return returned;
 }
 
 export interface ChangedPage {

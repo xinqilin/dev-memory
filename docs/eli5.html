@@ -1232,7 +1232,7 @@
             <td>不要了</td>
             <td>只有你說不要才做：<code>ingest-discard</code></td>
             <td>說「這份不要了」</td>
-            <td>卡片退回 <code>local</code>，下次 ingest 再帶上；工作區跟本機分支刪掉。已送出 PR 的不動</td>
+            <td>卡片退回 <code>local</code>，下次 ingest 再帶上；工作區跟本機分支刪掉。PR 還開著的不動；PR 關掉沒 merge 的，<code>sync</code> 時卡片會自己退回</td>
           </tr>
         </tbody>
       </table>
@@ -2848,7 +2848,7 @@
       </div>
       <div class="check">
         <span>自動測試<small>每個功能都有測試，包含真的開 git worktree、真的合併兩個 branch</small></span>
-        <b class="chip done">188 個</b>
+        <b class="chip done">191 個</b>
       </div>
       <div class="check">
         <span>文件過時偵測<small>讀文件最後的「程式碼位置」表，用本機 clone 比對。測試裡改過跟被刪掉的檔都抓得到；真實文件的 6 個路徑都查得到，目前沒有過時</small></span>
@@ -2952,7 +2952,7 @@
     </div>
   </section>
 
-  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-26 · 188 個測試通過，已跑完兩次真實的 PR 流程；文件從程式碼寫，對話只補「為什麼」</footer>
+  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-26 · 191 個測試通過，已跑完兩次真實的 PR 流程；文件從程式碼寫，對話只補「為什麼」</footer>
 
 </div>
 </body>

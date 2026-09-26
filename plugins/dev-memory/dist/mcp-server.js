@@ -34701,7 +34701,7 @@ class StdioServerTransport {
   }
 }
 // package.json
-var version2 = "0.8.0";
+var version2 = "0.9.0";
 
 // src/core/db.ts
 import { Database } from "bun:sqlite";

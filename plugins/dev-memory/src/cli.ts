@@ -18,7 +18,7 @@ import { initRepo } from "./core/init-repo";
 import { publish } from "./core/publish";
 import { formatSetup, runSetup } from "./core/setup";
 import { sync as syncRepo } from "./core/sync";
-import { branchName, changedPages, discardIngest, ensureWorktree } from "./core/worktree";
+import { branchName, changedPages, discardIngest, ensureWorktree, returnClosedIngests } from "./core/worktree";
 import { startReviewServer } from "./review/server";
 import { repoIdFromDir } from "./core/repo-id";
 import { type RecordInput, addRecord, contentHash, findByContentHash, gitAuthor } from "./core/record";
@@ -159,7 +159,7 @@ async function runIngestDiscard(args: string[]): Promise<number> {
       return 1;
     }
     if (result.status === "pushed") {
-      console.error(`${values.branch} 已經 push 過，卡片在它的 PR 裡，本機什麼都沒動。\n要放棄的話，到 GitHub 把 PR 關掉。`);
+      console.error(`${values.branch} 已經 push 過，而且 PR 還開著（或查不到狀態），卡片在它的 PR 裡，本機什麼都沒動。\n要放棄的話，先到 GitHub 把 PR 關掉，再跑一次這個指令。`);
       return 1;
     }
     console.log(`已捨棄 ${values.branch}：工作區跟本機分支都刪了，${result.returned} 張卡片退回本機，下次 ingest 會再帶上`);
@@ -349,6 +349,13 @@ async function runSync(args: string[]): Promise<number> {
         (result.records.markedMerged ? ` (${result.records.markedMerged} of mine are now on ${config.memory.branch})` : ""),
     );
     console.log(`pages:   ${result.pages.imported} indexed, ${result.pages.removed} removed`);
+    // Offline means GitHub cannot be asked either, so a closed PR waits for the next sync.
+    if (!values["skip-fetch"]) {
+      for (const closed of returnClosedIngests(repo, db, `origin/${config.memory.branch}`)) {
+        console.log(`PR closed without merging: ${closed.branch} — ${closed.returned} records back to local, the next ingest carries them`);
+        console.log(`  its worktree is still there: dev-memory ingest-discard --branch ${closed.branch}`);
+      }
+    }
     return 0;
   } catch (error) {
     console.error(`sync failed: ${error instanceof Error ? error.message : error}`);

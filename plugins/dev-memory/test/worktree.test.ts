@@ -3,7 +3,18 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { baseVersion, branchName, changedPages, discardIngest, ensureWorktree, removeWorktree, slugify, worktreePath } from "../src/core/worktree";
+import {
+  type PrState,
+  baseVersion,
+  branchName,
+  changedPages,
+  discardIngest,
+  ensureWorktree,
+  removeWorktree,
+  returnClosedIngests,
+  slugify,
+  worktreePath,
+} from "../src/core/worktree";
 import { openDb } from "../src/core/db";
 import { addRecord } from "../src/core/record";
 
@@ -38,7 +49,8 @@ test("slug and branch names are readable and safe in a path", () => {
   expect(slugify("Export Report / partial failure")).toBe("export-report-partial-failure");
   expect(slugify("匯出報表")).toBe("匯出報表");
   expect(slugify("!!!")).toBe("memory");
-  expect(branchName("bill.lin", "匯出報表", new Date("2026-09-18T00:00:00Z"))).toBe("mem/bill-lin/20260918-匯出報表");
+  // 07:30 on the author's clock: still the 18th, even where UTC is already or still on another day.
+  expect(branchName("bill.lin", "匯出報表", new Date(2026, 8, 18, 7, 30))).toBe("mem/bill-lin/20260918-匯出報表");
 });
 
 test("creates a worktree on a new branch and reuses it on the second call", async () => {
@@ -156,7 +168,8 @@ test("a pushed ingest is left alone: its cards are in a PR", async () => {
   git(path, "commit", "-q", "-m", "approve");
   git(path, "push", "-q", "-u", "origin", branch);
 
-  expect(discardIngest(clone, branch, db)).toEqual({ status: "pushed", returned: 0 });
+  expect(discardIngest(clone, branch, db, "origin/main", () => "OPEN")).toEqual({ status: "pushed", returned: 0 });
+  expect(discardIngest(clone, branch, db, "origin/main", () => null)).toEqual({ status: "pushed", returned: 0 }); // gh cannot tell
   expect(status(sent)).toBe("submitted");
   expect(existsSync(path)).toBe(true);
   expect(branchExists(clone, branch)).toBe(true);
@@ -182,4 +195,47 @@ test("discarding an ingest that does not exist changes nothing", async () => {
   const { clone, db } = await withCards();
   expect(discardIngest(clone, "mem/t/20260922-never", db)).toEqual({ status: "missing", returned: 0 });
   expect(branchExists(clone, "mem/t/20260922-never")).toBe(false);
+});
+
+/** Ingest branch with one exported card, committed and pushed: the state after 送出 PR. */
+async function pushedIngest(pair: Awaited<ReturnType<typeof withCards>>, branch: string, title: string) {
+  const { path } = ensureWorktree(pair.clone, branch, { fetch: false });
+  const card = pair.card(title, "submitted");
+  await Bun.write(join(path, FILE), `{"id":"${pair.merged}"}\n{"id":"${card}"}\n`);
+  git(path, "add", ".");
+  git(path, "commit", "-q", "-m", "approve");
+  git(path, "push", "-q", "-u", "origin", branch);
+  return { path, card };
+}
+
+test("a pushed ingest whose PR was closed without merging can be thrown away", async () => {
+  const pair = await withCards();
+  const branch = "mem/t/20260926-closed";
+  const { path, card } = await pushedIngest(pair, branch, "PR 被關掉了");
+
+  expect(discardIngest(pair.clone, branch, pair.db, "origin/main", () => "CLOSED")).toEqual({ status: "discarded", returned: 1 });
+  expect(pair.status(card)).toBe("local");
+  expect(existsSync(path)).toBe(false);
+  expect(branchExists(pair.clone, branch)).toBe(false);
+});
+
+test("at sync time only a closed PR hands its cards back, and settled branches are not even asked about", async () => {
+  const pair = await withCards();
+  const closed = await pushedIngest(pair, "mem/t/20260926-closed", "關掉的 PR");
+  const open = await pushedIngest(pair, "mem/t/20260926-open", "還開著的 PR");
+  const settled = await pushedIngest(pair, "mem/t/20260926-settled", "已經處理過的卡片");
+  pair.db.run("update record set status = 'local' where id = ?", [settled.card]); // nothing stuck on this branch
+
+  const states: Record<string, PrState> = { "mem/t/20260926-closed": "CLOSED", "mem/t/20260926-open": "OPEN" };
+  const asked: string[] = [];
+  const returned = returnClosedIngests(pair.clone, pair.db, "origin/main", (_repo, branch) => {
+    asked.push(branch);
+    return states[branch] ?? null;
+  });
+
+  expect(returned).toEqual([{ branch: "mem/t/20260926-closed", returned: 1 }]);
+  expect(pair.status(closed.card)).toBe("local");
+  expect(pair.status(open.card)).toBe("submitted");
+  expect(asked.sort()).toEqual(["mem/t/20260926-closed", "mem/t/20260926-open"]); // no network call for the settled one
+  expect(existsSync(closed.path)).toBe(true); // cleaning up the worktree stays the author's call
 });
