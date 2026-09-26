@@ -26,7 +26,7 @@ jobs:
         run: gitleaks dir . --redact --exit-code 1 --no-banner
 
   structure:
-    # Only wiki/ and records/ are linted; hand-written docs elsewhere keep their own format.
+    # records/ must be valid JSONL, links must resolve, and every document must be in the README index.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
