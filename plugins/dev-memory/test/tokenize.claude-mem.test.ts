@@ -52,8 +52,11 @@ test.skipIf(!existsSync(SOURCE))("bigram FTS5 matches LIKE on claude-mem observa
     expect(match).toBe(like);
   }
 
-  const id = "WAIT_FOR_INSERT_MIDDLE_DB";
-  const idMatch = matchCount(id);
-  console.log(`term=${id} like=${likeCount(id)} bigram_match=${idMatch} plain_unicode61_match=${plainCount(id)}`);
-  expect(idMatch).toBeGreaterThan(0);
+  // Any long SNAKE_CASE identifier in this person's data will do: it has to match as a whole token.
+  const id = rows.map((r) => FIELDS.map((f) => r[f] ?? "").join("\n").match(/\b[A-Z]+(?:_[A-Z]+){2,}\b/)?.[0]).find(Boolean);
+  if (id) {
+    const idMatch = matchCount(id);
+    console.log(`term=${id} like=${likeCount(id)} bigram_match=${idMatch} plain_unicode61_match=${plainCount(id)}`);
+    expect(idMatch).toBeGreaterThan(0);
+  }
 });

@@ -53,7 +53,7 @@ branch = "main"
 # Where your clones of the code repos live, so documents can be written from the source.
 # \`dev-memory setup\` fills this in by scanning the usual places; add anything it missed.
 [repos]
-# "104corp/example-service" = "~/project-backend/example-service"
+# "acme/example-service" = "~/projects/example-service"
 
 # Conversations in these directories are never collected: a private project, a customer's code.
 # Only affects what is collected from now on.

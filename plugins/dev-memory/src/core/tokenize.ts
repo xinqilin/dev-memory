@@ -1,8 +1,8 @@
 // Pre-tokenizer for the FTS5 index. Pair it with: tokenize = "unicode61 tokenchars '_'"
 //
 // - CJK runs become overlapping bigrams, because unicode61 would keep a whole run as one token.
-// - Identifiers keep their full form (so WAIT_FOR_INSERT_MIDDLE_DB matches exactly) and also
-//   emit camelCase / snake_case parts (so "status" finds sapStatus).
+// - Identifiers keep their full form (so WAIT_FOR_INSERT_STAGING_DB matches exactly) and also
+//   emit camelCase / snake_case parts (so "status" finds invoiceStatus).
 
 const CJK = String.raw`\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}`;
 const SEGMENT = new RegExp(String.raw`([${CJK}]+)|((?:(?![${CJK}])[\p{L}\p{M}\p{N}_])+)`, "gu");

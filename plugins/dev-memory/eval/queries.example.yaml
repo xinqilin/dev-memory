@@ -23,7 +23,7 @@ cases:
   - id: identifier-search
     query: 那個一直維持某個狀態的欄位叫什麼
     expect:
-      all_of: ["WAIT_FOR_INSERT_MIDDLE_DB"]
+      all_of: ["WAIT_FOR_INSERT_STAGING_DB"]
 
   - id: codex-mcp-config
     query: Codex 要讀哪一個 MCP 設定檔

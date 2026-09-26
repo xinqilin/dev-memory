@@ -13,13 +13,13 @@ describe("tokenizeForIndex", () => {
   });
 
   test("identifiers keep full form plus parts", () => {
-    expect(tokenizeForIndex("WAIT_FOR_INSERT_MIDDLE_DB")).toBe("wait_for_insert_middle_db wait for insert middle db");
-    expect(tokenizeForIndex("sapStatus")).toBe("sapstatus sap status");
+    expect(tokenizeForIndex("WAIT_FOR_INSERT_STAGING_DB")).toBe("wait_for_insert_staging_db wait for insert staging db");
+    expect(tokenizeForIndex("invoiceStatus")).toBe("invoicestatus invoice status");
     expect(tokenizeForIndex("plain")).toBe("plain");
   });
 
   test("mixed Chinese and identifiers", () => {
-    expect(tokenizeForIndex("sapStatus維持WAIT_FOR_DB")).toBe("sapstatus sap status 維持 維 持 wait_for_db wait for db");
+    expect(tokenizeForIndex("invoiceStatus維持WAIT_FOR_DB")).toBe("invoicestatus invoice status 維持 維 持 wait_for_db wait for db");
   });
 });
 
@@ -57,7 +57,7 @@ describe("one-character queries", () => {
 
 describe("identifierParts", () => {
   test("camelCase, PascalCase, acronyms, digits", () => {
-    expect(identifierParts("ErpDataRecordType")).toEqual(["erp", "data", "record", "type"]);
+    expect(identifierParts("ErpSyncRecordType")).toEqual(["erp", "sync", "record", "type"]);
     expect(identifierParts("HTTPServerError")).toEqual(["http", "server", "error"]);
     expect(identifierParts("fromValue2Json")).toEqual(["from", "value2", "json"]);
     expect(identifierParts("snake_case_name")).toEqual(["snake", "case", "name"]);
@@ -67,7 +67,7 @@ describe("identifierParts", () => {
 describe("buildMatchQuery", () => {
   test("builds phrases and quoted identifiers", () => {
     expect(buildMatchQuery("例外")).toBe('"例外"');
-    expect(buildMatchQuery("例外處理 sapStatus")).toBe('"例外 外處 處理" "sapstatus"');
+    expect(buildMatchQuery("例外處理 invoiceStatus")).toBe('"例外 外處 處理" "invoicestatus"');
     expect(buildMatchQuery("例")).toBe('"例"*');
     expect(buildMatchQuery("  ，。 ")).toBeNull();
   });
@@ -89,8 +89,8 @@ describe("FTS5 round trip", () => {
   const db = new Database(":memory:");
   db.run(`create virtual table doc using fts5(body, tokenize = "unicode61 tokenchars '_'")`);
   const rows = [
-    "ErpDataRecordType 未知 type 改為不中斷",
-    "sapStatus 維持 WAIT_FOR_INSERT_MIDDLE_DB",
+    "ErpSyncRecordType 未知 type 改為不中斷",
+    "invoiceStatus 維持 WAIT_FOR_INSERT_STAGING_DB",
     "例外處理要彙總 log",
     "處理例外的方式",
     "WAIT_FOR_INSERT 是另一個狀態",
@@ -106,7 +106,7 @@ describe("FTS5 round trip", () => {
   });
 
   test("full identifier does not match its prefix", () => {
-    expect(hits("WAIT_FOR_INSERT_MIDDLE_DB")).toEqual([2]);
+    expect(hits("WAIT_FOR_INSERT_STAGING_DB")).toEqual([2]);
     expect(hits("WAIT_FOR_INSERT")).toEqual([5]);
   });
 

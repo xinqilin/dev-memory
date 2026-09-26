@@ -21,17 +21,17 @@ test("reads the table form, including the branch hints", async () => {
   const dir = await repoWith(`products:
   billing:
     repos:
-      - id: 104corp/api
+      - id: acme/api
         default_branch: dev
-      - id: 104corp/batch
+      - id: acme/batch
         branch_per_job: true
         job_branch_prefix: "job/"
 `);
 
   const entries = (await readReposYaml(dir)).get("billing")!;
   expect(entries).toEqual([
-    { id: "104corp/api", refs: ["dev"], defaultBranch: "dev", branchPerJob: false, jobBranchPrefix: "batch/" },
-    { id: "104corp/batch", refs: ["main"], defaultBranch: "main", branchPerJob: true, jobBranchPrefix: "job/" },
+    { id: "acme/api", refs: ["dev"], defaultBranch: "dev", branchPerJob: false, jobBranchPrefix: "batch/" },
+    { id: "acme/batch", refs: ["main"], defaultBranch: "main", branchPerJob: true, jobBranchPrefix: "job/" },
   ]);
 });
 
@@ -39,11 +39,11 @@ test("still reads the older bare-string form", async () => {
   const dir = await repoWith(`products:
   billing:
     repos:
-      - 104corp/api
+      - acme/api
 `);
 
   const entries = (await readReposYaml(dir)).get("billing")!;
-  expect(entries).toEqual([{ id: "104corp/api", refs: ["main"], defaultBranch: "main", branchPerJob: false, jobBranchPrefix: "batch/" }]);
+  expect(entries).toEqual([{ id: "acme/api", refs: ["main"], defaultBranch: "main", branchPerJob: false, jobBranchPrefix: "batch/" }]);
 });
 
 test("a repo with no repos.yaml yields nothing rather than throwing", async () => {
@@ -54,19 +54,19 @@ test("a repo with no repos.yaml yields nothing rather than throwing", async () =
 
 test("the suggestion names every missing repo and nothing else", () => {
   const resolved: ResolvedRepo[] = [
-    { id: "104corp/api", defaultBranch: "dev", branchPerJob: false, jobBranchPrefix: "batch/", path: "/x/api", via: "config" },
-    { id: "104corp/batch", defaultBranch: "main", branchPerJob: true, jobBranchPrefix: "batch/", path: null, via: null },
+    { id: "acme/api", defaultBranch: "dev", branchPerJob: false, jobBranchPrefix: "batch/", path: "/x/api", via: "config" },
+    { id: "acme/batch", defaultBranch: "main", branchPerJob: true, jobBranchPrefix: "batch/", path: null, via: null },
   ];
 
   const suggestion = configSuggestion(resolved)!;
   expect(suggestion).toContain("[repos]");
-  expect(suggestion).toContain('"104corp/batch"');
-  expect(suggestion).not.toContain("104corp/api"); // already resolved, nothing to add
+  expect(suggestion).toContain('"acme/batch"');
+  expect(suggestion).not.toContain("acme/api"); // already resolved, nothing to add
 });
 
 test("nothing to suggest when everything resolved", () => {
   const resolved: ResolvedRepo[] = [
-    { id: "104corp/api", defaultBranch: "dev", branchPerJob: false, jobBranchPrefix: "batch/", path: "/x/api", via: "scan" },
+    { id: "acme/api", defaultBranch: "dev", branchPerJob: false, jobBranchPrefix: "batch/", path: "/x/api", via: "scan" },
   ];
   expect(configSuggestion(resolved)).toBeNull();
 });

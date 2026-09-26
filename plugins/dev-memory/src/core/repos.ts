@@ -2,7 +2,7 @@
 //
 // repos.yaml (in the memory repo) says which repos a product has; it is shared with the whole
 // team, so it must not contain anyone's local paths. This module answers the other half —
-// "where is 104corp/foo on *this* laptop" — from ~/.dev-memory/config.toml, falling back to a
+// "where is acme/foo on *this* laptop" — from ~/.dev-memory/config.toml, falling back to a
 // scan of the usual places so most people never have to configure anything.
 import { readdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";

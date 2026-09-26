@@ -1,7 +1,7 @@
 {
-  "name": "104mis-plugins",
+  "name": "dev-memory",
   "interface": {
-    "displayName": "104mis-plugins"
+    "displayName": "dev-memory"
   },
   "plugins": [
     {

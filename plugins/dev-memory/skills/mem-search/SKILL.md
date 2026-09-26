@@ -15,10 +15,10 @@ tools when they are available; otherwise `CLI search <words>` and `CLI get <kind
 ## 1. Pick the words
 
 - Use the nouns the user would have used at the time: a table, a field, a batch name, a flag, an
-  error message. `sapStatus`、`中介表`、`重跑` beat a whole question.
+  error message. `invoiceStatus`、`中介表`、`重跑` beat a whole question.
 - Chinese works best as short terms of two to four characters. Split a long question into its
   key terms instead of searching the sentence.
-- Code identifiers can be searched whole or by part: `WAIT_FOR_INSERT_MIDDLE_DB`, or `middle`.
+- Code identifiers can be searched whole or by part: `WAIT_FOR_INSERT_STAGING_DB`, or `staging`.
 
 ## 2. Search, then widen
 

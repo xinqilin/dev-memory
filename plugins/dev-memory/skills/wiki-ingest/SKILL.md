@@ -19,8 +19,8 @@ Let `CLI` mean `bun "${CLAUDE_PLUGIN_ROOT}/src/cli.ts"`.
 
 主題是**一個東西**，不是「最近的幾個決定」。例如：
 
-- 一支批次：`sap-create-bu-data`
-- 一條資料流：測評點數從 BU 到 ERP
+- 一支批次：`sync-invoices`
+- 一條資料流：發票從前台到 ERP
 - 一個子系統：3DS 交易
 
 主題不明確就問。範圍太大（「整個 billing」）就切小。

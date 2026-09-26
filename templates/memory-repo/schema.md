@@ -62,8 +62,8 @@
 
 | 內容 | repo | 分支 | 路徑 |
 |---|---|---|---|
-| API 端點與 payload | `104mis-billing-api-aws` | `dev` | `src/main/java/.../BillingToErpController.java` |
-| 批次主程式 | `104mis-billing-batch-aws` | `batch/sap-create-bu-data` | `src/main/java/.../sapCreateBuData/` |
+| API 端點與 payload | `billing-api` | `dev` | `src/main/java/.../InvoiceToErpController.java` |
+| 批次主程式 | `billing-batch` | `batch/sync-invoices` | `src/main/java/.../syncInvoices/` |
 | 排程設定 | 同上 | 同上 | `deploy/env-{dev,staging,production}.sh` |
 
 - 四個欄位就叫「內容、repo、分支、路徑」
@@ -100,7 +100,7 @@ mermaid sequenceDiagram 或 flowchart，一眼看完資料從哪到哪
 ## 相關文件 / 程式碼位置
 ```
 
-`payment-3DS.md` 的「階段一進入頁面 → 階段二送出付款 → 階段三交棒 ACS → 階段四 callback」就是標準示範：**照執行順序講成一個故事**。
+例如一份信用卡 3DS 付款的文件，照「階段一進入頁面 → 階段二送出付款 → 階段三交棒 ACS → 階段四 callback」寫，就是標準示範：**照執行順序講成一個故事**。
 
 ## 必須有真實資料
 
@@ -109,8 +109,8 @@ mermaid sequenceDiagram 或 flowchart，一眼看完資料從哪到哪
 - **request / response JSON 要完整**，從實際的 DTO 產生，不要只列欄位表
 - 欄位的必填、格式、值域、上限，**照程式碼的 validation annotation 寫**
 - 有條件必填（某欄位依另一欄位的值而定）要**分情境各給一個範例**
-- JSON 裡用註解標明情境：`// version=3.0 時 erpCustNo 傳空字串`
-- 狀態值要寫實際的數字與名稱（`1: WAIT_FOR_INSERT_MIDDLE_DB`），不要只寫名稱
+- JSON 裡用註解標明情境：`// version=3.0 時 erpCustomerNo 傳空字串`
+- 狀態值要寫實際的數字與名稱（`1: WAIT_FOR_INSERT_STAGING_DB`），不要只寫名稱
 - 排程寫實際的 cron 運算式**與換算後的當地時間**，並註明出自哪個檔案
 
 **編造欄位是最嚴重的錯誤**：讀的人會照著打，然後失敗。查不到就寫「待確認」，不要猜。

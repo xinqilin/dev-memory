@@ -511,7 +511,7 @@
             </div>
             <div class="brow">
               <span class="brow-label">程式名字整個留著，也拆開</span>
-              <span class="blk mono">sapStatus</span><span class="to">→</span>
+              <span class="blk mono">invoiceStatus</span><span class="to">→</span>
               <span class="blk mono">sap</span><span class="blk mono">status</span>
             </div>
           </div>
@@ -816,7 +816,7 @@
       <div class="say-this">
         <span class="when">功能做完，要留下文件</span>
         <div>
-          <q>幫我寫一份測評點數拋轉 ERP 的文件</q>
+          <q>幫我寫一份發票拋轉 ERP 的文件</q>
           <small><code>wiki-ingest</code>：讀程式碼 → 給你骨架 → 寫文件 → 開審核頁。中間停兩次等你回話，全程約 10 分鐘。<strong>這是唯一會產生 PR 的一句話。</strong>主題要具體：一支批次、一條資料流、一個子系統。</small>
         </div>
       </div>
@@ -875,23 +875,23 @@
     <p>它讀完程式碼之後，會先給你一份<strong>大綱</strong>——不是檔案、不是卡片清單，就是「這份文件打算長什麼樣」。像這樣：</p>
 
     <div class="pic">
-      <svg viewBox="0 0 680 356" role="img" aria-label="文件骨架的樣子：主題測評點數拋轉 ERP，跨兩個 repo，分成五節。前四節的內容從程式碼讀出來，分別有流程圖、payload、兩張表；第五節設計考量與 Known Issue 從卡片來">
+      <svg viewBox="0 0 680 356" role="img" aria-label="文件骨架的樣子：主題發票拋轉 ERP，跨兩個 repo，分成五節。前四節的內容從程式碼讀出來，分別有流程圖、payload、兩張表；第五節設計考量與 Known Issue 從卡片來">
         <rect class="f-paper s-ink" x="20" y="14" width="640" height="304" rx="10"/>
-        <text class="t" x="44" y="50" font-size="20" font-weight="700">測評點數拋轉 ERP</text>
+        <text class="t" x="44" y="50" font-size="20" font-weight="700">發票拋轉 ERP</text>
         <rect class="f-none s-ok" x="584" y="30" width="56" height="26" rx="13"/>
         <text class="t t-ok" x="612" y="48" text-anchor="middle" font-size="13">新增</text>
-        <text class="t t-mono t-muted" x="44" y="74" font-size="11">billing-api-aws @ dev　·　billing-batch-aws @ batch/sap-create-bu-data</text>
+        <text class="t t-mono t-muted" x="44" y="74" font-size="11">billing-api @ dev　·　billing-batch @ batch/sync-invoices</text>
         <line class="s-line" x1="36" y1="88" x2="644" y2="88"/>
         <rect class="f-accent" x="36" y="107" width="6" height="26" rx="3"/>
         <text class="t t-muted" x="58" y="126" font-size="15">1</text>
         <text class="t" x="80" y="126" font-size="14">整體流程</text>
-        <text class="t t-muted" x="300" y="126" font-size="12">BU → API → 中介表 → cron → SAP</text>
+        <text class="t t-muted" x="300" y="126" font-size="12">前台 → API → 中介表 → cron → ERP</text>
         <rect class="f-none s-ok" x="560" y="108" width="84" height="24" rx="12"/>
         <text class="t t-ok" x="602" y="125" text-anchor="middle" font-size="12">有圖</text>
         <line class="s-line dash" x1="36" y1="141" x2="644" y2="141" style="stroke-width:1"/>
         <rect class="f-accent" x="36" y="149" width="6" height="26" rx="3"/>
         <text class="t t-muted" x="58" y="168" font-size="15">2</text>
-        <text class="t" x="80" y="168" font-size="14">階段一：BU 呼叫 API</text>
+        <text class="t" x="80" y="168" font-size="14">階段一：前台呼叫 API</text>
         <text class="t t-muted" x="300" y="168" font-size="12">兩支端點完整的 request / response</text>
         <rect class="f-none s-ok" x="560" y="150" width="84" height="24" rx="12"/>
         <text class="t t-ok" x="602" y="167" text-anchor="middle" font-size="12">有 payload</text>
@@ -929,7 +929,7 @@
     <div class="says">
       <div class="say-this">
         <span class="when">範圍不對</span>
-        <div><q>不要寫 BU_RECORD_COUNT，這篇只講測評點數</q></div>
+        <div><q>不要寫退款，這篇只講發票拋轉</q></div>
       </div>
       <div class="say-this">
         <span class="when">要補東西</span>
@@ -937,7 +937,7 @@
       </div>
       <div class="say-this">
         <span class="when">該併進既有頁</span>
-        <div><q>這個併到 sap-create-bu-data 那頁，不要另開</q></div>
+        <div><q>這個併到 sync-invoices 那頁，不要另開</q></div>
       </div>
       <div class="say-this">
         <span class="when">都對</span>
@@ -986,7 +986,7 @@
         <text class="t t-paper" x="54" y="74" text-anchor="middle" font-size="11">1</text>
         <text class="t t-muted" x="70" y="74" font-size="11">這次改到的檔案</text>
         <rect class="f-paper" x="50" y="88" width="150" height="18" rx="4"/>
-        <text class="t t-mono t-ink" x="57" y="101" font-size="8.5">spec/testing-point-to-erp.md</text>
+        <text class="t t-mono t-ink" x="57" y="101" font-size="8.5">spec/invoice-to-erp.md</text>
         <rect class="f-paper" x="50" y="110" width="150" height="18" rx="4"/>
         <text class="t t-mono t-ink" x="57" y="123" font-size="8.5">records/…/bill.lin.jsonl</text>
         <rect class="f-paper" x="50" y="132" width="150" height="18" rx="4"/>
@@ -1069,7 +1069,7 @@
     <div class="pic">
       <svg viewBox="0 0 680 530" role="img" aria-label="寫文件的九個步驟：先查 repo 清單跟本機位置，用 git show 讀分支上的程式碼，搜記憶只補為什麼、查重疊有就連過去，然後把骨架給你確認，確認後才開 worktree 寫檔、lint、開預覽頁">
         <rect class="f-ok" x="150" y="10" width="380" height="34" rx="8"/>
-        <text class="t t-paper" x="340" y="32" text-anchor="middle" font-size="15">你：「幫我寫一份 sap-create-bu-data 的文件」</text>
+        <text class="t t-paper" x="340" y="32" text-anchor="middle" font-size="15">你：「幫我寫一份 sync-invoices 的文件」</text>
         <path class="f-none s-line" d="M340 44 V62"/><polygon class="f-line" points="334,60 340,72 346,60"/>
 
         <rect class="f-none s-line dash" x="20" y="76" width="640" height="250" rx="12"/>
@@ -1095,9 +1095,9 @@
         <rect class="f-accent" x="36" y="158" width="608" height="64" rx="6"/>
         <text class="t t-paper" x="340" y="178" text-anchor="middle" font-size="14">③ 用 git show 直接讀分支上的程式碼，不 checkout</text>
         <rect class="f-paper" x="52" y="188" width="196" height="24" rx="12"/>
-        <text class="t t-mono" x="150" y="204" text-anchor="middle" font-size="11">billing-api-aws @ dev</text>
+        <text class="t t-mono" x="150" y="204" text-anchor="middle" font-size="11">billing-api @ dev</text>
         <rect class="f-paper" x="260" y="188" width="236" height="24" rx="12"/>
-        <text class="t t-mono" x="378" y="204" text-anchor="middle" font-size="11">billing-batch-aws @ batch/…</text>
+        <text class="t t-mono" x="378" y="204" text-anchor="middle" font-size="11">billing-batch @ batch/…</text>
         <rect class="f-soft" x="508" y="188" width="120" height="24" rx="12"/>
         <text class="t t-mono t-muted" x="568" y="204" text-anchor="middle" font-size="11">git checkout</text>
         <line class="s-warn" x1="516" y1="200" x2="620" y2="200"/>
@@ -1158,7 +1158,7 @@
       </div>
       <div class="idea">
         <h3>為什麼第 ⑤ 步值得特別做</h3>
-        <p>實際跑第二篇的時候，<code>sap-create-bu-data</code> 跟既有的測評點數文件有一半重疊。正確的產出是<strong>只寫沒寫過的那一半，重疊的地方留一句「見某某文件」</strong>。</p>
+        <p>實際跑第二篇的時候，<code>sync-invoices</code> 跟既有的發票拋轉文件有一半重疊。正確的產出是<strong>只寫沒寫過的那一半，重疊的地方留一句「見某某文件」</strong>。</p>
         <p class="note">文件庫會爛掉，多半不是因為寫得不好，是因為<strong>同一件事散在三個地方，改的時候只改了一個</strong>。</p>
       </div>
     </div>
@@ -1166,7 +1166,7 @@
 
   <section>
     <h2>跑一次給你看</h2>
-    <p class="lead">這是真的跑過的一次：測評點數拋轉 ERP，從程式碼變成團隊 repo 裡的一份規格。</p>
+    <p class="lead">這是真的跑過的一次：發票拋轉 ERP，從程式碼變成團隊 repo 裡的一份規格。</p>
 
     <div class="flow-wrap">
       <table class="flow">
@@ -1242,7 +1242,7 @@
       <div class="idea">
         <h3>那次動到的檔案</h3>
         <p class="note">
-          <strong>新增</strong> <code>spec/testing-point-to-erp.md</code> ← 主角，要讀的就這頁<br>
+          <strong>新增</strong> <code>spec/invoice-to-erp.md</code> ← 主角，要讀的就這頁<br>
           <strong>新增</strong> <code>config/batch-schedule.md</code> ← 排程表，文件從這裡連過去<br>
           <strong>更新</strong> <code>README.md</code> ← 唯一索引，沒連過去就沒人找得到<br>
           <strong>更新</strong> <code>records/billing/2026-09/bill.lin.jsonl</code> ← 紀錄原文
@@ -1252,7 +1252,7 @@
       <div class="idea">
         <h3>合併之後，問一句就有答案</h3>
         <p class="note">
-          問「測評點數怎麼拋到 ERP？」<br>
+          問「發票怎麼拋到 ERP？」<br>
           <strong>1.</strong> 文件（整理過的答案）<br>
           <strong>2.</strong> 紀錄（當初的取捨）<br>
           <strong>3.</strong> 原始對話（完整脈絡）
@@ -1440,9 +1440,9 @@
         <thead><tr><th>AI 搜的字</th><th>會拆成</th><th>結果</th></tr></thead>
         <tbody>
           <tr><td>中介表</td><td>中介、介表</td><td>找到所有提到中介表的紀錄</td></tr>
-          <tr><td>測評點數為什麼不中斷</td><td>測評、評點、點數……中斷</td><td><strong>對上越多塊的排越前面</strong>；「什麼」這種到處都有的塊幾乎不加分</td></tr>
+          <tr><td>發票拋轉為什麼不中斷</td><td>發票、票拋、拋轉……中斷</td><td><strong>對上越多塊的排越前面</strong>；「什麼」這種到處都有的塊幾乎不加分</td></tr>
           <tr><td>表</td><td>表</td><td>要靠單字那一份，才找得到「中介表」「排程表」</td></tr>
-          <tr><td>status</td><td>status</td><td>找得到寫著 <code>sapStatus</code> 的紀錄</td></tr>
+          <tr><td>status</td><td>status</td><td>找得到寫著 <code>invoiceStatus</code> 的紀錄</td></tr>
         </tbody>
       </table>
     </div>
@@ -1462,8 +1462,8 @@
           </div>
           <div class="brow">
             <span class="brow-label">② 程式名字：整個留著，另外拆開</span>
-            <span class="blk mono">sapStatus</span><span class="to">→</span>
-            <span class="blk mono">sapstatus</span><span class="blk mono">sap</span><span class="blk mono">status</span>
+            <span class="blk mono">invoiceStatus</span><span class="to">→</span>
+            <span class="blk mono">invoicestatus</span><span class="blk mono">invoice</span><span class="blk mono">status</span>
           </div>
         </div>
         <h3>存進去時怎麼切</h3>
@@ -1523,7 +1523,7 @@
     <p class="note"><strong>搜尋片段是原文，不是切碎的內容。</strong> 資料庫裡存兩份：原文給人看，切過詞的只給比對用。所以你看到的是「因為佔位符而拋<strong>[例外]</strong>，要找出…」，不是「拋例 例外 外要」。</p>
 
     <h3>為什麼是兩字一塊＋單字，不是真的斷詞</h3>
-    <p>真正的斷詞器（jieba 這類）靠<strong>詞庫</strong>認得「測評點數」是一個詞。詞庫要維護，遇到新詞、專有名詞、打錯字就認不出來，而且要另外編譯安裝。</p>
+    <p>真正的斷詞器（jieba 這類）靠<strong>詞庫</strong>認得「電子發票」是一個詞。詞庫要維護，遇到新詞、專有名詞、打錯字就認不出來，而且要另外編譯安裝。</p>
     <p>兩字一塊不需要任何詞庫——<strong>重疊切法保證任何相鄰兩字都會變成一個 token</strong>，所以不必知道詞的邊界在哪。代價是索引大約變 1.8 倍，而且會有誤中（查「中斷」可能撈到「途中斷了」），靠排序壓下去。</p>
     <p class="legend">兩字一塊叫 <b>bigram</b>，單字叫 <b>unigram</b>。用空間換掉詞庫，是中文全文檢索最常見的無依賴解法。</p>
 
@@ -1587,7 +1587,7 @@
           <tr>
             <td>這個詞罕不罕見</td>
             <td>只出現在 3 篇的詞，權重遠高於出現在 2000 篇的</td>
-            <td>命中「測評點數」幾乎確定就是你要的；命中「系統」等於沒講。所以不用自己排除「的、是、了」，它們的權重會自動趨近 0</td>
+            <td>命中「電子發票」幾乎確定就是你要的；命中「系統」等於沒講。所以不用自己排除「的、是、了」，它們的權重會自動趨近 0</td>
           </tr>
           <tr>
             <td>這篇有多長</td>
@@ -1627,7 +1627,7 @@
           <tr>
             <td>弱項</td>
             <td>問「效能問題」找不到寫「太慢」的紀錄</td>
-            <td><code>WAIT_FOR_INSERT_MIDDLE_DB</code> 這種字串模型常常認不得</td>
+            <td><code>WAIT_FOR_INSERT_STAGING_DB</code> 這種字串模型常常認不得</td>
           </tr>
           <tr>
             <td>查不到時</td>
@@ -1643,7 +1643,7 @@
       </table>
     </div>
 
-    <p>你的記憶裡到處是 <code>sapStatus</code>、<code>@Transactional</code>、<code>erpDocType</code> 這種字串，<strong>那正好是 bm25 的強項、向量的弱項</strong>。加上不用裝任何模型，第一版就先這樣。</p>
+    <p>你的記憶裡到處是 <code>invoiceStatus</code>、<code>@Transactional</code>、<code>erpSyncType</code> 這種字串，<strong>那正好是 bm25 的強項、向量的弱項</strong>。加上不用裝任何模型，第一版就先這樣。</p>
 
     <p class="note"><strong>正解其實是兩個一起用。</strong> 業界作法叫 hybrid search：bm25 一份排名、cosine 一份排名，再把兩份融合。<strong>不是二選一。</strong> 這是之後的事——但要先有評測集，否則加上去是變好還變壞根本不知道。</p>
 
@@ -2487,7 +2487,7 @@
             <td>skill、hook、MCP server、CLI。<strong>不含任何記憶資料</strong></td>
           </tr>
           <tr>
-            <td><code>104mis-billing-doc-test</code></td>
+            <td><code>billing-docs</code></td>
             <td><strong>文件庫</strong>（團隊共用）</td>
             <td>每個人自己 clone 一份</td>
             <td><code>spec/</code> 文件、<code>records/</code> 紀錄、<code>schema.md</code> 規則、<code>repos.yaml</code></td>
@@ -2527,14 +2527,14 @@
       <div class="say-this">
         <span class="when">3　clone 文件庫（個人模式跳過）</span>
         <div>
-          <q>git clone …/104mis-billing-doc-test ~/project-other/…</q>
+          <q>git clone …/billing-docs ~/projects/…</q>
           <small>這是團隊共用的那一份。clone 到哪都可以，下一步會告訴 plugin。</small>
         </div>
       </div>
       <div class="say-this">
         <span class="when">4　跑一次 setup</span>
         <div>
-          <q>dm setup --repo ~/project-other/104mis-billing-doc-test</q>
+          <q>dm setup --repo ~/projects/billing-docs</q>
           <small><strong>這一步做完就能用了。</strong>它會建 <code>~/.dev-memory</code>、建空的 <code>memory.db</code>、把既有對話灌進索引、從 <code>main</code> 同步隊友的文件，最後逐項檢查環境。只想自己用就跑 <code>dm setup</code>（不帶 <code>--repo</code>），這是<strong>個人模式</strong>：一樣收對話、能搜尋、能存卡片，只是不寫文件、不送 PR。</small>
         </div>
       </div>
@@ -2602,7 +2602,7 @@
         </div>
         <div class="say">
           <h3>一個工具箱，兩份說明書</h3>
-          <p>裡面的東西兩邊共用。Claude Code 看 <code>.claude-plugin/</code>，Codex 看 <code>plugin.json</code>。裝的時候打 <code>dev-memory@104mis-plugins</code>。</p>
+          <p>裡面的東西兩邊共用。Claude Code 看 <code>.claude-plugin/</code>，Codex 看 <code>plugin.json</code>。裝的時候打 <code>dev-memory@dev-memory</code>。</p>
           <p>Codex 第一次要你按「信任」，它才會開始記。</p>
         </div>
       </div>
@@ -2668,7 +2668,7 @@
         <div class="tool">
           <svg viewBox="0 0 48 48" aria-hidden="true"><path class="f-accent s-ink" d="M6 18 L10 8 H38 L42 18 Z"/><rect class="f-paper s-ink" x="9" y="18" width="30" height="22"/><rect class="f-soft s-ink" x="20" y="28" width="8" height="12"/></svg>
           <b>dev-memory repo</b>
-          <span>小幫手的發放處，隊友從這裡安裝：<code>dev-memory@104mis-plugins</code>。</span>
+          <span>小幫手的發放處，隊友從這裡安裝：<code>dev-memory@dev-memory</code>。</span>
           <em class="tag team">GitHub 私有 repo</em>
         </div>
         <div class="tool">
@@ -2749,11 +2749,11 @@
         <tbody>
           <tr>
             <td>關鍵字已經夠用</td>
-            <td>文件是照主題寫的，查「測評點數」「sap-create-bu-data」這種詞本來就對得上。真正靠同義詞才找得到的情況，目前沒遇到幾次</td>
+            <td>文件是照主題寫的，查「電子發票」「sync-invoices」這種詞本來就對得上。真正靠同義詞才找得到的情況，目前沒遇到幾次</td>
           </tr>
           <tr>
             <td>內容特性不利向量</td>
-            <td>記憶裡到處是 <code>sapStatus</code>、<code>@Transactional</code>、<code>WAIT_FOR_INSERT_MIDDLE_DB</code>。<strong>這種字串 embedding 模型常常認不得</strong>，反而是關鍵字的強項</td>
+            <td>記憶裡到處是 <code>invoiceStatus</code>、<code>@Transactional</code>、<code>WAIT_FOR_INSERT_STAGING_DB</code>。<strong>這種字串 embedding 模型常常認不得</strong>，反而是關鍵字的強項</td>
           </tr>
           <tr>
             <td>導入成本壓在最痛的那一刻</td>
@@ -2783,7 +2783,7 @@
       </div>
       <div class="callout">
         <b>2</b>
-        <span>這裡的 query 大宗是識別字，<strong>精準比對是特性不是缺陷</strong>。<small>實際會搜的是 <code>BuRecordCountRequest</code>、<code>erp_data_record</code>、<code>ChainedTransactionManager</code>、<code>cron(35 00 * * ? *)</code>。這些是罕見詞，bm25 天生給它們最高權重；embedding 會把 <code>BuRecordCountRequest</code> 跟 <code>BuRecordCountResult</code> 壓到幾乎同一個點——但這兩個在文件裡是不同階段。<strong>embedding 擅長模糊，我要的是精確。</strong></small></span>
+        <span>這裡的 query 大宗是識別字，<strong>精準比對是特性不是缺陷</strong>。<small>實際會搜的是 <code>InvoiceCountRequest</code>、<code>erp_sync_record</code>、<code>ChainedTransactionManager</code>、<code>cron(35 00 * * ? *)</code>。這些是罕見詞，bm25 天生給它們最高權重；embedding 會把 <code>InvoiceCountRequest</code> 跟 <code>InvoiceCountResult</code> 壓到幾乎同一個點——但這兩個在文件裡是不同階段。<strong>embedding 擅長模糊，我要的是精確。</strong></small></span>
       </div>
       <div class="callout">
         <b>3</b>
@@ -2823,7 +2823,7 @@
   <section>
     <h2>這次不用的東西</h2>
     <div class="skip">
-      <div><b>claude-mem</b><span>退休：中文搜不到，還會把決定漏掉</span></div>
+      <div><b>claude-mem</b><span>不沿用：中文搜不到，還會把決定漏掉</span></div>
       <div><b>n8n + Apps Script</b><span>改成直接開 PR，步驟更少</span></div>
       <div><b>PostgreSQL</b><span>先不用，SQLite 就夠</span></div>
       <div><b>Ollama / 語意搜尋</b><span>評估後決定現在不需要：關鍵字夠用，而且會讓每個隊友多裝一個常駐模型服務</span></div>
@@ -2946,13 +2946,13 @@
         <b class="chip wait">進行中</b>
       </div>
       <div class="check">
-        <span>正式上線<small>切到正式的 104mis-billing-doc、找隊友試用、停掉舊工具</small></span>
+        <span>正式上線<small>切到正式的文件庫、找第一批使用者試用</small></span>
         <b class="chip wait">下一階段</b>
       </div>
     </div>
   </section>
 
-  <footer>依據 docs/PLAN.md 與 docs/spikes/phase-0.md · 2026-09-26 · 191 個測試通過，已跑完兩次真實的 PR 流程；文件從程式碼寫，對話只補「為什麼」</footer>
+  <footer>數字都是實測的；repo、批次、欄位名稱是虛構的範例 · 2026-09-26 · 191 個測試通過，已跑完兩次真實的 PR 流程；文件從程式碼寫，對話只補「為什麼」</footer>
 
 </div>
 </body>

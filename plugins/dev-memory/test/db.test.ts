@@ -58,7 +58,7 @@ test("turn rows survive a reopen and the id is the primary key", () => {
 test("the fts table indexes pre-tokenized bodies and finds Chinese", () => {
   const db = openDb(tempDb());
   db.run("insert into fts (body, kind, ref) values (?, ?, ?)", [
-    tokenizeForIndex("sapStatus 維持 WAIT_FOR_INSERT_MIDDLE_DB，例外處理要彙總"),
+    tokenizeForIndex("invoiceStatus 維持 WAIT_FOR_INSERT_STAGING_DB，例外處理要彙總"),
     "turn",
     "claude-code:s1:1",
   ]);

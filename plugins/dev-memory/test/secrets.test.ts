@@ -36,6 +36,6 @@ test("every occurrence is masked, and masking twice changes nothing more", () =>
 });
 
 test("ordinary conversation is left alone", () => {
-  const text = "sapStatus 維持 WAIT_FOR_INSERT_MIDDLE_DB；token 放在 header，不寫進 config";
+  const text = "invoiceStatus 維持 WAIT_FOR_INSERT_STAGING_DB；token 放在 header，不寫進 config";
   expect(redactSecrets(text)).toBe(text);
 });

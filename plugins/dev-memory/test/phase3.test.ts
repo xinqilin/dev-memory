@@ -25,7 +25,7 @@ function addRecordRow(db: ReturnType<typeof openDb>, overrides: Record<string, u
     author: "bill.lin",
     host: "claude-code",
     product: "billing",
-    repos: JSON.stringify(["104corp/billing-batch"]),
+    repos: JSON.stringify(["acme/billing-batch"]),
     entities: JSON.stringify([{ kind: "table", name: "export_job", access: "write" }]),
     title: "匯出報表改成單筆失敗不中斷",
     body: "原因：…\n決定：…",
@@ -44,17 +44,17 @@ describe("entities", () => {
   test("collects who writes and who reads, across repos", () => {
     const { db } = workspace();
     addRecordRow(db);
-    addRecordRow(db, { repos: JSON.stringify(["104corp/billing-api"]), entities: JSON.stringify([{ kind: "table", name: "export_job", access: "read" }]) });
-    addRecordRow(db, { repos: JSON.stringify(["104corp/billing-frontend"]), entities: JSON.stringify([{ kind: "api", name: "GET /exports" }]) });
+    addRecordRow(db, { repos: JSON.stringify(["acme/billing-api"]), entities: JSON.stringify([{ kind: "table", name: "export_job", access: "read" }]) });
+    addRecordRow(db, { repos: JSON.stringify(["acme/billing-frontend"]), entities: JSON.stringify([{ kind: "api", name: "GET /exports" }]) });
 
     const entities = entityIndex(db);
     const table = entities.find((entity) => entity.name === "export_job")!;
-    expect(table.writers).toEqual(["104corp/billing-batch"]);
-    expect(table.readers).toEqual(["104corp/billing-api"]);
+    expect(table.writers).toEqual(["acme/billing-batch"]);
+    expect(table.readers).toEqual(["acme/billing-api"]);
     expect(table.recordIds).toHaveLength(2);
 
     const api = entities.find((entity) => entity.kind === "api")!;
-    expect(api.uses[0]).toMatchObject({ repo: "104corp/billing-frontend", access: "unknown" });
+    expect(api.uses[0]).toMatchObject({ repo: "acme/billing-frontend", access: "unknown" });
     db.close();
   });
 
@@ -92,7 +92,7 @@ describe("lint", () => {
   test("a code-location table is checked only where there is one", async () => {
     const { repo: dir, db } = await repo({
       "README.md": "# 目錄\n1. [a](./spec/a.md)\n2. [b](./spec/b.md)\n",
-      "repos.yaml": "products:\n  billing:\n    repos:\n      - id: 104corp/billing-api\n        refs: [dev]\n",
+      "repos.yaml": "products:\n  billing:\n    repos:\n      - id: acme/billing-api\n        refs: [dev]\n",
       "spec/a.md":
         "# a\n\n## 程式碼位置\n\n| 內容 | repo | 分支 | 路徑 |\n|---|---|---|---|\n| a | `billing-api` | `dev` | `src/A.java` |\n| b | `unknown-repo` | `dev` | `src/B.java` |\n",
       "spec/b.md": "# b\n\n人工寫的，沒有程式碼位置表。\n",
@@ -149,8 +149,8 @@ describe("lint", () => {
   test("two documents under the same heading are flagged", async () => {
     const { repo: dir, db } = await repo({
       "README.md": "# 目錄\n1. [甲](./spec/a.md)\n2. [乙](./spec/b.md)\n",
-      "spec/a.md": "# 測評點數拋轉 ERP\n\n第一份。\n",
-      "spec/b.md": "# 測評點數拋轉 ERP\n\n又一份。\n",
+      "spec/a.md": "# 發票拋轉 ERP\n\n第一份。\n",
+      "spec/b.md": "# 發票拋轉 ERP\n\n又一份。\n",
     });
 
     const report = await lintRepo(db, dir);

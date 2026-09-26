@@ -2,7 +2,7 @@
 
 AI 讀程式碼寫出技術文件，用你存下來的開發紀錄補上「當初為什麼」，你審核後送 PR。
 
-Claude Code 與 Codex CLI 共用同一個 plugin、同一份記憶（Codex 那半尚未實測）。這個 repo 本身也是 plugin 的 marketplace，名稱 `104mis-plugins`。
+Claude Code 與 Codex CLI 共用同一個 plugin、同一份記憶（Codex 那半尚未實測）。這個 repo 本身也是 plugin 的 marketplace，名稱 `dev-memory`。
 
 ```
 你說「寫一份 X 的文件」→ AI 讀程式碼 → 給你大綱確認 → 寫成文件
@@ -47,11 +47,11 @@ Claude Code 與 Codex CLI 共用同一個 plugin、同一份記憶（Codex 那�
 **兩步：先加 marketplace，再裝 plugin。**
 
 ```bash
-# 1. 把這個 repo 註冊成 marketplace（名稱是 104mis-plugins）
-claude plugin marketplace add git@github.com:xinqilin/dev-memory.git
+# 1. 把這個 repo 註冊成 marketplace（名稱是 dev-memory）
+claude plugin marketplace add xinqilin/dev-memory
 
 # 2. 安裝
-claude plugin install dev-memory@104mis-plugins
+claude plugin install dev-memory@dev-memory
 ```
 
 裝完**重開 Claude Code**才會生效。
@@ -69,7 +69,7 @@ claude plugin details dev-memory      # 列出 skill、hook、MCP，以及常駐
 |---|---|
 | `claude plugin list` | 看裝了什麼、什麼版本 |
 | `claude plugin update dev-memory` | 更新到最新版（**要重開才生效**） |
-| `claude plugin marketplace update 104mis-plugins` | 只更新 marketplace 清單，不動已裝的 plugin |
+| `claude plugin marketplace update dev-memory` | 只更新 marketplace 清單，不動已裝的 plugin |
 | `claude plugin uninstall dev-memory` | 移除 |
 | `claude plugin disable dev-memory` / `enable` | 暫時停用／啟用，不用移除 |
 | `claude plugin marketplace list` | 看註冊了哪些 marketplace |
@@ -146,7 +146,7 @@ dm repos --save
 
 ```toml
 [repos]
-"104corp/example-service" = "~/你 clone 的位置/example-service"
+"acme/example-service" = "~/你 clone 的位置/example-service"
 ```
 
 > **為什麼路徑不寫在 `repos.yaml`**：那個檔案在團隊文件庫裡、會發給每個人，而每個人 clone 的位置都不同。`repos.yaml` 只寫 repo 身分跟要讀哪幾支分支，本機路徑各自放在自己的 `config.toml`。
@@ -170,9 +170,9 @@ dm repos --save
 
 | 你想做什麼 | 你說 | 背後發生什麼 |
 |---|---|---|
-| **查以前怎麼做的** | 「測評點數怎麼拋到 ERP？」「上次那個中介表怎麼決定的？」 | `mem-search`：AI 自動搜記憶（文件 → 紀錄 → 原始對話），答不出來才翻程式碼 |
+| **查以前怎麼做的** | 「發票怎麼拋到 ERP？」「上次那個中介表怎麼決定的？」 | `mem-search`：AI 自動搜記憶（文件 → 紀錄 → 原始對話），答不出來才翻程式碼 |
 | **存一個決定** | AI 問你就點頭，或自己說「把這個決定存起來」 | `mem-save` 起草卡片（原因／決定／放棄），**你看過才存** |
-| **寫文件** | 「幫我寫一份 sap-create-bu-data 的文件」 | `wiki-ingest`：讀程式碼 → 給你骨架確認 → 寫文件 → 開審核頁 |
+| **寫文件** | 「幫我寫一份 sync-invoices 的文件」 | `wiki-ingest`：讀程式碼 → 給你骨架確認 → 寫文件 → 開審核頁 |
 
 主題要具體：**一支批次、一條資料流、一個子系統**，不是「最近的幾個決定」。
 
@@ -307,4 +307,4 @@ templates/memory-repo/           # init-repo 會複製到文件庫的骨架（sc
 
 ---
 
-私有 repo，公司內部使用。`git push` 一律由使用者自己執行。
+授權：Apache-2.0，見 [LICENSE](LICENSE)。

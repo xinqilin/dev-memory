@@ -414,7 +414,7 @@
       <div class="say-this">
         <span class="when go">功能做完，要留文件</span>
         <div>
-          <q>幫我寫一份測評點數拋轉 ERP 的文件</q>
+          <q>幫我寫一份發票拋轉 ERP 的文件</q>
           <small>全程約 10 分鐘，中間停兩次等你回話。<strong>這是唯一會產生 PR 的一句話。</strong>想確定叫到它，就打 <code>/dev-memory:wiki-ingest</code>。</small>
         </div>
       </div>
@@ -586,8 +586,8 @@
         </div>
         <div class="brow">
           <span class="brow-label">程式名字：整個留著，另外拆開</span>
-          <span class="blk mono">sapStatus</span><span class="to">→</span>
-          <span class="blk mono">sapstatus</span><span class="blk mono">sap</span><span class="blk mono">status</span>
+          <span class="blk mono">invoiceStatus</span><span class="to">→</span>
+          <span class="blk mono">invoicestatus</span><span class="blk mono">invoice</span><span class="blk mono">status</span>
         </div>
       </div>
     </div>
@@ -598,9 +598,9 @@
         <thead><tr><th>AI 搜的字</th><th>會拆成</th><th>結果</th></tr></thead>
         <tbody>
           <tr><td>中介表</td><td>中介、介表</td><td>找到所有提到中介表的紀錄</td></tr>
-          <tr><td>測評點數為什麼不中斷</td><td>測評、評點、點數……中斷</td><td><strong>對上越多塊的排越前面</strong>；「什麼」這種到處都有的塊幾乎不加分</td></tr>
+          <tr><td>發票拋轉為什麼不中斷</td><td>發票、票拋、拋轉……中斷</td><td><strong>對上越多塊的排越前面</strong>；「什麼」這種到處都有的塊幾乎不加分</td></tr>
           <tr><td>表</td><td>表</td><td>要靠單字那一份，才找得到「中介表」「排程表」</td></tr>
-          <tr><td>status</td><td>status</td><td>找得到寫著 <code>sapStatus</code> 的紀錄</td></tr>
+          <tr><td>status</td><td>status</td><td>找得到寫著 <code>invoiceStatus</code> 的紀錄</td></tr>
         </tbody>
       </table>
     </div>
@@ -627,7 +627,7 @@
 
     <div class="safe">
       <div><b>① 搜尋結果是給 AI 看的，不是給人看的</b><span>embedding 的價值是「你打模糊的字，系統猜你要什麼」。但這裡打字的是 AI：它會自己換詞重搜、先讀索引再決定關鍵字。語意那一層已經在它腦袋裡了，再塞一個小模型進去是同一件事做兩次。</span></div>
-      <div><b>② 要搜的大多是程式名字</b><span><code>erp_data_record</code> 這種罕見詞正是 bm25 的強項；embedding 反而會把 <code>BuRecordCountRequest</code> 跟 <code>BuRecordCountResult</code> 當成幾乎一樣的東西，但它們在文件裡是不同階段。</span></div>
+      <div><b>② 要搜的大多是程式名字</b><span><code>erp_sync_record</code> 這種罕見詞正是 bm25 的強項；embedding 反而會把 <code>InvoiceCountRequest</code> 跟 <code>InvoiceCountResult</code> 當成幾乎一樣的東西，但它們在文件裡是不同階段。</span></div>
       <div><b>③ 搜不到時查得出原因</b><span>「查『表』會漏掉最後一個字」能定位到切詞方式，修完 341 筆變 423 筆，有數字可比。向量只給你一個距離，沒有下一步。</span></div>
       <div><b>④ 零依賴才裝得起來</b><span>整條搜尋路徑第三方依賴是 0，隊友只要有 Bun。要 embedding 就多三樣東西要裝，每一樣都是「跑不起來」的來源。<strong>團隊工具的採用率上限，是它的安裝成功率。</strong></span></div>
       <div><b>⑤ 索引隨時能重建，向量不行</b><span>切詞方式改了，重建一次就好（0.9 秒）。向量只有同一個模型同一個版本可比，每個人裝的版本不同，索引就不能共用、不能一起 commit。</span></div>
@@ -661,8 +661,8 @@
       <div class="say-this">
         <span class="when">2　裝 plugin</span>
         <div>
-          <code class="cmd">claude plugin marketplace add git@github.com:xinqilin/dev-memory.git
-claude plugin install dev-memory@104mis-plugins</code>
+          <code class="cmd">claude plugin marketplace add xinqilin/dev-memory
+claude plugin install dev-memory@dev-memory</code>
           <small>Codex 要在 <code>/hooks</code> 信任一次，然後重開 session。</small>
         </div>
       </div>

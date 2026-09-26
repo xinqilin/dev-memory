@@ -25,17 +25,17 @@ test("lists the documents README does not reach, with links relative to the repo
   const dir = await repo({
     "README.md": "# 索引\n\n1. [排程](./config/batch-schedule.md)\n",
     "config/batch-schedule.md": "# 排程表\n",
-    "spec/payment-3DS.md": "# EasyPay 信用卡 3DS 交易文件\n",
+    "spec/payment-3ds.md": "# 信用卡 3DS 付款\n",
     "maintenance/aws.md": "# AWS 維運\n",
   });
 
   const result = await indexExistingDocs(dir);
-  expect(result.docs).toEqual(["maintenance/aws.md", "spec/payment-3DS.md"]);
+  expect(result.docs).toEqual(["maintenance/aws.md", "spec/payment-3ds.md"]);
   expect(result.alreadyIndexed).toBe(1); // batch-schedule.md was already linked
   expect(result.changed).toBe(true);
 
   const text = await readme(dir);
-  expect(text).toContain("[EasyPay 信用卡 3DS 交易文件](./spec/payment-3DS.md)");
+  expect(text).toContain("[信用卡 3DS 付款](./spec/payment-3ds.md)");
   expect(text).toContain("[AWS 維運](./maintenance/aws.md)"); // title comes from the H1
   expect(text).toContain("1. [排程](./config/batch-schedule.md)"); // the original index is untouched
 });

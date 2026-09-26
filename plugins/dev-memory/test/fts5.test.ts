@@ -8,8 +8,8 @@ test("bun:sqlite supports FTS5 on this platform", () => {
   console.log(`sqlite_version=${version} platform=${process.platform}/${process.arch} ENABLE_FTS5=${options.includes("ENABLE_FTS5")}`);
 
   db.run(`create virtual table doc using fts5(body, tokenize = "unicode61 tokenchars '_'")`);
-  db.run("insert into doc(body) values (?), (?)", ["sapStatus stays WAIT_FOR_INSERT_MIDDLE_DB", "unrelated row"]);
+  db.run("insert into doc(body) values (?), (?)", ["invoiceStatus stays WAIT_FOR_INSERT_STAGING_DB", "unrelated row"]);
 
-  const hits = db.query("select rowid from doc where doc match ?").all('"WAIT_FOR_INSERT_MIDDLE_DB"');
+  const hits = db.query("select rowid from doc where doc match ?").all('"WAIT_FOR_INSERT_STAGING_DB"');
   expect(hits).toEqual([{ rowid: 1 }]);
 });
