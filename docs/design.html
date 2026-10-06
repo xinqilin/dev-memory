@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>dev-memory 圖解</title>
+<meta name="description" content="AI 讀程式碼寫出規格文件，用開發紀錄補上「當初為什麼」，你審核後送 PR。一頁看完 dev-memory 的整個設計。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="dev-memory">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:title" content="dev-memory 圖解：程式碼跟對話，怎麼變成全隊的文件">
+<meta property="og:description" content="AI 讀程式碼寫出規格文件，用開發紀錄補上「當初為什麼」，你審核後送 PR。一頁看完 dev-memory 的整個設計。">
+<meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
@@ -190,7 +197,16 @@
     font-size: 15px;
   }
 
-  footer { color: var(--muted); font-size: 14px; }
+  footer { color: var(--muted); font-size: 14px; display: grid; gap: 8px; }
+  a { color: var(--accent); }
+  .mores { display: flex; flex-wrap: wrap; gap: 10px; }
+  .more {
+    font-size: 15px;
+    border: 1.5px dashed var(--line);
+    border-radius: 999px;
+    padding: 4px 14px;
+    text-decoration: none;
+  }
 
   .skip {
     display: grid;
@@ -333,6 +349,8 @@
     .ideas { grid-template-columns: minmax(0, 1fr); }
     .skip { grid-template-columns: minmax(0, 1fr); }
     .wrap { gap: 48px; padding-block: 28px 48px; }
+    .wrap, section { grid-template-columns: minmax(0, 1fr); }
+    code { white-space: normal; overflow-wrap: anywhere; }
     .stop { font-size: 17px; padding: 1px 11px; }
     .say-this { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .when { justify-self: start; margin-top: 0; }
@@ -386,6 +404,10 @@
       </table>
     </div>
 
+    <div class="mores">
+      <a class="more" href="overview.html">只想看重點 → 精簡版</a>
+      <a class="more" href="https://github.com/xinqilin/dev-memory">安裝與原始碼 → GitHub</a>
+    </div>
   </header>
 
   <section>
@@ -2956,7 +2978,10 @@
     </div>
   </section>
 
-  <footer>數字都是實測的；repo、批次、欄位名稱是虛構的範例 · 2026-09-26 · 191 個測試通過，已跑完兩次真實的 PR 流程；文件從程式碼寫，對話只補「為什麼」</footer>
+  <footer>
+    <span>數字都是實測的；repo、批次、欄位名稱是虛構的範例 · 2026-09-26 · 191 個測試通過，已跑完兩次真實的 PR 流程；文件從程式碼寫，對話只補「為什麼」</span>
+    <span><a href="overview.html">精簡版</a> · <a href="https://github.com/xinqilin/dev-memory">GitHub：安裝與原始碼</a></span>
+  </footer>
 
 </div>
 </body>

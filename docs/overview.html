@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>dev-memory 速覽</title>
+<meta name="description" content="平常照用 Claude Code 或 Codex，對話會自動記下來。要寫文件時說一句話，AI 讀程式碼寫出規格、用開發紀錄補上「當初為什麼」，你審核後自己送 PR。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="dev-memory">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:title" content="dev-memory 速覽：程式碼跟對話，變成全隊的文件">
+<meta property="og:description" content="平常照用 Claude Code 或 Codex，對話會自動記下來。要寫文件時說一句話，AI 讀程式碼寫出規格、用開發紀錄補上「當初為什麼」，你審核後自己送 PR。">
+<meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
@@ -121,6 +128,7 @@
   .legend b { color: var(--accent); font-weight: 500; }
   .legend b.g { color: var(--ok); }
 
+  .mores { display: flex; flex-wrap: wrap; gap: 10px; }
   .more {
     justify-self: start;
     font-size: 15px;
@@ -268,6 +276,8 @@
 
   @media (max-width: 720px) {
     .wrap { gap: 48px; padding-inline: 16px; padding-block: 28px 48px; }
+    .wrap, section { grid-template-columns: minmax(0, 1fr); }
+    code { white-space: normal; overflow-wrap: anywhere; }
     .pains, .moments, .safe, .duo { grid-template-columns: minmax(0, 1fr); }
     .stop { font-size: 17px; padding: 1px 11px; }
     .say-this { grid-template-columns: minmax(0, 1fr); gap: 8px; }
@@ -291,7 +301,10 @@
       <span class="stop">隊友同步</span>
     </div>
     <p class="legend"><b>藍框</b>是 AI 停下來等你點頭；<b class="g">綠色</b>那一步只有你能做。</p>
-    <a class="more" href="eli5.html">想看每一步的細節 → 完整版</a>
+    <div class="mores">
+      <a class="more" href="design.html">想看每一步的細節 → 完整版</a>
+      <a class="more" href="https://github.com/xinqilin/dev-memory">安裝與原始碼 → GitHub</a>
+    </div>
   </header>
 
   <section>
@@ -682,8 +695,8 @@ dm setup                                   # 個人模式：只收對話、搜�
   </section>
 
   <footer>
-    <a class="more" href="eli5.html">完整版：bm25 與語意搜尋的比較、九個步驟、借了 LLM Wiki 哪些又改了哪些、每個技術選擇的理由 →</a>
-    <span>摘自 docs/eli5.html · 2026-09-26</span>
+    <a class="more" href="design.html">完整版：bm25 與語意搜尋的比較、九個步驟、借了 LLM Wiki 哪些又改了哪些、每個技術選擇的理由 →</a>
+    <span>摘自 docs/design.html · 2026-09-26 · <a href="https://github.com/xinqilin/dev-memory">GitHub：安裝與原始碼</a></span>
   </footer>
 
 </div>
