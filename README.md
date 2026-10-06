@@ -16,8 +16,7 @@
 > 介面訊息（setup 的檢查結果、本機審核頁、部分指令的輸出）目前是繁體中文。
 > 日文、韓文用的是同一套切法，理論上適用，但沒有實測過。
 
-圖解版（一頁看完整個設計）：[docs/eli5.html](docs/eli5.html)、精簡版 [docs/eli5-simple.html](docs/eli5-simple.html)。
-GitHub 只會顯示 HTML 原始碼，下載後用瀏覽器打開。
+圖解版（一頁看完整個設計）：[完整版](https://bill-lin.dev/dev-memory/design.html)、[精簡版](https://bill-lin.dev/dev-memory/overview.html)。
 
 ---
 
@@ -294,7 +293,7 @@ exclude = []               # 這些目錄裡的對話不收，例如 ["~/persona
 **為什麼沒有用 embedding（語意搜尋）？**
 搜尋結果是給 AI 看的，換個說法重搜這件事 AI 自己就會做；要搜的大多是程式識別字，這正是關鍵字排序（bm25）的強項；
 而且不用每個人多跑一個模型服務。搜不到的時候，也查得出是哪個詞沒對上。之後真的需要，可以再加上關鍵字跟語意兩種排序的融合，
-資料不用重收。完整的理由在 [docs/eli5.html](docs/eli5.html)。
+資料不用重收。完整的理由在[圖解完整版](https://bill-lin.dev/dev-memory/design.html)。
 
 **為什麼用 SQLite，不用 PostgreSQL？**
 資料是每個人自己的，共享走 git；SQLite 就是一個檔案，FTS5 內建全文檢索，不用多開一個服務。

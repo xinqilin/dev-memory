@@ -21,8 +21,8 @@ the spec, and fills in *why it was built this way* from the decisions you saved;
 > **The interface is in Traditional Chinese**: setup's checks, the local review page and some command output.
 > Japanese and Korean go through the same tokenizer and should work in principle, but have not been tested.
 
-Illustrated explainers (in Chinese): [docs/eli5.html](docs/eli5.html) and the short version
-[docs/eli5-simple.html](docs/eli5-simple.html). GitHub shows the HTML source; download them and open in a browser.
+Illustrated explainers (in Chinese): the [full version](https://bill-lin.dev/dev-memory/design.html) and the
+[short version](https://bill-lin.dev/dev-memory/overview.html).
 
 ---
 
@@ -315,7 +315,7 @@ want fully automatic summaries, another tool may suit you better.
 Search results are read by the agent, which already rephrases and searches again on its own. Most queries are code
 identifiers, which is exactly what keyword ranking (bm25) is good at. Nobody has to run a model service, and when a
 search misses, you can see which word failed to match. Hybrid ranking can be added later without collecting anything
-again. The full reasoning is in [docs/eli5.html](docs/eli5.html) (Chinese).
+again. The full reasoning is in the [illustrated explainer](https://bill-lin.dev/dev-memory/design.html) (Chinese).
 
 **Why SQLite rather than PostgreSQL?**
 The data belongs to each person and sharing goes through git. SQLite is a single file with full-text search built in,
